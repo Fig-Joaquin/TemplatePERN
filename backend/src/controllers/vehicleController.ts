@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { Vehicle } from "../entities/VehicleTEST";
-import { vehicleSchema } from "../validators/vehicleValidator";
+import { vehicleSchema } from "../schema/vehicleValidator";
 import { ValidationAdapter } from "../adapters/validationAdapter";
 import { ClassValidatorAdapter } from "../adapters/classValidatorAdapter";
 
