@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
-import { IsInt, IsString, Length, IsEmail, Matches } from "class-validator";
+import {  IsString, Length, IsEmail, Matches } from "class-validator";
 
-@Entity("personas")
-export class Persona {
+@Entity("persons")
+export class Person {
     @PrimaryGeneratedColumn()
     id_persona!: number; // Primary key gestionada por TypeORM
 

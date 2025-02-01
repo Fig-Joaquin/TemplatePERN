@@ -1,18 +1,18 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { IsString, Length, Matches } from "class-validator";
-import { Persona } from "./personasEntity"; // Asegúrate de que la ruta de importación sea correcta
+import { Person } from "./personsEntity"; // Asegúrate de que la ruta de importación sea correcta
 
-@Entity("usuarios")
-export class Usuario {
+@Entity("users")
+export class User {
     @PrimaryGeneratedColumn()
     id_usuario!: number;
 
     @Column()
     id_persona!: number;
 
-    @ManyToOne(() => Persona, { nullable: false })
+    @ManyToOne(() => Person, { nullable: false })
     @JoinColumn({ name: "id_persona" })
-    persona!: Persona;
+    persona!: Person;
 
     @Column({ length: 20 })
     @IsString()
