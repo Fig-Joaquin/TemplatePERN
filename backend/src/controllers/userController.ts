@@ -2,18 +2,24 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/usersEntity";
 import { Person } from "../entities/personsEntity";
-import { validate } from "class-validator";
 import { hash, compare } from "bcryptjs";
+import { UserSchema, UpdateUserSchema } from "../schema/usersValidator";
+import { PersonSchema } from "../schema/personsValidator";
 
 const userRepository = AppDataSource.getRepository(User);
 const personRepository = AppDataSource.getRepository(Person);
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        const { person_id, user_role, username, password } = req.body;
+        const validationResult = UserSchema.safeParse(req.body);
+        if (!validationResult.success) {
+            return res.status(400).json({ errors: validationResult.error.errors });
+        }
+
+        const { person_id, user_role, username, password } = validationResult.data;
 
         const person = await personRepository.findOne({
-            where: { person_id }
+            where: { person_id: person_id }
         });
         if (!person) {
             return res.status(404).json({ message: "Person not found" });
@@ -26,11 +32,6 @@ export const createUser = async (req: Request, res: Response) => {
         user.user_role = user_role;
         user.username = username;
         user.password = hashedPassword;
-
-        const errors = await validate(user);
-        if (errors.length > 0) {
-            return res.status(400).json({ errors });
-        }
 
         await userRepository.save(user);
         return res.status(201).json({ message: "User created successfully" });
@@ -72,7 +73,12 @@ export const getUserById = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { user_role, username, password } = req.body;
+        const validationResult = UpdateUserSchema.safeParse(req.body);
+        if (!validationResult.success) {
+            return res.status(400).json({ errors: validationResult.error.errors });
+        }
+
+        const { user_role, username, password } = validationResult.data;
 
         const user = await userRepository.findOneBy({ user_id: parseInt(id) });
         if (!user) {
@@ -83,11 +89,6 @@ export const updateUser = async (req: Request, res: Response) => {
         if (username) user.username = username;
         if (password) {
             user.password = await hash(password, 10);
-        }
-
-        const errors = await validate(user);
-        if (errors.length > 0) {
-            return res.status(400).json({ errors });
         }
 
         await userRepository.save(user);
@@ -136,9 +137,9 @@ export const loginUser = async (req: Request, res: Response) => {
         return res.json({
             message: "Login successful",
             user: {
-                user_id: user.user_id,
+                userId: user.user_id,
                 username: user.username,
-                user_role: user.user_role,
+                userRole: user.user_role,
                 person: user.person
             }
         });
