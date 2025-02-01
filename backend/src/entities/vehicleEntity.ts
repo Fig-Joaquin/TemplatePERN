@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from "typeorm";
 import { IsString, Length, IsInt, Min, Max } from "class-validator";
 import { VehicleModel } from "./vehicleModelEntity";
 import { Person } from "./personsEntity";
+import { MileageHistory } from "./mileageHistoryEntity";
 
 @Entity("vehicles")
 export class Vehicle {
@@ -21,6 +22,9 @@ export class Vehicle {
     @ManyToOne(() => Person, { nullable: false })
     @JoinColumn({ name: "person_id" })
     owner!: Person;
+
+    @OneToMany(() => MileageHistory, mileageHistory => mileageHistory.vehicle)
+    mileage_history!: MileageHistory[];
 
     @Column({ length: 8, unique: true })
     @IsString()
