@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import { AppDataSource } from "./config/ormconfig";
 
 // Imports de rutas
-import vehicleRoutes from "./routes/vehicleRoutes";
+//import vehicleRoutes from "./routes/vehicleRoutes";
 
 const app: Application = express();
 
@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cookieParser()); // Middleware para manejar cookies
 
 // Rutas de acceso API
-app.use("/vehicles", vehicleRoutes);
+//app.use("/vehicles", vehicleRoutes);
 
 // Ruta para establecer cookies como ejemplo
 app.get("/set-cookie", (_req: Request, res: Response): void => {
