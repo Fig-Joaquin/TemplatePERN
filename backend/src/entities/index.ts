@@ -1,4 +1,19 @@
 // entities/index.ts
-
 export { Person } from "./personsEntity";
 export { User } from "./usersEntity";
+export { MileageHistory } from "./mileageHistoryEntity";
+export { PaymentType } from "./paymentTypeEntity";
+export { Product } from "./productEntity";
+export { ProductCategory } from "./productCategoryEntity";
+export { ProductPurchase } from "./productPurchaseEntity";
+export { ProductType } from "./productTypeEntity";
+export { Quotation } from "./quotationEntity";
+export { Tax } from "./taxEntity";
+export { Vehicle } from "./vehicleEntity";
+export { VehicleBrand } from "./vehicleBrandEntity";
+export { VehicleModel } from "./vehicleModelEntity";
+export { WorkOrder } from "./workOrderEntity";
+export { WorkPayment } from "./workPaymentEntity";
+export { WorkProductDetail } from "./workProductDetailEntity";
+export { WorkTicket } from "./workTicketEntity";
+export { PurchaseHistory } from "./purchaseHistoryEntity";
