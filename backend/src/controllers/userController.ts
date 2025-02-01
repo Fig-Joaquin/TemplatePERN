@@ -4,7 +4,6 @@ import { User } from "../entities/usersEntity";
 import { Person } from "../entities/personsEntity";
 import { hash, compare } from "bcryptjs";
 import { UserSchema, UpdateUserSchema } from "../schema/usersValidator";
-import { PersonSchema } from "../schema/personsValidator";
 
 const userRepository = AppDataSource.getRepository(User);
 const personRepository = AppDataSource.getRepository(Person);
@@ -41,7 +40,7 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (_req: Request, res: Response) => {
     try {
         const users = await userRepository.find({
             relations: ["person"]

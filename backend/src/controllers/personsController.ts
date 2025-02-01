@@ -5,7 +5,7 @@ import { PersonSchema, UpdatePersonSchema } from "../schema/personsValidator";
 
 const personRepository = AppDataSource.getRepository(Person);
 
-export const getAllPersons = async (req: Request, res: Response) => {
+export const getAllPersons = async (_req: Request, res: Response) => {
     try {
         const persons = await personRepository.find();
         return res.json(persons);
