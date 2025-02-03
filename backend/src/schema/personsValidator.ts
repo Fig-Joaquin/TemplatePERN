@@ -33,10 +33,9 @@ export const PersonSchema = z.object({
         .string()
         .regex(/^\+?56[0-9]{9}$/, "Formato de teléfono inválido. Debe ser formato chileno (+56)"),
 
-    person_type: z
-        .string()
-        .min(2, "Tipo de persona debe tener entre 2 y 20 caracteres")
-        .max(20, "Tipo de persona debe tener entre 2 y 20 caracteres"),
+    person_type: z.enum(["trabajador", "cliente", "administrador"], {
+    errorMap: () => ({ message: "El tipo de persona debe ser 'trabajador', 'cliente' o 'administrador'" })
+  }),
 });
 
 export const UpdatePersonSchema = PersonSchema.partial();
