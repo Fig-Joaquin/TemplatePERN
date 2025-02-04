@@ -1,6 +1,6 @@
 // src/controllers/authController.ts
 import { Request, Response, RequestHandler } from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/usersEntity";

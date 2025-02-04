@@ -3,12 +3,12 @@ import { Router } from "express";
 import { login, logoutUser } from "../controllers/authController";
 // import { authenticateUser } from "../middleware/authMiddleware";
 
-const router = Router();
+const authRoutes = Router();
 
-router.post("/login", login);
-router.post("/logout", logoutUser);
+authRoutes.post("/login", login);
+authRoutes.post("/logout", logoutUser);
 // router.get("/perfil", authenticateUser, (req, res) => {
 //   res.json({ message: "Acceso autorizado", user: req.user });
 // });
 
-export default router;
+export default authRoutes;

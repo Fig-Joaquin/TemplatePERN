@@ -2,7 +2,7 @@ import "reflect-metadata";
 import express, { Application, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import { AppDataSource } from "./config/ormconfig";
-import { authRoutes, personsRoutes, userRoutes } from "./routes";
+import routes from "./routes";
 
 
 // Imports de rutas
@@ -17,9 +17,7 @@ app.use(cookieParser()); // Middleware para manejar cookies
 
 
 // ! Rutas de acceso API
-app.use("/auth", authRoutes)
-app.use("/person", personsRoutes)
-app.use("/user", userRoutes)
+app.use(routes);
 
 //app.use("/vehicles", vehicleRoutes);
 
