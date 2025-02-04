@@ -1,13 +1,11 @@
+// src/controllers/authController.ts
 import { Request, Response, RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/usersEntity";
 
-export const login: RequestHandler = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const login: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -51,4 +49,14 @@ export const login: RequestHandler = async (
     console.error("Error en login:", error);
     res.status(500).json({ message: "Error en el servidor" });
   }
+};
+
+export const logoutUser: RequestHandler = (_req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+  res.status(200).json({ message: "Logout exitoso" });
 };

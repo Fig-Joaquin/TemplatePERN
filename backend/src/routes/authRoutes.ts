@@ -1,9 +1,14 @@
 // src/routes/authRoutes.ts
 import { Router } from "express";
-import { login } from "../controllers/authController";
+import { login, logoutUser } from "../controllers/authController";
+// import { authenticateUser } from "../middleware/authMiddleware";
 
-const authRouter = Router();
+const router = Router();
 
-authRouter.post("/", login);
+router.post("/login", login);
+router.post("/logout", logoutUser);
+// router.get("/perfil", authenticateUser, (req, res) => {
+//   res.json({ message: "Acceso autorizado", user: req.user });
+// });
 
-export default authRouter;
+export default router;

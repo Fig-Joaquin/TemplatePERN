@@ -17,7 +17,7 @@ app.use(cookieParser()); // Middleware para manejar cookies
 
 
 // ! Rutas de acceso API
-app.use("/login", authRoutes)
+app.use("/auth", authRoutes)
 app.use("/person", personsRoutes)
 app.use("/user", userRoutes)
 
