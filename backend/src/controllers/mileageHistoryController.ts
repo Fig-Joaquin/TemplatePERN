@@ -60,7 +60,7 @@ export const createMileageHistory = async (req: Request, res: Response, _next: N
             return;
         }
 
-        const { vehicle_id, current_mileage, registration_date } = validationResult.data;
+        const { vehicle_id, current_mileage } = validationResult.data; // Eliminamos registration_date
 
         const vehicle = await AppDataSource.getRepository(Vehicle).findOne({ where: { vehicle_id } });
         if (!vehicle) {
@@ -70,8 +70,7 @@ export const createMileageHistory = async (req: Request, res: Response, _next: N
 
         const newHistory = mileageHistoryRepository.create({
             vehicle,
-            current_mileage,
-            registration_date
+            current_mileage
         });
 
         await mileageHistoryRepository.save(newHistory);
@@ -80,6 +79,7 @@ export const createMileageHistory = async (req: Request, res: Response, _next: N
         handleError(res, "Error interno al crear historial de kilometraje", error);
     }
 };
+
 
 export const updateMileageHistory = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {

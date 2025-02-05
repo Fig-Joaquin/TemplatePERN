@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { IsInt, Min, IsDate } from "class-validator";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import { IsInt, Min } from "class-validator";
 import { Vehicle } from "./vehicleEntity";
 
 @Entity("mileage_history")
@@ -19,7 +19,6 @@ export class MileageHistory {
     @Min(0, { message: "El kilometraje no puede ser negativo" })
     current_mileage!: number;
 
-    @Column()
-    @IsDate()
+    @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
     registration_date!: Date;
 }
