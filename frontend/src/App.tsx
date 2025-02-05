@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
+import VehiclesPage from "./pages/vehiclesPage";
 
 export default function App() {
   return (
@@ -17,7 +18,9 @@ export default function App() {
       >
         <Route path="dashboard" element={<Dashboard />} />
         {/* Puedes agregar más rutas dentro del layout aquí */}
+        <Route path="vehiculo" element={<VehiclesPage />} />
       </Route>
+      
     </Routes>
   );
 }
