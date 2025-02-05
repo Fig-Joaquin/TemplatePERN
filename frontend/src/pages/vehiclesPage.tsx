@@ -5,7 +5,19 @@ import api from "../utils/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Types and Interfaces
+// Tipos e Interfaces
+
+interface MileageHistory {
+    registration_date: string;
+    current_mileage: number;
+}
+
+interface Person {
+    person_id: number;
+    name: string;
+    first_surname: string;
+}
+
 interface Vehicle {
     vehicle_id: number;
     license_plate: string;
@@ -25,20 +37,23 @@ interface Vehicle {
     mileage_history: MileageHistory[];
 }
 
-interface Person {
-    person_id: number;
-    name: string;
-    first_surname: string;
+// Interfaces para las entidades de marca y modelo según tus definiciones en TypeORM
+interface VehicleBrand {
+    vehicle_brand_id: number;
+    brand_name: string;
+    models: VehicleModel[];
 }
 
-interface MileageHistory {
-    registration_date: string;
-    current_mileage: number;
+interface VehicleModel {
+    vehicle_model_id: number;
+    vehicle_brand_id: number;
+    model_name: string;
+    brand: VehicleBrand;
 }
 
 type ModalType = "create" | "edit" | "delete";
 
-// OwnerListbox Component usando Headless UI Listbox
+// Componente OwnerListbox usando Headless UI Listbox
 export const OwnerListbox = ({
     persons,
     selectedPerson,
@@ -66,9 +81,7 @@ export const OwnerListbox = ({
                                 key={person.person_id}
                                 value={person}
                                 className={({ active }) =>
-                                    `cursor-pointer p-2 ${
-                                        active ? "bg-blue-600 text-white" : "bg-white text-black"
-                                    }`
+                                    `cursor-pointer p-2 ${active ? "bg-blue-600 text-white" : "bg-white text-black"}`
                                 }
                             >
                                 {({ selected }) => (
@@ -88,9 +101,9 @@ export const OwnerListbox = ({
     );
 };
 
-// VehiclesPage Component
+// Componente VehiclesPage
 const VehiclesPage = () => {
-    // Estados para vehículos y loading
+    // Estados para vehículos y carga
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -104,6 +117,12 @@ const VehiclesPage = () => {
     // Estados para propietarios
     const [persons, setPersons] = useState<Person[]>([]);
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+
+    // Estados para marcas y modelos
+    const [brands, setBrands] = useState<VehicleBrand[]>([]);
+    const [selectedBrand, setSelectedBrand] = useState<VehicleBrand | null>(null);
+    const [models, setModels] = useState<VehicleModel[]>([]);
+    const [selectedModel, setSelectedModel] = useState<VehicleModel | null>(null);
 
     // Estado para controlar el historial de kilometraje expandido por vehículo
     const [expandedMileage, setExpandedMileage] = useState<{ [key: number]: boolean }>({});
@@ -132,11 +151,34 @@ const VehiclesPage = () => {
         }
     };
 
+    // Función para obtener marcas (vehicle_brands)
+    const fetchBrands = async () => {
+        try {
+            const response = await api.get("/vehicleBrands");
+            setBrands(response.data);
+        } catch (error: any) {
+            toast.error("Error al cargar las marcas");
+        }
+    };
+
+    // Función para obtener modelos (vehicle_models)
+    const fetchModels = async () => {
+        try {
+            const response = await api.get("/vehicleModels");
+            setModels(response.data);
+        } catch (error: any) {
+            toast.error("Error al cargar los modelos");
+        }
+    };
+
     useEffect(() => {
         fetchVehicles();
         fetchPersons();
+        fetchBrands();
+        fetchModels();
     }, []);
 
+    // Función para abrir el modal (create, edit o delete)
     const openModal = (type: ModalType, vehicle: Vehicle | null = null) => {
         setModalType(type);
         setSelectedVehicle(vehicle);
@@ -144,12 +186,14 @@ const VehiclesPage = () => {
             setLicensePlate(vehicle.license_plate);
             setYear(vehicle.year);
             setColor(vehicle.color);
-            // Si se desea, se puede asignar el propietario del vehículo a selectedPerson
+            // Si se desea preseleccionar marca/modelo en edición, se agregaría la lógica aquí
         } else {
             setLicensePlate("");
             setYear(2020);
             setColor("");
             setSelectedPerson(null);
+            setSelectedBrand(null);
+            setSelectedModel(null);
         }
         setModalOpen(true);
     };
@@ -160,11 +204,20 @@ const VehiclesPage = () => {
         setSelectedVehicle(null);
     };
 
+    // Manejo del submit para crear y editar
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (modalType === "create") {
             if (!selectedPerson) {
                 toast.error("Debes seleccionar un propietario para el vehículo");
+                return;
+            }
+            if (!selectedBrand) {
+                toast.error("Debes seleccionar una marca para el vehículo");
+                return;
+            }
+            if (!selectedModel) {
+                toast.error("Debes seleccionar un modelo para el vehículo");
                 return;
             }
             try {
@@ -173,6 +226,8 @@ const VehiclesPage = () => {
                     year,
                     color,
                     owner_id: selectedPerson.person_id,
+                    vehicle_brand_id: selectedBrand.vehicle_brand_id,
+                    vehicle_model_id: selectedModel.vehicle_model_id,
                 });
                 toast.success("Vehículo creado correctamente");
                 fetchVehicles();
@@ -188,6 +243,7 @@ const VehiclesPage = () => {
                     license_plate: licensePlate,
                     year,
                     color,
+                    // Si se desea editar marca/modelo, se agregaría aquí la lógica
                 });
                 toast.success("Vehículo actualizado correctamente");
                 fetchVehicles();
@@ -200,6 +256,7 @@ const VehiclesPage = () => {
         }
     };
 
+    // Función para confirmar eliminación
     const handleDeleteConfirm = async () => {
         if (selectedVehicle) {
             try {
@@ -233,7 +290,7 @@ const VehiclesPage = () => {
     return (
         <div className="p-6">
             <ToastContainer />
-            {/* Header */}
+            {/* Cabecera */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                     <Car className="w-6 h-6" />
@@ -292,7 +349,7 @@ const VehiclesPage = () => {
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredVehicles.map((vehicle) => {
-                                    // Ordenamos el historial para obtener el registro más reciente
+                                    // Ordenar historial para obtener el registro más reciente
                                     const sortedMileage = [...vehicle.mileage_history].sort(
                                         (a, b) =>
                                             new Date(b.registration_date).getTime() -
@@ -445,14 +502,101 @@ const VehiclesPage = () => {
                                         />
                                     </div>
                                     {modalType === "create" && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm mb-1">Propietario</label>
-                                            <OwnerListbox
-                                                persons={persons}
-                                                selectedPerson={selectedPerson}
-                                                setSelectedPerson={setSelectedPerson}
-                                            />
-                                        </div>
+                                        <>
+                                            <div className="mb-4">
+                                                <label className="block text-sm mb-1">Marca</label>
+                                                <Listbox value={selectedBrand} onChange={setSelectedBrand}>
+                                                    {({ open }) => (
+                                                        <>
+                                                            <Listbox.Button className="w-full border rounded p-2 bg-white text-gray-900 flex justify-between items-center">
+                                                                <span>
+                                                                    {selectedBrand ? selectedBrand.brand_name : "Selecciona una marca"}
+                                                                </span>
+                                                                <ChevronsUpDown className="w-5 h-5" />
+                                                            </Listbox.Button>
+                                                            <Listbox.Options className="border rounded mt-1 max-h-60 overflow-auto bg-white">
+                                                                {brands.map((brand) => (
+                                                                    <Listbox.Option
+                                                                        key={brand.vehicle_brand_id}
+                                                                        value={brand}
+                                                                        className={({ active }) =>
+                                                                            `cursor-pointer p-2 ${active ? "bg-blue-600 text-white" : "bg-white text-black"}`
+                                                                        }
+                                                                    >
+                                                                        {({ selected }) => (
+                                                                            <div className="flex justify-between items-center">
+                                                                                <span>{brand.brand_name}</span>
+                                                                                {selected && <Check className="w-4 h-4" />}
+                                                                            </div>
+                                                                        )}
+                                                                    </Listbox.Option>
+                                                                ))}
+                                                            </Listbox.Options>
+                                                        </>
+                                                    )}
+                                                </Listbox>
+                                            </div>
+                                            <div className="mb-4">
+                                                <label className="block text-sm mb-1">Modelo</label>
+                                                <Listbox
+                                                    value={selectedModel}
+                                                    onChange={setSelectedModel}
+                                                    disabled={!selectedBrand}
+                                                >
+                                                    {({ open }) => (
+                                                        <>
+                                                            <Listbox.Button
+                                                                disabled={!selectedBrand}
+                                                                className={`w-full border rounded p-2 bg-white text-gray-900 flex justify-between items-center ${!selectedBrand ? "opacity-50 cursor-not-allowed" : ""
+                                                                    }`}
+                                                            >
+                                                                <span>
+                                                                    {selectedModel
+                                                                        ? selectedModel.model_name
+                                                                        : !selectedBrand
+                                                                            ? "Selecciona una marca primero"
+                                                                            : "Selecciona un modelo"}
+                                                                </span>
+                                                                <ChevronsUpDown className="w-5 h-5" />
+                                                            </Listbox.Button>
+                                                            {selectedBrand && (
+                                                                <Listbox.Options className="border rounded mt-1 max-h-60 overflow-auto bg-white">
+                                                                    {models
+                                                                        .filter(
+                                                                            (model) =>
+                                                                                model.vehicle_brand_id === selectedBrand.vehicle_brand_id
+                                                                        )
+                                                                        .map((model) => (
+                                                                            <Listbox.Option
+                                                                                key={model.vehicle_model_id}
+                                                                                value={model}
+                                                                                className={({ active }) =>
+                                                                                    `cursor-pointer p-2 ${active ? "bg-blue-600 text-white" : "bg-white text-black"}`
+                                                                                }
+                                                                            >
+                                                                                {({ selected }) => (
+                                                                                    <div className="flex justify-between items-center">
+                                                                                        <span>{model.model_name}</span>
+                                                                                        {selected && <Check className="w-4 h-4" />}
+                                                                                    </div>
+                                                                                )}
+                                                                            </Listbox.Option>
+                                                                        ))}
+                                                                </Listbox.Options>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Listbox>
+                                            </div>
+                                            <div className="mb-4">
+                                                <label className="block text-sm mb-1">Propietario</label>
+                                                <OwnerListbox
+                                                    persons={persons}
+                                                    selectedPerson={selectedPerson}
+                                                    setSelectedPerson={setSelectedPerson}
+                                                />
+                                            </div>
+                                        </>
                                     )}
                                     <div className="flex justify-end gap-2">
                                         <button
