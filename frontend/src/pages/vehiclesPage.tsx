@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
+import { Dialog, Transition } from "@headlessui/react";
 import api from "../utils/axiosConfig";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Car, Edit, Trash2, Search, Plus } from "lucide-react";
-import { showErrorToast, showSuccessToast } from "../utils/toastConfig";
 
 interface Vehicle {
     vehicle_id: number;
@@ -29,27 +31,25 @@ const VehiclesPage = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [modalType, setModalType] = useState<ModalType | null>(null);
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-    // Estados para el formulario (simplificado)
     const [licensePlate, setLicensePlate] = useState("");
     const [year, setYear] = useState<number>(2020);
     const [color, setColor] = useState("");
-
-    useEffect(() => {
-        fetchVehicles();
-    }, []);
 
     const fetchVehicles = async () => {
         try {
             const response = await api.get("/vehicles");
             setVehicles(response.data);
-            setLoading(false);
-        } catch (error) {
-            showErrorToast("Error al cargar los vehículos");
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Error al cargar los vehículos");
+        } finally {
             setLoading(false);
         }
     };
 
-    // Abrir modal según acción
+    useEffect(() => {
+        fetchVehicles();
+    }, []);
+
     const openModal = (type: ModalType, vehicle: Vehicle | null = null) => {
         setModalType(type);
         setSelectedVehicle(vehicle);
@@ -75,16 +75,12 @@ const VehiclesPage = () => {
         e.preventDefault();
         if (modalType === "create") {
             try {
-                await api.post("/vehicles", {
-                    license_plate: licensePlate,
-                    year,
-                    color,
-                });
-                showSuccessToast("Vehículo creado correctamente");
+                await api.post("/vehicles", { license_plate: licensePlate, year, color });
+                toast.success("Vehículo creado correctamente");
                 fetchVehicles();
                 closeModal();
-            } catch (error) {
-                showErrorToast("Error al crear el vehículo");
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || "Error al crear el vehículo");
             }
         } else if (modalType === "edit" && selectedVehicle) {
             try {
@@ -93,11 +89,11 @@ const VehiclesPage = () => {
                     year,
                     color,
                 });
-                showSuccessToast("Vehículo actualizado correctamente");
+                toast.success("Vehículo actualizado correctamente");
                 fetchVehicles();
                 closeModal();
-            } catch (error) {
-                showErrorToast("Error al actualizar el vehículo");
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || "Error al actualizar el vehículo");
             }
         }
     };
@@ -106,22 +102,20 @@ const VehiclesPage = () => {
         if (selectedVehicle) {
             try {
                 await api.delete(`/vehicles/${selectedVehicle.vehicle_id}`);
-                showSuccessToast("Vehículo eliminado correctamente");
+                toast.success("Vehículo eliminado correctamente");
                 fetchVehicles();
                 closeModal();
-            } catch (error) {
-                showErrorToast("Error al eliminar el vehículo");
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || "Error al eliminar el vehículo");
             }
         }
     };
 
     const filteredVehicles = vehicles.filter(
-        (vehicle) =>
-            vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            vehicle.model.brand.brand_name
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            vehicle.model.model_name.toLowerCase().includes(searchTerm.toLowerCase())
+        (v) =>
+            v.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.model.brand.brand_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.model.model_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -139,7 +133,6 @@ const VehiclesPage = () => {
                     Nuevo Vehículo
                 </button>
             </div>
-
             <div className="bg-white/30 backdrop-blur-md rounded-lg shadow p-6">
                 <div className="mb-4 relative">
                     <input
@@ -151,7 +144,6 @@ const VehiclesPage = () => {
                     />
                     <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
                 </div>
-
                 {loading ? (
                     <div className="text-center py-4">Cargando vehículos...</div>
                 ) : (
@@ -182,19 +174,12 @@ const VehiclesPage = () => {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredVehicles.map((vehicle) => (
                                     <tr key={vehicle.vehicle_id}>
+                                        <td className="px-6 py-4 whitespace-nowrap">{vehicle.license_plate}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {vehicle.license_plate}
+                                            {vehicle.model.brand.brand_name} / {vehicle.model.model_name}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {vehicle.model.brand.brand_name} /{" "}
-                                            {vehicle.model.model_name}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {vehicle.year}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {vehicle.color}
-                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{vehicle.year}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{vehicle.color}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {vehicle.owner.name} {vehicle.owner.first_surname}
                                         </td>
@@ -221,91 +206,91 @@ const VehiclesPage = () => {
                     </div>
                 )}
             </div>
-
-            {/* Modal */}
-            {modalOpen && modalType && (
-                <div className="fixed inset-0 backdrop-blur-md flex justify-center items-center z-10">
-                    <div className="bg-white shadow-lg rounded-lg w-96 p-6">
-                        {modalType === "delete" ? (
-                            <>
-                                <h2 className="text-xl font-bold mb-4">
-                                    Confirmar eliminación
-                                </h2>
-                                <p>
-                                    ¿Está seguro que desea eliminar el vehículo{" "}
-                                    {selectedVehicle?.license_plate}?
-                                </p>
-                                <div className="mt-6 flex justify-end gap-2">
-                                    <button
-                                        onClick={closeModal}
-                                        className="px-4 py-2 border rounded"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        onClick={handleDeleteConfirm}
-                                        className="px-4 py-2 bg-red-600 text-white rounded"
-                                    >
-                                        Eliminar
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <form onSubmit={handleSubmit}>
-                                <h2 className="text-xl font-bold mb-4">
-                                    {modalType === "create"
-                                        ? "Nuevo Vehículo"
-                                        : "Editar Vehículo"}
-                                </h2>
-                                <div className="mb-4">
-                                    <label className="block text-sm mb-1">Placa</label>
-                                    <input
-                                        type="text"
-                                        value={licensePlate}
-                                        onChange={(e) => setLicensePlate(e.target.value)}
-                                        className="w-full border rounded p-2 bg-white text-gray-900"
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="block text-sm mb-1">Año</label>
-                                    <input
-                                        type="number"
-                                        value={year}
-                                        onChange={(e) => setYear(Number(e.target.value))}
-                                        className="w-full border rounded p-2 bg-white text-gray-900"
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="block text-sm mb-1">Color</label>
-                                    <input
-                                        type="text"
-                                        value={color}
-                                        onChange={(e) => setColor(e.target.value)}
-                                        className="w-full border rounded p-2 bg-white text-gray-900"
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={closeModal}
-                                        className="px-4 py-2 border rounded"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700 transition"
-                                    >
-                                        {modalType === "create" ? "Crear" : "Modificar"}
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                </div>
-            )}
+            <Transition appear show={modalOpen} as={Fragment}>
+                <Dialog
+                    as="div"
+                    className="fixed inset-0 backdrop-blur-md flex justify-center items-center z-10"
+                    onClose={closeModal}
+                >
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0 scale-95"
+                        enterTo="opacity-100 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-95"
+                    >
+                        <Dialog.Panel className="w-96 bg-white shadow-lg rounded-lg p-6">
+                            {modalType === "delete" ? (
+                                <>
+                                    <Dialog.Title className="text-xl font-bold mb-4">
+                                        Confirmar eliminación
+                                    </Dialog.Title>
+                                    <p>¿Está seguro que desea eliminar el vehículo {selectedVehicle?.license_plate}?</p>
+                                    <div className="mt-6 flex justify-end gap-2">
+                                        <button onClick={closeModal} className="px-4 py-2 border rounded">
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={handleDeleteConfirm}
+                                            className="px-4 py-2 bg-red-600 text-white rounded"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <form onSubmit={handleSubmit}>
+                                    <Dialog.Title className="text-xl font-bold mb-4">
+                                        {modalType === "create" ? "Nuevo Vehículo" : "Editar Vehículo"}
+                                    </Dialog.Title>
+                                    <div className="mb-4">
+                                        <label className="block text-sm mb-1">Placa</label>
+                                        <input
+                                            type="text"
+                                            value={licensePlate}
+                                            onChange={(e) => setLicensePlate(e.target.value)}
+                                            className="w-full border rounded p-2 bg-white text-gray-900"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm mb-1">Año</label>
+                                        <input
+                                            type="number"
+                                            value={year}
+                                            onChange={(e) => setYear(Number(e.target.value))}
+                                            className="w-full border rounded p-2 bg-white text-gray-900"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm mb-1">Color</label>
+                                        <input
+                                            type="text"
+                                            value={color}
+                                            onChange={(e) => setColor(e.target.value)}
+                                            className="w-full border rounded p-2 bg-white text-gray-900"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={closeModal} className="px-4 py-2 border rounded">
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700 transition"
+                                        >
+                                            {modalType === "create" ? "Crear" : "Modificar"}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </Dialog.Panel>
+                    </Transition.Child>
+                </Dialog>
+            </Transition>
         </div>
     );
 };
