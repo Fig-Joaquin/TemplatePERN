@@ -37,23 +37,56 @@ export const getPersonById = async (req: Request, res: Response, _next: NextFunc
 
 export const createPerson = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        // Validar la entrada con Zod
         const validationResult = PersonSchema.safeParse(req.body);
         if (!validationResult.success) {
-            res.status(400).json({ errors: validationResult.error.errors });
+            res.status(400).json({
+                message: "Error de validación",
+                errors: validationResult.error.errors.map(err => ({
+                    field: err.path.join("."),
+                    message: err.message
+                }))
+            });
             return;
         }
 
-        const person = personRepository.create(req.body);
-        await personRepository.save(person);
-        res.status(201).json(person);
-        return;
-    } catch (error: any) {
-        if (error.code === '23505') { // Unique constraint error
-            res.status(400).json({ message: "El RUT ya existe en el sistema" });
+        const { rut, email, number_phone } = validationResult.data;
+
+        // Verificar si el RUT ya existe antes de intentar guardarlo
+        const existingPersonByRut = await personRepository.findOneBy({ rut });
+        if (existingPersonByRut) {
+            res.status(409).json({ message: `El RUT '${rut}' ya está registrado en el sistema.` });
             return;
         }
-        res.status(500).json({ message: "Error al crear persona", error });
-        return;
+
+        // Verificar si el email ya está registrado
+        const existingPersonByEmail = await personRepository.findOneBy({ email });
+        if (existingPersonByEmail) {
+            res.status(409).json({ message: `El email '${email}' ya está registrado en el sistema.` });
+            return;
+        }
+
+        // Verificar si el teléfono ya está registrado
+        const existingPersonByPhone = await personRepository.findOneBy({ number_phone });
+        if (existingPersonByPhone) {
+            res.status(409).json({ message: `El número de teléfono '${number_phone}' ya está registrado en el sistema.` });
+            return;
+        }
+
+        // Crear la persona
+        const person = personRepository.create(validationResult.data);
+        await personRepository.save(person);
+        res.status(201).json({ message: "Persona creada exitosamente", person });
+    } catch (error: any) {
+        if (error.code === '23505') {
+            res.status(409).json({ message: "El RUT ya existe en el sistema" });
+            return;
+        }
+        console.error("Error al crear persona:", error);
+        res.status(500).json({ 
+            message: "Error interno al crear persona",
+            error: error instanceof Error ? error.message : error
+        });
     }
 };
 
