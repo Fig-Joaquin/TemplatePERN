@@ -5,9 +5,21 @@ import { User } from "../entities/usersEntity";
 import { Person } from "../entities/personsEntity";
 import { hash, compare } from "bcryptjs";
 import { UserSchema, UpdateUserSchema } from "../schema/usersValidator";
+import { AuthRequest } from "../middleware/authMiddleware";
 
 const userRepository = AppDataSource.getRepository(User);
 const personRepository = AppDataSource.getRepository(Person);
+
+
+export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: "No autenticado" });
+    return;
+  }
+
+  res.json({ message: "Perfil del usuario", user: req.user });
+};
+
 
 export const createUser = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
   try {

@@ -1,1 +1,0 @@
-## Preparación proyecto Taller Mecanico

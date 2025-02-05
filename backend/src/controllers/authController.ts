@@ -1,7 +1,7 @@
 // src/controllers/authController.ts
 import { Request, Response, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/usersEntity";
 
@@ -59,4 +59,20 @@ export const logoutUser: RequestHandler = (_req, res) => {
     path: "/",
   });
   res.status(200).json({ message: "Logout exitoso" });
+};
+
+export const checkSession: RequestHandler = (req: Request, res: Response): void => {
+  console.log("Cookies recibidas:", req.cookies); // 🔍 Depuración
+
+  const token = req.cookies?.token; // ← Cambia `session` por `token`
+  if (!token) {
+    res.status(401).json({ error: "No autenticado, cookie no encontrada" });
+    return; 
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    res.json({ user: decoded });
+  } catch (error) {
+    res.status(401).json({ error: "Token inválido o expirado" });
+  }
 };

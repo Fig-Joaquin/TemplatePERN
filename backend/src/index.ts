@@ -3,6 +3,8 @@ import express, { Application, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import { AppDataSource } from "./config/ormconfig";
 import routes from "./routes";
+import cors from "cors";
+
 
 
 // Imports de rutas
@@ -10,11 +12,17 @@ import routes from "./routes";
 
 const app: Application = express();
 
+
 // Middlewares
 app.use(express.json());
 app.use(cookieParser()); // Middleware para manejar cookies
 
 
+app.use(cors({
+    origin: `${process.env.FRONTEND_URL}`, // Permitir el frontend
+    credentials: true, // Permite enviar cookies y cabeceras de autenticación
+    methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos
+}));
 
 // ! Rutas de acceso API
 app.use(routes);
