@@ -16,7 +16,7 @@ const Sidebar = () => {
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className={`absolute top-4 left-4 z-50 p-2 rounded-full shadow-md transition-colors duration-200 ${isSidebarOpen ? "bg-gray-100 hover:bg-gray-100" : "bg-white-200 hover:bg-white-300"}`}
       >
-        {isSidebarOpen ? <Bars4Icon className="w-6 h-6 text-gray-700" /> : <Bars3Icon className="w-6 h-6 text-gray-700" />}
+        {isSidebarOpen ? <Bars3Icon className="w-6 h-6 text-gray-700" /> : <Bars4Icon className="w-6 h-6 text-gray-700" />}
       </button>
 
       {/* Sidebar */}

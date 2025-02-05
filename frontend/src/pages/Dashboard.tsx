@@ -40,9 +40,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
       <div className="flex-1 p-6">
-        <Navbar username={user?.username} onLogout={handleLogout} />
         <main className="grid grid-cols-3 gap-6 mt-6">
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-700">Ventas Diarias</h3>

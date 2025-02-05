@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLayout from "./components/AdminLayout";
 
 export default function App() {
   return (
@@ -9,8 +10,14 @@ export default function App() {
       {/* Ruta pública */}
       <Route path="/" element={<Login />} />
 
-      {/* Ruta protegida para admin */}
-      <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      {/* Rutas protegidas dentro de AdminLayout */}
+      <Route
+        path="/admin"
+        element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}
+      >
+        <Route path="dashboard" element={<Dashboard />} />
+        {/* Puedes agregar más rutas dentro del layout aquí */}
+      </Route>
     </Routes>
   );
 }
