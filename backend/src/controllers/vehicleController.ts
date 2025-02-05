@@ -33,7 +33,7 @@ export const getVehicleById = async (req: Request, res: Response, _next: NextFun
         const { id } = req.params;
         const vehicle = await vehicleRepository.findOne({
             where: { vehicle_id: parseInt(id) },
-            relations: ["model", "owner", "mileage_history"]
+            relations: ["model", "model.brand", "owner", "mileage_history"]
         });
         if (!vehicle) {
             res.status(404).json({ message: "Vehículo no encontrado" });
@@ -129,15 +129,35 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
 export const deleteVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
-        const vehicle = await vehicleRepository.findOneBy({ vehicle_id: parseInt(id) });
+        const vehicle = await vehicleRepository.findOne({
+            where: { vehicle_id: parseInt(id) },
+            relations: ["mileage_history"]
+        });
+
         if (!vehicle) {
             res.status(404).json({ message: "Vehículo no encontrado" });
             return;
         }
 
-        await vehicleRepository.remove(vehicle);
-        res.json({ message: "Vehículo eliminado exitosamente" });
+        // Verificar y eliminar los registros relacionados en "mileage_history"
+        if (vehicle.mileage_history && vehicle.mileage_history.length > 0) {
+            await mileageHistoryRepository.createQueryBuilder()
+                .delete()
+                .from("mileage_history")
+                .where("vehicle_id = :id", { id: vehicle.vehicle_id })
+                .execute();
+        }
+
+        // Ahora eliminar el vehículo
+        await vehicleRepository.createQueryBuilder()
+            .delete()
+            .from("vehicles")
+            .where("vehicle_id = :id", { id: vehicle.vehicle_id })
+            .execute();
+
+        res.json({ message: "Vehículo y su historial de kilometraje eliminado exitosamente" });
     } catch (error) {
+        console.error("Error al eliminar vehículo:", error);
         res.status(500).json({ message: "Error al eliminar vehículo", error });
     }
 };
