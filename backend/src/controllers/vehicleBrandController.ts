@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { VehicleBrand } from "../entities/vehicleBrandEntity";
 import { VehicleBrandSchema, updateVehicleBrandSchema } from "../schema/vehicleBrandValidator";
+import { QueryFailedError } from "typeorm";
 
 // src/controllers/vehicleBrandController.ts
 
@@ -32,16 +33,51 @@ export const getVehicleBrandById = async (req: Request, res: Response, _next: Ne
 
 export const createVehicleBrand = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        // Validar con Zod
         const validationResult = VehicleBrandSchema.safeParse(req.body);
         if (!validationResult.success) {
-            res.status(400).json({ errors: validationResult.error.errors });
+            res.status(400).json({
+                message: "Error de validación",
+                errors: validationResult.error.errors.map(err => ({
+                    field: err.path.join("."),
+                    message: err.message
+                }))
+            });
             return;
         }
+
+        const { brand_name } = validationResult.data;
+
+        // Verificar si la marca ya existe antes de insertarla
+        const existingBrand = await vehicleBrandRepository.findOneBy({ brand_name });
+        if (existingBrand) {
+            res.status(409).json({ 
+                message: `La marca '${brand_name}' ya existe.`,
+                brand: existingBrand
+            });
+            return;
+        }
+
+        // Crear la marca si no existe
         const brand = vehicleBrandRepository.create(validationResult.data);
         await vehicleBrandRepository.save(brand);
-        res.status(201).json(brand);
+        res.status(201).json({ message: "Marca creada exitosamente", brand });
     } catch (error) {
-        res.status(500).json({ message: "Error al crear la marca de vehículo", error });
+        if (error instanceof QueryFailedError) {
+            // Manejar errores específicos de PostgreSQL
+            if ((error as any).code === "23505") {
+                res.status(409).json({
+                    message: `La marca '${req.body.brand_name}' ya existe en la base de datos.`,
+                    error: (error as any).detail
+                });
+                return;
+            }
+        }
+
+        res.status(500).json({ 
+            message: "Error interno al crear la marca de vehículo",
+            error: error instanceof Error ? error.message : error
+        });
     }
 };
 
