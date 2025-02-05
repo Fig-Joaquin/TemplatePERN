@@ -51,9 +51,11 @@ const mileageHistoryRepository = AppDataSource.getRepository(MileageHistory);
 
 export const createVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        console.log("Body:", req.body);
         // Validar la entrada con Zod
         const validationResult = vehicleSchema.safeParse(req.body);
         if (!validationResult.success) {
+            console.log("Error de validación:", validationResult.error.errors);
             res.status(400).json({
                 message: "Error de validación",
                 errors: validationResult.error.errors.map(err => ({

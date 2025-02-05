@@ -37,7 +37,6 @@ interface Vehicle {
     mileage_history: MileageHistory[];
 }
 
-// Interfaces para las entidades de marca y modelo según tus definiciones en TypeORM
 interface VehicleBrand {
     vehicle_brand_id: number;
     brand_name: string;
@@ -114,6 +113,16 @@ const VehiclesPage = () => {
     const [year, setYear] = useState<number>(2020);
     const [color, setColor] = useState("");
 
+    // Estado para el kilometraje
+    const [mileage, setMileage] = useState<number>(0);
+
+    // Estado para vehicle_status y sus opciones (mostrar en español)
+    const [vehicleStatus, setVehicleStatus] = useState<string>("running");
+    const vehicleStatusOptions = [
+        { value: "running", label: "En funcionamiento" },
+        { value: "not_running", label: "No en funcionamiento" },
+    ];
+
     // Estados para propietarios
     const [persons, setPersons] = useState<Person[]>([]);
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
@@ -186,14 +195,16 @@ const VehiclesPage = () => {
             setLicensePlate(vehicle.license_plate);
             setYear(vehicle.year);
             setColor(vehicle.color);
-            // Si se desea preseleccionar marca/modelo en edición, se agregaría la lógica aquí
+            // Aquí podrías agregar la lógica para setear el estado del vehículo si ya está definido
         } else {
             setLicensePlate("");
             setYear(2020);
             setColor("");
+            setMileage(0);
             setSelectedPerson(null);
             setSelectedBrand(null);
             setSelectedModel(null);
+            setVehicleStatus("running"); // Valor por defecto
         }
         setModalOpen(true);
     };
@@ -221,14 +232,18 @@ const VehiclesPage = () => {
                 return;
             }
             try {
+                console.log(licensePlate, year, color, vehicleStatus, selectedPerson.person_id, selectedBrand.vehicle_brand_id, selectedModel.vehicle_model_id, mileage);
                 await api.post("/vehicles", {
                     license_plate: licensePlate,
-                    year,
-                    color,
-                    owner_id: selectedPerson.person_id,
-                    vehicle_brand_id: selectedBrand.vehicle_brand_id,
+                    year: year,
+                    color: color,
+                    vehicle_status: vehicleStatus, // Se envía el estado seleccionado ("running" o "not_running")
+                    person_id: selectedPerson.person_id,
+                    //vehicle_brand_id: selectedBrand.vehicle_brand_id,
                     vehicle_model_id: selectedModel.vehicle_model_id,
+                    mileageHistory: [{ current_mileage: mileage }],
                 });
+                console.log(licensePlate, year, color, vehicleStatus, selectedPerson.person_id, selectedBrand.vehicle_brand_id, selectedModel.vehicle_model_id, mileage);
                 toast.success("Vehículo creado correctamente");
                 fetchVehicles();
                 closeModal();
@@ -243,7 +258,7 @@ const VehiclesPage = () => {
                     license_plate: licensePlate,
                     year,
                     color,
-                    // Si se desea editar marca/modelo, se agregaría aquí la lógica
+                    // Aquí se podría agregar la lógica para actualizar el estado o el kilometraje si se requiere
                 });
                 toast.success("Vehículo actualizado correctamente");
                 fetchVehicles();
@@ -498,11 +513,55 @@ const VehiclesPage = () => {
                                             type="text"
                                             value={color}
                                             onChange={(e) => setColor(e.target.value)}
+                                            pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
                                             className="w-full border rounded p-2 bg-white text-gray-900"
                                         />
                                     </div>
                                     {modalType === "create" && (
                                         <>
+                                            <div className="mb-4">
+                                                <label className="block text-sm mb-1">Kilometraje</label>
+                                                <input
+                                                    type="number"
+                                                    value={mileage}
+                                                    onChange={(e) => setMileage(Number(e.target.value))}
+                                                    className="w-full border rounded p-2 bg-white text-gray-900"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="mb-4">
+                                                <label className="block text-sm mb-1">Estado del vehículo</label>
+                                                <Listbox value={vehicleStatus} onChange={setVehicleStatus}>
+                                                    {({ open }) => (
+                                                        <>
+                                                            <Listbox.Button className="w-full border rounded p-2 bg-white text-gray-900 flex justify-between items-center">
+                                                                <span>
+                                                                    {vehicleStatusOptions.find(opt => opt.value === vehicleStatus)?.label || "Selecciona un estado"}
+                                                                </span>
+                                                                <ChevronsUpDown className="w-5 h-5" />
+                                                            </Listbox.Button>
+                                                            <Listbox.Options className="border rounded mt-1 max-h-60 overflow-auto bg-white">
+                                                                {vehicleStatusOptions.map((option) => (
+                                                                    <Listbox.Option
+                                                                        key={option.value}
+                                                                        value={option.value}
+                                                                        className={({ active }) =>
+                                                                            `cursor-pointer p-2 ${active ? "bg-blue-600 text-white" : "bg-white text-black"}`
+                                                                        }
+                                                                    >
+                                                                        {({ selected }) => (
+                                                                            <div className="flex justify-between items-center">
+                                                                                <span>{option.label}</span>
+                                                                                {selected && <Check className="w-4 h-4" />}
+                                                                            </div>
+                                                                        )}
+                                                                    </Listbox.Option>
+                                                                ))}
+                                                            </Listbox.Options>
+                                                        </>
+                                                    )}
+                                                </Listbox>
+                                            </div>
                                             <div className="mb-4">
                                                 <label className="block text-sm mb-1">Marca</label>
                                                 <Listbox value={selectedBrand} onChange={setSelectedBrand}>
@@ -538,17 +597,12 @@ const VehiclesPage = () => {
                                             </div>
                                             <div className="mb-4">
                                                 <label className="block text-sm mb-1">Modelo</label>
-                                                <Listbox
-                                                    value={selectedModel}
-                                                    onChange={setSelectedModel}
-                                                    disabled={!selectedBrand}
-                                                >
+                                                <Listbox value={selectedModel} onChange={setSelectedModel} disabled={!selectedBrand}>
                                                     {({ open }) => (
                                                         <>
                                                             <Listbox.Button
                                                                 disabled={!selectedBrand}
-                                                                className={`w-full border rounded p-2 bg-white text-gray-900 flex justify-between items-center ${!selectedBrand ? "opacity-50 cursor-not-allowed" : ""
-                                                                    }`}
+                                                                className={`w-full border rounded p-2 bg-white text-gray-900 flex justify-between items-center ${!selectedBrand ? "opacity-50 cursor-not-allowed" : ""}`}
                                                             >
                                                                 <span>
                                                                     {selectedModel
