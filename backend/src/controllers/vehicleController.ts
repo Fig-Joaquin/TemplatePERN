@@ -5,7 +5,7 @@ import { vehicleSchema } from "../schema/vehicleValidator";
 import { VehicleModel } from "../entities/vehicleModelEntity";
 import { Person } from "../entities/personsEntity";
 import { MileageHistory } from "../entities/mileageHistoryEntity";
-import { DeepPartial } from "typeorm";
+import { DeepPartial, QueryFailedError } from "typeorm";
 
 
 // src/controllers/vehicleController.ts
@@ -51,55 +51,88 @@ const mileageHistoryRepository = AppDataSource.getRepository(MileageHistory);
 
 export const createVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        // Validar la entrada
+        // Validar la entrada con Zod
         const validationResult = vehicleSchema.safeParse(req.body);
         if (!validationResult.success) {
-            res.status(400).json({ errors: validationResult.error.errors });
+            res.status(400).json({
+                message: "Error de validación",
+                errors: validationResult.error.errors.map(err => ({
+                    field: err.path.join("."),
+                    message: err.message
+                }))
+            });
             return;
         }
 
-        // Extraer datos relacionales y demás datos del vehículo.
-        // Se espera que el frontend envíe vehicle_model_id, person_id y mileageHistory (para el primer registro de kilometraje).
         const { vehicle_model_id, person_id, ...vehicleData } = validationResult.data;
         const mileageHistoryData = req.body.mileageHistory;
 
-        // Verificar y obtener el modelo
+        // Verificar si el modelo existe
         const model = await modelRepository.findOneBy({ vehicle_model_id });
         if (!model) {
-            res.status(404).json({ message: "Modelo no encontrado" });
+            res.status(404).json({ message: "El modelo especificado no existe." });
             return;
         }
 
-        // Verificar y obtener el dueño
+        // Verificar si el dueño existe
         const owner = await ownerRepository.findOneBy({ person_id });
         if (!owner) {
-            res.status(404).json({ message: "Dueño no encontrado" });
+            res.status(404).json({ message: "El propietario especificado no existe." });
             return;
         }
 
-        // Verificar que se proporcione el primer registro de kilometraje
+        // Verificar si ya existe un vehículo con la misma patente
+        const existingVehicle = await vehicleRepository.findOneBy({ license_plate: vehicleData.license_plate });
+        if (existingVehicle) {
+            res.status(409).json({ 
+                message: `El vehículo con patente '${vehicleData.license_plate}' ya existe.`,
+                vehicle: existingVehicle
+            });
+            return;
+        }
+
+        // Verificar si hay al menos un registro de kilometraje
         if (!mileageHistoryData || !Array.isArray(mileageHistoryData) || mileageHistoryData.length === 0) {
-            res.status(400).json({ message: "Se requiere el primer registro de kilometraje en el historial" });
+            res.status(400).json({ message: "Se requiere al menos un registro de kilometraje inicial." });
             return;
         }
-        
-        // Crear el primer registro del historial de kilometraje
-        const initialMileageRecord = mileageHistoryRepository.create(mileageHistoryData[0]);
 
+        // ✅ Crear historial de kilometraje correctamente sin transformación adicional
+        const mileageRecords: DeepPartial<MileageHistory>[] = mileageHistoryData.map(record => ({
+            ...record
+        }));
+
+        // ✅ Crear el vehículo con las relaciones correctamente
         const vehicle = vehicleRepository.create({
             ...vehicleData,
-            model,
-            owner,
-            mileage_history: [initialMileageRecord] // Se pasa como array para que la cascada funcione correctamente
-        } as unknown as DeepPartial<Vehicle>);
+            model,   // Se usa la entidad encontrada
+            owner,   // Se usa la entidad encontrada
+            mileage_history: mileageRecords // Pasamos el array correctamente sin transformación adicional
+        });
 
-        // Guardar el vehículo (la cascada se encargará de guardar el historial de kilometraje)
+        // Guardar el vehículo y su historial de kilometraje en cascada
         await vehicleRepository.save(vehicle);
-        res.status(201).json(vehicle);
+        res.status(201).json({ message: "Vehículo creado exitosamente", vehicle });
     } catch (error) {
-        res.status(500).json({ message: "Error al crear vehículo", error });
+        if (error instanceof QueryFailedError) {
+            // Manejo específico de errores de PostgreSQL
+            if ((error as any).code === "23505") {
+                res.status(409).json({
+                    message: `El vehículo con patente '${req.body.license_plate}' ya está registrado.`,
+                    error: (error as any).detail
+                });
+                return;
+            }
+        }
+
+        console.error("Error al crear vehículo:", error);
+        res.status(500).json({ 
+            message: "Error interno al crear vehículo",
+            error: error instanceof Error ? error.message : error
+        });
     }
 };
+
 
 export const updateVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
