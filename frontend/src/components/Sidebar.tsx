@@ -1,9 +1,8 @@
-import { ChevronDownIcon, Bars4Icon , Bars3Icon, TruckIcon, UsersIcon, ArchiveBoxIcon } from "@heroicons/react/24/solid";
+import { ChevronDownIcon, Bars4Icon, Bars3Icon, TruckIcon, UsersIcon, ArchiveBoxIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 
-const Sidebar = () => {
+const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }: { isSidebarOpen: boolean; setIsSidebarOpen: (open: boolean) => void }) => {
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({});
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -14,13 +13,13 @@ const Sidebar = () => {
       {/* Botón para abrir/cerrar el sidebar */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className={`absolute top-4 left-4 z-50 p-2 rounded-full shadow-md transition-colors duration-200 ${isSidebarOpen ? "bg-gray-100 hover:bg-gray-100" : "bg-white-200 hover:bg-white-300"}`}
+        className={`absolute top-4 left-4 z-50 p-2 rounded-full shadow-md transition-colors duration-200 ${isSidebarOpen ? "bg-gray-100 hover:bg-gray-100" : "bg-white hover:bg-gray-200"}`}
       >
-        {isSidebarOpen ? <Bars3Icon className="w-6 h-6 text-gray-700" /> : <Bars4Icon className="w-6 h-6 text-gray-700" />}
+        {isSidebarOpen ? <Bars4Icon className="w-6 h-6 text-gray-700" /> : <Bars3Icon className="w-6 h-6 text-gray-700" />}
       </button>
 
-      {/* Sidebar */}
-      <aside className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-16"}`}>
+      {/* Sidebar con transición dinámica */}
+      <aside className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-16"}`}>
         <h2 className={`text-2xl font-bold mb-6 text-center text-gray-700 transition-opacity ${isSidebarOpen ? "opacity-100" : "opacity-0"}`}>Panel</h2>
         <nav>
           <ul className="space-y-4">
@@ -61,26 +60,6 @@ const Sidebar = () => {
                   <li><a href="/admin/personas/crear" className="hover:text-blue-500">Crear Personas</a></li>
                   <li><a href="/admin/personas/editar" className="hover:text-blue-500">Editar Personas</a></li>
                   <li><a href="/admin/personas/eliminar" className="hover:text-blue-500">Eliminar Personas</a></li>
-                </ul>
-              )}
-            </li>
-            <li>
-              <button
-                onClick={() => toggleSection("inventario")}
-                className="flex items-center justify-between w-full text-left text-lg font-semibold text-gray-700 hover:bg-gray-100 p-2 rounded-lg"
-              >
-                <div className="flex items-center gap-2">
-                  <ArchiveBoxIcon className="w-6 h-6 text-gray-600" />
-                  <span className={isSidebarOpen ? "block" : "hidden"}>Inventario</span>
-                </div>
-                <ChevronDownIcon className={`w-5 h-5 transition-transform ${openSections["inventario"] ? "rotate-180" : ""}`} />
-              </button>
-              {openSections["inventario"] && isSidebarOpen && (
-                <ul className="ml-4 space-y-2 mt-2 text-sm text-gray-600">
-                  <li><a href="/admin/inventario" className="hover:text-blue-500">Ver Inventario</a></li>
-                  <li><a href="/admin/inventario/agregar" className="hover:text-blue-500">Agregar Inventario</a></li>
-                  <li><a href="/admin/inventario/modificar" className="hover:text-blue-500">Modificar Inventario</a></li>
-                  <li><a href="/admin/inventario/eliminar" className="hover:text-blue-500">Eliminar Inventario</a></li>
                 </ul>
               )}
             </li>

@@ -1,19 +1,20 @@
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 
 const AdminLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar con ancho fijo */}
-      <Sidebar />
+      <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
 
-      {/* Contenedor principal que incluye el Navbar y el contenido */}
-      <div className="flex flex-col flex-1">
-        {/* Navbar ahora se ajusta al tamaño restante */}
-        <Navbar />
-        
-        {/* Contenido con margen superior para evitar que se solape con el Navbar */}
+      {/* Contenedor principal con margen dinámico */}
+      <div 
+        className={`flex flex-col transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-16"} w-full`}
+      >
+        <Navbar isSidebarOpen={isSidebarOpen} />
         <main className="p-6 mt-16">
           <Outlet />
         </main>

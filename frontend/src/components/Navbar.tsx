@@ -4,11 +4,15 @@ import { BellIcon } from "@heroicons/react/24/solid";
 interface NavbarProps {
   username?: string;
   onLogout?: () => void;
+  isSidebarOpen: boolean; // Nueva prop
 }
 
-const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({ username, onLogout, isSidebarOpen }) => {
   return (
-    <nav className="fixed top-0 left-64 right-0 bg-white shadow px-6 h-16 flex items-center justify-between z-50">
+    <nav 
+      className={`fixed top-0 bg-white shadow px-6 h-16 flex items-center justify-between z-50 transition-all duration-300 
+      ${isSidebarOpen ? "left-64 w-[calc(100%-16rem)]" : "left-16 w-[calc(100%-4rem)]"}`}>
+      
       <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
 
       <div className="flex items-center space-x-6">
