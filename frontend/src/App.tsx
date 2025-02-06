@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
 import VehiclesPage from "./pages/vehiclesPage";
 import ClientPage from "./pages/clientPage";
+import QuotationPage from "./pages/quotationPage";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         {/* Puedes agregar más rutas dentro del layout aquí */}
         <Route path="vehiculo" element={<VehiclesPage />} />
         <Route path="clientes" element={<ClientPage />} />
+        <Route path="cotizacion" element={<QuotationPage />} />
       </Route>
       
     </Routes>

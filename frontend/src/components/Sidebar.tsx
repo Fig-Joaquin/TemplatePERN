@@ -43,7 +43,7 @@ const sidebarStructure = [
     icon: DocumentTextIcon,
     title: "Cotizaciones",
     items: [
-      { name: "Lista de cotizaciones", path: "/admin/cotizaciones" },
+      { name: "Lista de cotizaciones", path: "/admin/cotizacion" },
       { name: "Nueva cotización", path: "/admin/cotizaciones/nueva" },
     ],
   },
