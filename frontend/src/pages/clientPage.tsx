@@ -2,7 +2,7 @@ import { useEffect, useState, Fragment } from "react";
 import api from "../utils/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Dialog, Transition } from "@headlessui/react";
 import ClientList from "../components/clientList";
 import ClientForm from "../components/clientForm";
@@ -139,8 +139,10 @@ const ClientPage = () => {
             await api.delete(`/persons/${personId}`);
             toast.success("Cliente eliminado exitosamente");
             setPersons(persons.filter(person => person.person_id !== personId));
-        } catch {
-            toast.error("Error al eliminar el cliente");
+        } catch (error: any) {
+            toast.error(
+                error.response?.data?.message  || error.response?.data?.errors.map((e: any) => e.message).join(", ")
+            );
         }
     };
 

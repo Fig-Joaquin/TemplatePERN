@@ -125,6 +125,21 @@ export const updatePerson = async (req: Request, res: Response, _next: NextFunct
 export const deletePerson = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
+        
+        // Delete associated mileage_history for the vehicles of the person
+        await AppDataSource.createQueryBuilder()
+            .delete()
+            .from("mileage_history")
+            .where("vehicle_id IN (SELECT vehicle_id FROM vehicles WHERE person_id = :id)", { id: parseInt(id) })
+            .execute();
+        
+        // Delete associated vehicles
+        await AppDataSource.createQueryBuilder()
+            .delete()
+            .from("vehicles")
+            .where("person_id = :id", { id: parseInt(id) })
+            .execute();
+        
         const result = await personRepository.delete(parseInt(id));
         
         if (result.affected === 0) {
