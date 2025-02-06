@@ -139,7 +139,11 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
 export const updateVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
-        const vehicle = await vehicleRepository.findOneBy({ vehicle_id: parseInt(id) });
+        // Cargar el vehículo junto con su historial de kilometraje
+        const vehicle = await vehicleRepository.findOne({
+            where: { vehicle_id: parseInt(id) },
+            relations: ["mileage_history"]
+        });
         if (!vehicle) {
             res.status(404).json({ message: "Vehículo no encontrado" });
             return;
@@ -152,8 +156,21 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
             res.status(400).json({ errors: validationResult.error.errors });
             return;
         }
+        
+        const updateData = validationResult.data;
+        const mileageHistory = req.body.mileageHistory;
+        
+        // Actualizar los campos del vehículo
+        vehicleRepository.merge(vehicle, updateData);
 
-        vehicleRepository.merge(vehicle, validationResult.data);
+        // Si se proporcionó un historial de kilometraje, agregar los nuevos registros
+        if (mileageHistory && Array.isArray(mileageHistory) && mileageHistory.length > 0) {
+            const newMileageRecords = mileageHistory.map((record: any) => ({
+                ...record
+            }));
+            vehicle.mileage_history = [...(vehicle.mileage_history || []), ...newMileageRecords];
+        }
+        
         await vehicleRepository.save(vehicle);
         res.json(vehicle);
     } catch (error) {

@@ -258,6 +258,7 @@ const VehiclesPage = () => {
                     license_plate: licensePlate,
                     year,
                     color,
+                    mileageHistory: [{ current_mileage: mileage }],
                     // Aquí se podría agregar la lógica para actualizar el estado o el kilometraje si se requiere
                 });
                 toast.success("Vehículo actualizado correctamente");
@@ -517,6 +518,15 @@ const VehiclesPage = () => {
                                             className="w-full border rounded p-2 bg-white text-gray-900"
                                         />
                                     </div>
+                                    <div className="mb-4">
+                                                <label className="block text-sm mb-1">Kilometraje</label>
+                                                <input
+                                                    type="number"
+                                                    value={mileage}
+                                                    onChange={(e) => setMileage(Number(e.target.value))}
+                                                    className="w-full border rounded p-2 bg-white text-gray-900"
+                                                />
+                                            </div>
                                     {modalType === "create" && (
                                         <>
                                             <div className="mb-4">
