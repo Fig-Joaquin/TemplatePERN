@@ -29,7 +29,7 @@ export const createUser = async (req: Request, res: Response, _next: NextFunctio
       return;
     }
 
-    const { person_id, user_role, username, password } = validationResult.data;
+    const { person: { person_id }, user_role, username, password } = validationResult.data;
 
     const person = await personRepository.findOne({ where: { person_id } });
     if (!person) {
@@ -40,7 +40,7 @@ export const createUser = async (req: Request, res: Response, _next: NextFunctio
     const hashedPassword = await hash(password, 10);
 
     const user = new User();
-    user.person_id = person_id;
+    user.person = person;
     user.user_role = user_role;
     user.username = username;
     user.password = hashedPassword;

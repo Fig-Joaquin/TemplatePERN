@@ -7,8 +7,6 @@ export class WorkTicket {
     @PrimaryGeneratedColumn()
     work_ticket_id!: number;
 
-    @Column()
-    work_order_id!: number;
 
     @ManyToOne(() => WorkOrder, { nullable: false })
     @JoinColumn({ name: "work_order_id" })

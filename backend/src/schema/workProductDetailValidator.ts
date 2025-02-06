@@ -1,11 +1,14 @@
 import { z } from "zod";
+import { WorkOrderSchema } from "./workOrderValidator";
+import { ProductSchema } from "./productValidator";
+import { QuotationSchema } from "./quotationValidator";
+import { TaxSchema } from "./taxValidator";
 
 export const workProductDetailSchema = z.object({
-    work_product_detail_id: z.number().optional(), // Optional because it's auto-generated
-    work_order_id: z.number().int().positive(),
-    product_id: z.number().int().positive(),
-    quotation_id: z.number().int().positive().optional(),
-    tax_id: z.number().int().positive(),
+    work_order: WorkOrderSchema,
+    product: ProductSchema,
+    quotation: QuotationSchema,
+    tax: TaxSchema,
     quantity: z.number().int().min(1, { message: "La cantidad debe ser al menos 1" }),
     sale_price: z.number().nonnegative({ message: "El precio de venta no puede ser negativo" }).multipleOf(0.01),
     discount: z.number().nonnegative({ message: "El descuento no puede ser negativo" }).max(100).multipleOf(0.01),

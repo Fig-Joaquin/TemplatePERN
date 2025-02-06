@@ -3,13 +3,14 @@ import { AppDataSource } from "../config/ormconfig";
 import { WorkProductDetail } from "../entities/workProductDetailEntity";
 import { workProductDetailSchema } from "../schema/workProductDetailValidator";
 import { WorkOrder } from "../entities/workOrderEntity";
+import { DeepPartial } from "typeorm";
 
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
 
 export const getAllWorkProductDetails = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const details = await workProductDetailRepository.find({
-            relations: ["work_order", "product", "quotation", "tax"]
+            relations: ["work_order", "work_order.vehicle", "product", "quotation", "tax"]
         });
         res.json(details);
     } catch (error) {
@@ -45,7 +46,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
             res.status(400).json({ message: "Error de validación", errors: validationResult.error.errors });
             return;
         }
-        const newDetail = workProductDetailRepository.create(validationResult.data);
+        const newDetail = workProductDetailRepository.create(validationResult.data as DeepPartial<WorkProductDetail>);
         console.log(newDetail);
 
         const work_order_id = newDetail.work_order_id;
@@ -55,7 +56,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
             res.status(404).json({ message: "Orden de trabajo no encontrada" });
             return;
         }
-        const quotation_id = workOrder.quotation_id;
+        const quotation_id = workOrder.quotation.quotation_id;
 
         console.log(quotation_id);
 
@@ -86,7 +87,7 @@ export const updateWorkProductDetail = async (req: Request, res: Response, _next
             res.status(400).json({ message: "Error de validación", errors: validationResult.error.errors });
             return;
         }
-        workProductDetailRepository.merge(detail, validationResult.data);
+        workProductDetailRepository.merge(detail, validationResult.data as DeepPartial<WorkProductDetail>);
         await workProductDetailRepository.save(detail);
         res.json({ message: "Detalle de producto de trabajo actualizado exitosamente", workProductDetail: detail });
     } catch (error) {

@@ -7,8 +7,6 @@ export class User {
     @PrimaryGeneratedColumn()
     user_id!: number;
 
-    @Column()
-    person_id!: number;
 
     @ManyToOne(() => Person, { nullable: false })
     @JoinColumn({ name: "person_id" })

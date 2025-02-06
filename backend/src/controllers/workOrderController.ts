@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { WorkOrder } from "../entities/workOrderEntity";
 import { WorkOrderSchema } from "../schema/workOrderValidator";
+import { DeepPartial } from "typeorm";
 
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 
@@ -53,7 +54,7 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        const newWorkOrder = workOrderRepository.create(validationResult.data);
+        const newWorkOrder = workOrderRepository.create(validationResult.data as DeepPartial<WorkOrder>);
         await workOrderRepository.save(newWorkOrder);
         res.status(201).json({ message: "Orden de trabajo creada exitosamente", workOrder: newWorkOrder });
     } catch (error) {
@@ -88,7 +89,7 @@ export const updateWorkOrder = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        workOrderRepository.merge(workOrder, validationResult.data);
+        workOrderRepository.merge(workOrder, validationResult.data as DeepPartial<WorkOrder>);
         await workOrderRepository.save(workOrder);
         res.json({ message: "Orden de trabajo actualizada exitosamente", workOrder });
     } catch (error) {

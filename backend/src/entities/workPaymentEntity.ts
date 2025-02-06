@@ -8,11 +8,6 @@ export class WorkPayment {
     @PrimaryGeneratedColumn()
     work_payment_id!: number;
 
-    @Column()
-    payment_type_id!: number;
-
-    @Column()
-    work_order_id!: number;
 
     @ManyToOne(() => PaymentType, { nullable: false })
     @JoinColumn({ name: "payment_type_id" })

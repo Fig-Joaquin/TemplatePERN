@@ -10,17 +10,6 @@ export class WorkOrder {
     @PrimaryGeneratedColumn()
     work_order_id!: number;
 
-    @Column()
-    vehicle_id!: number;
-
-    @Column()
-    quotation_id!: number;
-
-    @Column()
-    person_id!: number;
-
-
-
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })
     vehicle!: Vehicle;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const PersonSchema = z.object({
+    person_id: z.number().int().positive().optional(),
     rut: z
         .string()
         .min(8, "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión")

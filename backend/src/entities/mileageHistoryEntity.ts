@@ -7,9 +7,6 @@ export class MileageHistory {
     @PrimaryGeneratedColumn()
     mileage_history_id!: number;
 
-    @Column()
-    vehicle_id!: number;
-
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })
     vehicle!: Vehicle;

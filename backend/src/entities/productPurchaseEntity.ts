@@ -9,14 +9,6 @@ export class ProductPurchase {
     @PrimaryGeneratedColumn()
     product_purchase_id!: number;
 
-    @Column()
-    product_id!: number;
-
-    @Column()
-    purchase_history_id!: number;
-
-    @Column()
-    tax_id!: number;
 
     @ManyToOne(() => Product, { nullable: false })
     @JoinColumn({ name: "product_id" })

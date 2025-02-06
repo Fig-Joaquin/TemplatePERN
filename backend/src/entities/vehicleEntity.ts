@@ -9,11 +9,6 @@ export class Vehicle {
     @PrimaryGeneratedColumn()
     vehicle_id!: number;
 
-    @Column()
-    vehicle_model_id!: number;
-
-    @Column()
-    person_id!: number;
 
     @ManyToOne(() => VehicleModel, { nullable: false })
     @JoinColumn({ name: "vehicle_model_id" })

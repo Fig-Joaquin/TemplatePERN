@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, RelationId } from "typeorm";
 import { IsNumber, Min } from "class-validator";
 import { WorkOrder } from "./workOrderEntity";
 import { Product } from "./productEntity";
@@ -10,33 +10,33 @@ export class WorkProductDetail {
     @PrimaryGeneratedColumn()
     work_product_detail_id!: number;
 
-    @Column()
-    work_order_id!: number;
-
-    @Column()
-    product_id!: number;
-
-    @Column()
-    quotation_id!: number;
-
-    @Column()
-    tax_id!: number;
-
-    @ManyToOne(() => WorkOrder, { nullable: false })
+    @ManyToOne(() => WorkOrder, { nullable: false /*, cascade: true*/ })
     @JoinColumn({ name: "work_order_id" })
     work_order!: WorkOrder;
+
+    @RelationId((detail: WorkProductDetail) => detail.work_order)
+    work_order_id!: number;
 
     @ManyToOne(() => Product, { nullable: false })
     @JoinColumn({ name: "product_id" })
     product!: Product;
+    
+    @RelationId((detail: WorkProductDetail) => detail.product)
+    product_id!: number;
 
-    @ManyToOne(() => Quotation, { nullable: false })
+    @ManyToOne(() => Quotation, { nullable: false /*, cascade: true*/ })
     @JoinColumn({ name: "quotation_id" })
     quotation!: Quotation;
+
+    @RelationId((detail: WorkProductDetail) => detail.quotation)
+    quotation_id!: number;
 
     @ManyToOne(() => Tax, { nullable: false })
     @JoinColumn({ name: "tax_id" })
     tax!: Tax;
+
+    @RelationId((detail: WorkProductDetail) => detail.tax)
+    tax_id!: number;
 
     @Column()
     @IsNumber()

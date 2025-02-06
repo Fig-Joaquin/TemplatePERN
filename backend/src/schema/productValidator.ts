@@ -1,13 +1,12 @@
 import { z } from "zod";
+import { ProductCategorySchema } from "./productCategoryValidator";
 
 export const ProductSchema = z.object({
+    category: ProductCategorySchema,
     product_name: z.string()
         .min(2, "El nombre del producto debe tener entre 2 y 100 caracteres")
         .max(100, "El nombre del producto debe tener entre 2 y 100 caracteres"),
     
-    product_type_id: z.number()
-        .int()
-        .positive("El tipo de producto es requerido"),
     
     profit_margin: z.number()
         .min(0, "El margen de ganancia no puede ser negativo")

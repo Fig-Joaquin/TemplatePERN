@@ -7,8 +7,6 @@ export class Product {
     @PrimaryGeneratedColumn()
     product_id!: number;
 
-    @Column()
-    product_type_id!: number;
 
     @ManyToOne(() => ProductType, type => type.products, { nullable: false })
     @JoinColumn({ name: "product_type_id" })

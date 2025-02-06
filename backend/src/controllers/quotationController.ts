@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { Quotation } from "../entities/quotationEntity";
 import { QuotationSchema } from "../schema/quotationValidator";
+import { DeepPartial } from "typeorm";
+import { Vehicle } from "entities/vehicleEntity";
 
 const quotationRepository = AppDataSource.getRepository(Quotation);
 
@@ -51,7 +53,10 @@ export const createQuotation = async (req: Request, res: Response, _next: NextFu
             });
             return;
         }
-        const data = validationResult.data;
+        const data: DeepPartial<Quotation> = {
+            ...validationResult.data,
+            vehicle: validationResult.data.vehicle as DeepPartial<Vehicle>
+        };
         const newQuotation = quotationRepository.create(data);
         await quotationRepository.save(newQuotation);
         res.status(201).json({ message: "Cotización creada exitosamente", quotation: newQuotation });
@@ -85,7 +90,11 @@ export const updateQuotation = async (req: Request, res: Response, _next: NextFu
             });
             return;
         }
-        quotationRepository.merge(quotation, validationResult.data);
+        const updateData: DeepPartial<Quotation> = {
+            ...validationResult.data,
+            vehicle: validationResult.data.vehicle as DeepPartial<Vehicle>
+        };
+        quotationRepository.merge(quotation, updateData);
         await quotationRepository.save(quotation);
         res.json({ message: "Cotización actualizada exitosamente", quotation });
     } catch (error) {

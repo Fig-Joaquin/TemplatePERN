@@ -8,8 +8,6 @@ export class Quotation {
     @PrimaryGeneratedColumn()
     quotation_id!: number;
 
-    @Column()
-    vehicle_id!: number;
 
 
     @ManyToOne(() => Vehicle, { nullable: false })

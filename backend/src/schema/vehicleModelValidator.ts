@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { VehicleBrandSchema } from "./vehicleBrandValidator";
 
-export const vehicleModelSchema = z.object({
-    vehicle_model_id: z.number().optional(), // Optional because it's auto-generated
-    vehicle_brand_id: z.number().min(1, "Se requiere un ID de marca válido"),
+export const vehicleModelSchema = z.object({// Optional because it's auto-generated
+    vehicle_model_id: z.number().optional(),
+    brand: VehicleBrandSchema,
     model_name: z.string()
         .min(2, "El nombre del modelo debe tener al menos 2 caracteres")
         .max(50, "El nombre del modelo no puede exceder los 50 caracteres")

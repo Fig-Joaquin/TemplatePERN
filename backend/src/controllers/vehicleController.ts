@@ -66,18 +66,18 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             return;
         }
 
-        const { vehicle_model_id, person_id, ...vehicleData } = validationResult.data;
+        const { model: vehicle_model_id, owner: person_id, ...vehicleData } = validationResult.data;
         const mileageHistoryData = req.body.mileageHistory;
 
         // Verificar si el modelo existe
-        const model = await modelRepository.findOneBy({ vehicle_model_id });
+        const model = await modelRepository.findOneBy({ vehicle_model_id: vehicle_model_id.vehicle_model_id });
         if (!model) {
             res.status(404).json({ message: "El modelo especificado no existe." });
             return;
         }
 
         // Verificar si el dueño existe
-        const owner = await ownerRepository.findOneBy({ person_id });
+        const owner = await ownerRepository.findOneBy({ person_id: person_id.person_id });
         if (!owner) {
             res.status(404).json({ message: "El propietario especificado no existe." });
             return;

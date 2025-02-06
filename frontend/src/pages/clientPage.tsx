@@ -7,8 +7,8 @@ import { Dialog, Transition } from "@headlessui/react";
 import ClientList from "../components/clientList";
 import ClientForm from "../components/clientForm";
 import SearchBar from "../components/searchBar";
-import {Person} from "../components/clientList";
-import {Vehicle} from "../components/vehicleList";
+import { Person } from "../components/clientList";
+import { Vehicle } from "../components/vehicleList";
 
 const ClientPage = () => {
     const [persons, setPersons] = useState<Person[]>([]);
@@ -17,8 +17,19 @@ const ClientPage = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [clientToDelete, setClientToDelete] = useState<number | null>(null);
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-    const [formData, setFormData] = useState({
+    const [createFormData, setCreateFormData] = useState({
+        rut: "",
+        name: "",
+        first_surname: "",
+        second_surname: "",
+        email: "",
+        number_phone: "",
+        person_type: "cliente",
+    });
+    const [editFormData, setEditFormData] = useState({
         rut: "",
         name: "",
         first_surname: "",
@@ -62,18 +73,23 @@ const ClientPage = () => {
         setSearchTerm(e.target.value);
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCreateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setCreateFormData({ ...createFormData, [name]: value });
+    };
+
+    const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setEditFormData({ ...editFormData, [name]: value });
     };
 
     const handleCreateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post("/persons/", formData);
+            await api.post("/persons/", createFormData);
             toast.success("Cliente creado exitosamente");
             setAddModalOpen(false);
-            setFormData({
+            setCreateFormData({
                 rut: "",
                 name: "",
                 first_surname: "",
@@ -87,7 +103,7 @@ const ClientPage = () => {
             setPersons(clients);
         } catch (error: any) {
             toast.error(
-                error.response?.data?.message  || error.response?.data?.errors.map((e: any) => e.message).join(", ")
+                error.response?.data?.message || error.response?.data?.errors.map((e: any) => e.message).join(", ")
             );
         }
     };
@@ -96,11 +112,11 @@ const ClientPage = () => {
         e.preventDefault();
         try {
             if (selectedPerson) {
-                await api.put(`/persons/${selectedPerson.person_id}`, formData);
+                await api.put(`/persons/${selectedPerson.person_id}`, editFormData);
                 toast.success("Cliente actualizado exitosamente");
                 setEditModalOpen(false);
                 setSelectedPerson(null);
-                setFormData({
+                setEditFormData({
                     rut: "",
                     name: "",
                     first_surname: "",
@@ -122,7 +138,7 @@ const ClientPage = () => {
 
     const handleEdit = (person: Person) => {
         setSelectedPerson(person);
-        setFormData({
+        setEditFormData({
             rut: person.rut,
             name: person.name,
             first_surname: person.first_surname,
@@ -134,15 +150,25 @@ const ClientPage = () => {
         setEditModalOpen(true);
     };
 
-    const handleDelete = async (personId: number) => {
-        try {
-            await api.delete(`/persons/${personId}`);
-            toast.success("Cliente eliminado exitosamente");
-            setPersons(persons.filter(person => person.person_id !== personId));
-        } catch (error: any) {
-            toast.error(
-                error.response?.data?.message  || error.response?.data?.errors.map((e: any) => e.message).join(", ")
-            );
+    const handleDelete = (personId: number) => {
+        setClientToDelete(personId);
+        setDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (clientToDelete) {
+            try {
+                await api.delete(`/persons/${clientToDelete}`);
+                toast.success("Cliente eliminado exitosamente");
+                setPersons(persons.filter(person => person.person_id !== clientToDelete));
+            } catch (error: any) {
+                toast.error(
+                    error.response?.data?.message || error.response?.data?.errors.map((e: any) => e.message).join(", ")
+                );
+            } finally {
+                setDeleteModalOpen(false);
+                setClientToDelete(null);
+            }
         }
     };
 
@@ -200,8 +226,8 @@ const ClientPage = () => {
                                 Nuevo Cliente
                             </Dialog.Title>
                             <ClientForm
-                                formData={formData}
-                                handleInputChange={handleInputChange}
+                                formData={createFormData}
+                                handleInputChange={handleCreateInputChange}
                                 handleSubmit={handleCreateSubmit}
                                 onCancel={() => setAddModalOpen(false)}
                             />
@@ -230,14 +256,53 @@ const ClientPage = () => {
                                 Editar Cliente
                             </Dialog.Title>
                             <ClientForm
-                                formData={formData}
-                                handleInputChange={handleInputChange}
+                                formData={editFormData}
+                                handleInputChange={handleEditInputChange}
                                 handleSubmit={handleUpdateSubmit}
                                 onCancel={() => {
                                     setEditModalOpen(false);
                                     setSelectedPerson(null);
                                 }}
                             />
+                        </Dialog.Panel>
+                    </Transition.Child>
+                </Dialog>
+            </Transition>
+
+            <Transition appear show={deleteModalOpen} as={Fragment}>
+                <Dialog
+                    as="div"
+                    className="fixed inset-0 backdrop-blur-md flex justify-center items-center z-10"
+                    onClose={() => setDeleteModalOpen(false)}
+                >
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0 scale-95"
+                        enterTo="opacity-100 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-95"
+                    >
+                        <Dialog.Panel className="w-96 bg-white shadow-lg rounded-lg p-6">
+                            <Dialog.Title className="text-xl font-bold mb-4">
+                                Confirmar Eliminación
+                            </Dialog.Title>
+                            <p>¿Estás seguro de eliminar este cliente?</p>
+                            <div className="flex justify-end mt-4">
+                                <button
+                                    className="bg-gray-300 text-black px-4 py-2 rounded mr-2"
+                                    onClick={() => setDeleteModalOpen(false)}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    className="bg-red-600 text-white px-4 py-2 rounded"
+                                    onClick={() => handleConfirmDelete()}
+                                >
+                                    Eliminar
+                                </button>
+                            </div>
                         </Dialog.Panel>
                     </Transition.Child>
                 </Dialog>

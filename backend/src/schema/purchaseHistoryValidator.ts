@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const PurchaseHistorySchema = z.object({
-    purchase_history_id: z.number().optional(),
     purchase_date: z.date(),
     arrival_date: z.date(),
     description: z.string().min(10, {

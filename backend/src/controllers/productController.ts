@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { QueryFailedError } from "typeorm";
 import { AppDataSource } from "../config/ormconfig";
 import { Product } from "../entities/productEntity";
-import { ProductSchema } from "../schema/productEntity";
+import { ProductSchema } from "../schema/productValidator";
 
 const productRepository = AppDataSource.getRepository(Product);
 

@@ -60,9 +60,9 @@ export const createMileageHistory = async (req: Request, res: Response, _next: N
             return;
         }
 
-        const { vehicle_id, current_mileage } = validationResult.data; // Eliminamos registration_date
+        const { vehicle: vehicle_id, current_mileage } = validationResult.data; // Eliminamos registration_date
 
-        const vehicle = await AppDataSource.getRepository(Vehicle).findOne({ where: { vehicle_id } });
+        const vehicle = await AppDataSource.getRepository(Vehicle).findOne({ where: { vehicle_id: Number(vehicle_id) } });
         if (!vehicle) {
             res.status(404).json({ message: `El vehículo con ID '${vehicle_id}' no existe.` });
             return;

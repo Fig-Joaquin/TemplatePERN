@@ -1,9 +1,9 @@
 import { z } from "zod";
+import { ProductSchema } from "../schema/productValidator";
 
 export const ProductPurchaseSchema = z.object({
-    product_id: z.number().int().positive(),
-    purchase_history_id: z.number().int().positive(),
     tax_id: z.number().int().positive(),
+    product: ProductSchema,
     purchase_status: z.enum(["processed", "returned"]),
     purchase_price: z.number().min(0, "El precio de compra no puede ser negativo"),
     quantity: z.number().int().min(1, "La cantidad debe ser al menos 1"),
