@@ -20,13 +20,12 @@ const sidebarStructure = [
     items: [{ name: "Dashboard", path: "/admin/dashboard" }],
   },
   {
-    id: "clientes",
+    id: "Personas",
     icon: UsersIcon,
-    title: "Clientes",
+    title: "Personas",
     items: [
-      { name: "Lista de clientes", path: "/admin/clientes" },
-      { name: "Registrar cliente", path: "/admin/clientes/nuevo" },
-      { name: "Vehículos", path: "/admin/clientes/vehiculos" },
+      { name: "Clientes", path: "/admin/clientes" },
+      { name: "Trabajadores", path: "/admin/" },
     ],
   },
   {

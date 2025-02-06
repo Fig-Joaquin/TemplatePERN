@@ -37,6 +37,7 @@ export const getPersonById = async (req: Request, res: Response, _next: NextFunc
 
 export const createPerson = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        console.log(req.body);
         // Validar la entrada con Zod
         const validationResult = PersonSchema.safeParse(req.body);
         if (!validationResult.success) {
@@ -92,6 +93,7 @@ export const createPerson = async (req: Request, res: Response, _next: NextFunct
 
 export const updatePerson = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        console.log(req.body);
         const { id } = req.params;
         const person = await personRepository.findOneBy({ person_id: parseInt(id) });
         
