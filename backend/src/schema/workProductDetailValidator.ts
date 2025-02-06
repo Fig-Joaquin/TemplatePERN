@@ -4,7 +4,7 @@ export const workProductDetailSchema = z.object({
     work_product_detail_id: z.number().optional(), // Optional because it's auto-generated
     work_order_id: z.number().int().positive(),
     product_id: z.number().int().positive(),
-    quotation_id: z.number().int().positive(),
+    quotation_id: z.number().int().positive().optional(),
     tax_id: z.number().int().positive(),
     quantity: z.number().int().min(1, { message: "La cantidad debe ser al menos 1" }),
     sale_price: z.number().nonnegative({ message: "El precio de venta no puede ser negativo" }).multipleOf(0.01),
