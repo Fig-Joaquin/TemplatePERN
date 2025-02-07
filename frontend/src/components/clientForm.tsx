@@ -1,17 +1,4 @@
-interface ClientFormProps {
-    formData: {
-        name: string;
-        first_surname: string;
-        second_surname?: string;
-        email: string;
-        number_phone: string;
-        person_type: string;
-        rut: string;
-    };
-    handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleSubmit: (e: React.FormEvent) => void;
-    onCancel: () => void;
-}
+import { ClientFormProps } from "../types/interfaces";
 
 const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: ClientFormProps) => {
     return (

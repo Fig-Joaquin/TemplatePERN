@@ -1,28 +1,31 @@
 import { Edit, Trash2 } from "lucide-react";
 import VehicleList from "./vehicleList";
-import { Vehicle } from "./vehicleList";
+import { Vehicle, Person } from "../types/interfaces";
+import { useEffect, useState } from "react";
 
-
-
-export interface Person {
-    person_id: number;
-    name: string;
-    first_surname: string;
-    second_surname?: string;
-    email: string;
-    number_phone: string;
-    person_type: string;
-    rut: string;
-}
 
 interface ClientListProps {
     persons: Person[];
-    getVehiclesByPersonId: (personId: number) => Vehicle[];
+    getVehiclesByPersonId: (personId: number) => Promise<Vehicle[]>;
     handleEdit: (person: Person) => void;
     handleDelete: (personId: number) => void;
 }
 
-const ClientList = ({ persons, getVehiclesByPersonId, handleEdit, handleDelete }: ClientListProps) => {
+const ClientList: React.FC<ClientListProps> = ({ persons, getVehiclesByPersonId, handleEdit, handleDelete }) => {
+    const [vehicles, setVehicles] = useState<{ [key: number]: Vehicle[] }>({});
+
+    useEffect(() => {
+        const fetchVehicles = async () => {
+            const vehiclesData: { [key: number]: Vehicle[] } = {};
+            for (const person of persons) {
+                vehiclesData[person.person_id] = await getVehiclesByPersonId(person.person_id);
+            }
+            setVehicles(vehiclesData);
+        };
+
+        fetchVehicles();
+    }, [persons, getVehiclesByPersonId]);
+
     return (
         <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -56,7 +59,7 @@ const ClientList = ({ persons, getVehiclesByPersonId, handleEdit, handleDelete }
                             <td className="px-6 py-4 whitespace-nowrap">{person.first_surname}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{person.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <VehicleList vehicles={getVehiclesByPersonId(person.person_id)} />
+                                <VehicleList vehicles={vehicles[person.person_id] || []} />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex gap-2">

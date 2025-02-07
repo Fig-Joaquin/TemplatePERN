@@ -4,15 +4,16 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Plus } from "lucide-react";
 import { Dialog, Transition } from "@headlessui/react";
-import ClientList from "../components/clientList";
+import ClientList, { Person } from "../components/clientList";
 import ClientForm from "../components/clientForm";
 import SearchBar from "../components/searchBar";
-import { Person } from "../components/clientList";
 import { Vehicle } from "../components/vehicleList";
+import { createPerson, updatePerson, fetchPersonsClient } from "../services/personService";
+import { fetchVehicles, fetchVehiclesByPersonId } from "../services/vehicleService";
 
 const ClientPage = () => {
     const [persons, setPersons] = useState<Person[]>([]);
-    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [, setVehicles] = useState<Vehicle[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [addModalOpen, setAddModalOpen] = useState(false);
@@ -20,7 +21,7 @@ const ClientPage = () => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [clientToDelete, setClientToDelete] = useState<number | null>(null);
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-    const [createFormData, setCreateFormData] = useState({
+    const initialFormData = {
         rut: "",
         name: "",
         first_surname: "",
@@ -28,22 +29,14 @@ const ClientPage = () => {
         email: "",
         number_phone: "",
         person_type: "cliente",
-    });
-    const [editFormData, setEditFormData] = useState({
-        rut: "",
-        name: "",
-        first_surname: "",
-        second_surname: "",
-        email: "",
-        number_phone: "",
-        person_type: "cliente",
-    });
+    };
+    const [createFormData, setCreateFormData] = useState(initialFormData);
+    const [editFormData, setEditFormData] = useState(initialFormData);
 
     useEffect(() => {
         const fetchPersons = async () => {
             try {
-                const { data } = await api.get<Person[]>("/persons");
-                const clients = data.filter(person => person.person_type === "cliente");
+                const clients = await fetchPersonsClient();
                 setPersons(clients);
             } catch {
                 toast.error("Error al cargar las personas");
@@ -52,22 +45,18 @@ const ClientPage = () => {
             }
         };
 
-        const fetchVehicles = async () => {
+        const fetchVehiclesData = async () => {
             try {
-                const { data } = await api.get<Vehicle[]>("/vehicles");
-                setVehicles(data);
+                const vehicles = await fetchVehicles();
+                setVehicles(vehicles);
             } catch {
                 toast.error("Error al cargar los vehículos");
             }
         };
 
         fetchPersons();
-        fetchVehicles();
+        fetchVehiclesData();
     }, []);
-
-    const getVehiclesByPersonId = (personId: number) => {
-        return vehicles.filter(vehicle => vehicle.owner.person_id === personId);
-    };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
@@ -86,24 +75,17 @@ const ClientPage = () => {
     const handleCreateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post("/persons/", createFormData);
+            await createPerson(createFormData);
             toast.success("Cliente creado exitosamente");
             setAddModalOpen(false);
-            setCreateFormData({
-                rut: "",
-                name: "",
-                first_surname: "",
-                second_surname: "",
-                email: "",
-                number_phone: "",
-                person_type: "cliente",
-            });
-            const { data } = await api.get<Person[]>("/persons");
-            const clients = data.filter(person => person.person_type === "cliente");
+            setCreateFormData(initialFormData);
+            const clients = await fetchPersonsClient();
             setPersons(clients);
         } catch (error: any) {
             toast.error(
-                error.response?.data?.message || error.response?.data?.errors.map((e: any) => e.message).join(", ")
+                error.response?.data?.message ||
+                error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
+                "Error al crear el cliente"
             );
         }
     };
@@ -112,26 +94,19 @@ const ClientPage = () => {
         e.preventDefault();
         try {
             if (selectedPerson) {
-                await api.put(`/persons/${selectedPerson.person_id}`, editFormData);
+                await updatePerson(selectedPerson.person_id, editFormData);
                 toast.success("Cliente actualizado exitosamente");
                 setEditModalOpen(false);
                 setSelectedPerson(null);
-                setEditFormData({
-                    rut: "",
-                    name: "",
-                    first_surname: "",
-                    second_surname: "",
-                    email: "",
-                    number_phone: "",
-                    person_type: "cliente",
-                });
-                const { data } = await api.get<Person[]>("/persons");
-                const clients = data.filter(person => person.person_type === "cliente");
+                setEditFormData(initialFormData);
+                const clients = await fetchPersonsClient();
                 setPersons(clients);
             }
         } catch (error: any) {
             toast.error(
-                error.response?.data?.errors.map((e: any) => e.message).join(", ")
+                error.response?.data?.message ||
+                error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
+                "Error al actualizar el cliente"
             );
         }
     };
@@ -156,14 +131,16 @@ const ClientPage = () => {
     };
 
     const handleConfirmDelete = async () => {
-        if (clientToDelete) {
+        if (clientToDelete !== null) {
             try {
                 await api.delete(`/persons/${clientToDelete}`);
                 toast.success("Cliente eliminado exitosamente");
                 setPersons(persons.filter(person => person.person_id !== clientToDelete));
             } catch (error: any) {
                 toast.error(
-                    error.response?.data?.message || error.response?.data?.errors.map((e: any) => e.message).join(", ")
+                    error.response?.data?.message ||
+                    error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
+                    "Error al eliminar el cliente"
                 );
             } finally {
                 setDeleteModalOpen(false);
@@ -199,7 +176,7 @@ const ClientPage = () => {
                 ) : (
                     <ClientList
                         persons={filteredPersons}
-                        getVehiclesByPersonId={getVehiclesByPersonId}
+                        getVehiclesByPersonId={fetchVehiclesByPersonId}
                         handleEdit={handleEdit}
                         handleDelete={handleDelete}
                     />
@@ -298,7 +275,7 @@ const ClientPage = () => {
                                 </button>
                                 <button
                                     className="bg-red-600 text-white px-4 py-2 rounded"
-                                    onClick={() => handleConfirmDelete()}
+                                    onClick={handleConfirmDelete}
                                 >
                                     Eliminar
                                 </button>

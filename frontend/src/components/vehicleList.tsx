@@ -1,19 +1,4 @@
-export interface Vehicle {
-    vehicle_id: number;
-    license_plate: string;
-    model: {
-        model_name: string;
-        brand: {
-            brand_name: string;
-        };
-    };
-    year: number;
-    owner: {
-        person_id?: number;
-        name: string;
-        first_surname: string;
-    };
-}
+import { Vehicle } from "../types/interfaces";
 
 interface VehicleListProps {
     vehicles: Vehicle[];

@@ -10,7 +10,7 @@ const quotationRepository = AppDataSource.getRepository(Quotation);
 export const getAllQuotations = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const quotations = await quotationRepository.find({
-            relations: ["vehicle", "mileage_history"]
+            relations: ["vehicle"]
         });
         res.json(quotations);
     } catch (error) {

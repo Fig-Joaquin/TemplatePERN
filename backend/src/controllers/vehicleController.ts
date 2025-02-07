@@ -28,6 +28,23 @@ export const getAllVehicles = async (_req: Request, res: Response, _next: NextFu
     }
 };
 
+export const getVehiclesByPersonId = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const { personId } = req.params;
+        const vehicles = await vehicleRepository.find({
+            where: { owner: { person_id: parseInt(personId) } },
+            relations: ["model", "model.brand", "owner", "mileage_history"]
+        });
+        if (vehicles.length === 0) {
+            res.status(404).json({ message: "No se encontraron vehículos para el propietario especificado" });
+            return;
+        }
+        res.json(vehicles);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener vehículos por propietario", error });
+    }
+};
+
 export const getVehicleById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
