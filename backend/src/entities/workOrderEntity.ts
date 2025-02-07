@@ -1,14 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from "typeorm";
 import { IsString, IsNumber, Min } from "class-validator";
 import { Vehicle } from "./vehicleEntity";
 import { Quotation } from "./quotationEntity";
 import { Person } from "./personsEntity";
+import { Company } from "./companiesEntity";
+import { Debtor } from "./debtorsEntity";
 
 
 @Entity("work_orders")
 export class WorkOrder {
     @PrimaryGeneratedColumn()
     work_order_id!: number;
+
+
+    @OneToMany(() => Debtor, (debtor) => debtor.workOrder)
+    debtors!: Debtor[];
+
+    @ManyToOne(() => Company, (company) => company.workOrders, { nullable: true })
+    @JoinColumn({ name: "company_id" })
+    company!: Company;
 
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })

@@ -1,12 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from "typeorm";
 import { IsString, Length, IsNumber, Min } from "class-validator";
 import { ProductType } from "./productTypeEntity";
+import { Supplier } from "./suppliersEntity";
+import { StockProduct } from "./stock_products";
+import { ProductHistory } from "./productsHistoryEntity";
 
 @Entity("products")
 export class Product {
     @PrimaryGeneratedColumn()
     product_id!: number;
 
+    @OneToMany(() => ProductHistory, (history) => history.product)
+    history!: ProductHistory[];
+
+    @ManyToOne(() => Supplier, (supplier) => supplier.products, { nullable: false })
+    @JoinColumn({ name: "supplier_id" })
+    supplier!: Supplier;
+
+    @OneToOne(() => StockProduct, (stock) => stock.product, { cascade: true })
+    @JoinColumn({ name: "product_id" })
+    stock!: StockProduct;
+    
 
     @ManyToOne(() => ProductType, type => type.products, { nullable: false })
     @JoinColumn({ name: "product_type_id" })
