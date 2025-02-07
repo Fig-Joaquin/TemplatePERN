@@ -1,0 +1,32 @@
+import { Quotation } from "../types/interfaces";
+
+export const VehicleCard = ({ vehicle }: { vehicle: Quotation["vehicle"] }) => {
+    return (
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="border-b p-4">
+                <h3 className="font-bold text-lg">{vehicle?.license_plate}</h3>
+                <p className="text-sm text-gray-500">
+                    {vehicle?.model.brand.brand_name} {vehicle?.model.model_name}
+                </p>
+            </div>
+            <div className="p-4 space-y-2">
+                <p>
+                    <strong>Año:</strong> {vehicle?.year}
+                </p>
+                <p>
+                    <strong>Color:</strong> {vehicle?.color}
+                </p>
+                <p>
+                    <strong>Estado:</strong> {vehicle?.vehicle_status}
+                </p>
+                <p>
+                    <strong>Propietario:</strong> {vehicle?.owner.name} {vehicle?.owner.first_surname}
+                </p>
+                <p>
+                    <strong>Kilometraje actual:</strong>{" "}
+                    {vehicle?.mileage_history[vehicle.mileage_history.length - 1].current_mileage} km
+                </p>
+            </div>
+        </div>
+    );
+};

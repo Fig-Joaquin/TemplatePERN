@@ -4,10 +4,10 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Plus } from "lucide-react";
 import { Dialog, Transition } from "@headlessui/react";
-import ClientList, { Person } from "../components/clientList";
+import ClientList from "../components/clientList";
 import ClientForm from "../components/clientForm";
 import SearchBar from "../components/searchBar";
-import { Vehicle } from "../components/vehicleList";
+import { Person, Vehicle } from "../types/interfaces";
 import { createPerson, updatePerson, fetchPersonsClient } from "../services/personService";
 import { fetchVehicles, fetchVehiclesByPersonId } from "../services/vehicleService";
 

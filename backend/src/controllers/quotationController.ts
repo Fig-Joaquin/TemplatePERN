@@ -10,7 +10,7 @@ const quotationRepository = AppDataSource.getRepository(Quotation);
 export const getAllQuotations = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const quotations = await quotationRepository.find({
-            relations: ["vehicle"]
+            relations: ["vehicle", "vehicle.model", "vehicle.model.brand", "vehicle.owner", "vehicle.mileage_history"]
         });
         res.json(quotations);
     } catch (error) {
@@ -28,7 +28,7 @@ export const getQuotationById = async (req: Request, res: Response, _next: NextF
 
         const quotation = await quotationRepository.findOne({
             where: { quotation_id: id },
-            relations: ["vehicle", "mileage_history"]
+            relations: ["vehicle"]
         });
         if (!quotation) {
             res.status(404).json({ message: "Cotización no encontrada" });
