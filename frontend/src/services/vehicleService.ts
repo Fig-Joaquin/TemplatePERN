@@ -1,5 +1,5 @@
 import api from "../utils/axiosConfig";
-import { Vehicle } from "../components/vehicleList";
+import { Vehicle } from "../types/interfaces";
 
 export const fetchVehicles = async () => {
     const { data } = await api.get<Vehicle[]>("/vehicles");

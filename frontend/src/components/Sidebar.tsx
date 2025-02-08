@@ -44,7 +44,7 @@ const sidebarStructure = [
     title: "Cotizaciones",
     items: [
       { name: "Lista de cotizaciones", path: "/admin/cotizacion" },
-      { name: "Nueva cotización", path: "/admin/cotizaciones/nueva" },
+      { name: "Nueva cotización", path: "/admin/cotizacion/create" },
     ],
   },
   {

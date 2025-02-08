@@ -34,6 +34,7 @@ export const getProductById = async (req: Request, res: Response, _next: NextFun
 
 export const createProduct = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        console.log(req.body);
         const validationResult = ProductSchema.safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({
@@ -47,7 +48,9 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         }
 
         const productData = validationResult.data;
+        console.log(productData);
         const product = productRepository.create(productData);
+        console.log(product);
         await productRepository.save(product);
         res.status(201).json({ message: "Producto creado exitosamente", product });
     } catch (error) {

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { ProductCategorySchema } from "./productCategoryValidator";
+import { ProductTypeSchema } from "./productTypeValidator";
 
 export const ProductSchema = z.object({
-    category: ProductCategorySchema,
+    type: ProductTypeSchema,
     product_name: z.string()
         .min(2, "El nombre del producto debe tener entre 2 y 100 caracteres")
         .max(100, "El nombre del producto debe tener entre 2 y 100 caracteres"),

@@ -36,12 +36,12 @@ export class Product {
     @Min(0, { message: "El margen de ganancia no puede ser negativo" })
     profit_margin!: number;
 
-    @Column({ type: "decimal", precision: 10, scale: 2 })
+    @Column({ type: "bigint" })
     @IsNumber()
     @Min(0, { message: "El precio de última compra no puede ser negativo" })
     last_purchase_price!: number;
 
-    @Column({ type: "decimal", precision: 10, scale: 2 })
+    @Column({ type: "bigint" })
     @IsNumber()
     @Min(0, { message: "El precio de venta no puede ser negativo" })
     sale_price!: number;

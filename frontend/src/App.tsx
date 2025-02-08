@@ -6,6 +6,7 @@ import AdminLayout from "./components/AdminLayout";
 import VehiclesPage from "./pages/vehiclesPage";
 import ClientPage from "./pages/clientPage";
 import QuotationPage from "./pages/quotationPage";
+import QuotationCreatePage from "./pages/quotationCreatePage";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="vehiculo" element={<VehiclesPage />} />
         <Route path="clientes" element={<ClientPage />} />
         <Route path="cotizacion" element={<QuotationPage />} />
+        <Route path="cotizacion/create" element={<QuotationCreatePage />} />
       </Route>
       
     </Routes>

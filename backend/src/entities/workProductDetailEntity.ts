@@ -10,7 +10,7 @@ export class WorkProductDetail {
     @PrimaryGeneratedColumn()
     work_product_detail_id!: number;
 
-    @ManyToOne(() => WorkOrder, { nullable: false /*, cascade: true*/ })
+    @ManyToOne(() => WorkOrder, { nullable: true /*, cascade: true*/ })
     @JoinColumn({ name: "work_order_id" })
     work_order!: WorkOrder;
 
@@ -24,7 +24,7 @@ export class WorkProductDetail {
     @RelationId((detail: WorkProductDetail) => detail.product)
     product_id!: number;
 
-    @ManyToOne(() => Quotation, { nullable: false /*, cascade: true*/ })
+    @ManyToOne(() => Quotation, { nullable: true /*, cascade: true*/ })
     @JoinColumn({ name: "quotation_id" })
     quotation!: Quotation;
 

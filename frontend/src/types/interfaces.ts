@@ -61,6 +61,55 @@ export interface Quotation {
     // Agrega otras propiedades relevantes si es necesario
 }
 
+export interface WorkOrder {
+    work_order_id: number;
+    description: string;
+    work_order_status: "approved" | "rejected" | "pending";
+    vehicle: Vehicle;
+    entry_date: Date;
+    // Agrega otras propiedades relevantes si es necesario
+}
+
+export interface WorkProductDetail {
+    work_product_detail_id: number;
+    work_order: WorkOrder;
+    product: Product;
+    quotation: Quotation;
+    tax: Tax;
+    quantity: number;
+    sale_price: number;
+    discount: number;
+    labor_price: number;
+}
+
+export interface Product {
+    product_id: number;
+    product_name: string;
+    profit_margin: string;
+    last_purchase_price: string;
+    sale_price: string;
+    description: string;
+    product_quantity: number;
+    type: type;
+}
+
+export interface type {
+    product_type_id: number;
+    type_name: string;
+    category: category;
+}
+
+export interface category {
+    product_category_id: number;
+    category_name: string;
+}
+
+export interface Tax {
+    tax_id: number;
+    tax_name: string;
+    tax_percentage: number;
+}
+
 
 
 
