@@ -1,7 +1,7 @@
 import { useState, useEffect, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, Transition, Tab } from "@headlessui/react";
 import { fetchVehicles } from "../services/vehicleService";
 import { createQuotation } from "../services/quotationService";
 import { Quotation } from "../types/interfaces";
@@ -92,18 +92,62 @@ const QuotationCreatePage = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block mb-2">Vehículo</label>
-                    <select
-                        value={vehicleId}
-                        onChange={(e) => setVehicleId(e.target.value)}
-                        className="w-full border border-gray-300 rounded p-2"
-                    >
-                        <option value="">Seleccione un vehículo</option>
-                        {vehicles.map((vehicle) => (
-                            <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
-                                {vehicle.license_plate} - { vehicle.model?.brand?.brand_name} {vehicle.model?.model_name} - {vehicle.owner?.name}
-                            </option>
-                        ))}
-                    </select>
+                    <Tab.Group>
+                        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+                            <Tab
+                                className={({ selected }) =>
+                                    selected
+                                        ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700 bg-white shadow"
+                                        : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-100 hover:bg-white/[0.12] hover:text-white"
+                                }
+                            >
+                                Personas
+                            </Tab>
+                            <Tab
+                                className={({ selected }) =>
+                                    selected
+                                        ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700 bg-white shadow"
+                                        : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-100 hover:bg-white/[0.12] hover:text-white"
+                                }
+                            >
+                                Empresas
+                            </Tab>
+                        </Tab.List>
+                        <Tab.Panels className="mt-2">
+                            <Tab.Panel className="rounded-xl bg-white p-3">
+                                <select
+                                    value={vehicleId}
+                                    onChange={(e) => setVehicleId(e.target.value)}
+                                    className="w-full border border-gray-300 rounded p-2"
+                                >
+                                    <option value="">Seleccione un vehículo</option>
+                                    {vehicles
+                                        .filter((vehicle) => vehicle.owner)
+                                        .map((vehicle) => (
+                                            <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
+                                                {vehicle.license_plate} - {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name} - {vehicle.owner?.name}
+                                            </option>
+                                        ))}
+                                </select>
+                            </Tab.Panel>
+                            <Tab.Panel className="rounded-xl bg-white p-3">
+                                <select
+                                    value={vehicleId}
+                                    onChange={(e) => setVehicleId(e.target.value)}
+                                    className="w-full border border-gray-300 rounded p-2"
+                                >
+                                    <option value="">Seleccione un vehículo</option>
+                                    {vehicles
+                                        .filter((vehicle) => vehicle.company)
+                                        .map((vehicle) => (
+                                            <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
+                                                {vehicle.license_plate} - {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name} - {vehicle.company?.name}
+                                            </option>
+                                        ))}
+                                </select>
+                            </Tab.Panel>
+                        </Tab.Panels>
+                    </Tab.Group>
                 </div>
                 <div>
                     <label className="block mb-2">Respuestos Seleccionados</label>

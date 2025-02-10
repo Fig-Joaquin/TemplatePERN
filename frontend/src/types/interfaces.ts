@@ -32,7 +32,15 @@ export interface Vehicle {
     mileage_history: mileage_history[];
     color: string;
     year: number;
-    owner: Person;
+    owner: Person | null; // Allow owner to be null
+    company: company | null; // Allow company to be null
+}
+
+export interface company {
+    company_id: number;
+    name: string;
+    email: string;
+    rut: string;
 }
 
 export interface model {
@@ -91,6 +99,23 @@ export interface Product {
     description: string;
     product_quantity: number;
     type: type;
+    supplier: Supplier;
+    StockProduct: StockProduct;
+}
+
+export interface Supplier {
+    supplier_id: number;
+    name: string;
+    adress: string;
+    city: string;
+    description: string;
+    phone: string;
+}
+
+export interface StockProduct {
+    stock_product_id: number;
+    product: Product;
+    quantity: number;
 }
 
 export interface type {
