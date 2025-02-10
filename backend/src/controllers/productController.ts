@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { QueryFailedError } from "typeorm";
 import { AppDataSource } from "../config/ormconfig";
 import { Product } from "../entities/productEntity";
 import { ProductType } from "../entities/productTypeEntity";
 import { Supplier } from "../entities/suppliersEntity";
 import { ProductSchema } from "../schema/productValidator";
+import { StockProduct } from "../entities/stockProductEntity";
 
 const productRepository = AppDataSource.getRepository(Product);
 const productTypeRepository = AppDataSource.getRepository(ProductType);
 const supplierRepository = AppDataSource.getRepository(Supplier);
+const stockProductRepository = AppDataSource.getRepository(StockProduct);
 
 export const getAllProducts = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -38,56 +39,68 @@ export const getProductById = async (req: Request, res: Response, _next: NextFun
 
 export const createProduct = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        console.log("Request Body:", JSON.stringify(req.body, null, 2));
-        const validationResult = ProductSchema.safeParse(req.body);
+        console.log("Request Body recibido:", req.body);
 
+        // Validar la entrada con Zod
+        const validationResult = ProductSchema.safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({
                 message: "Error de validación",
                 errors: validationResult.error.errors.map(err => ({
                     field: err.path.join("."),
-                    message: err.message,
-                })),
+                    message: err.message
+                }))
             });
             return;
         }
 
+        // Extraer los datos validados
         const productData = validationResult.data;
+        const { supplier_id, product_type_id, product_quantity, ...restData } = productData;
 
-        // Buscamos las entidades existentes según los IDs recibidos
-        const supplierId = productData.supplier_id;
-        const productTypeId = productData.product_type_id;
-
-        const supplierEntity = await supplierRepository.findOne({ where: { supplier_id: supplierId } });
+        // Verificar proveedor
+        const supplierEntity = await supplierRepository.findOneBy({ supplier_id });
         if (!supplierEntity) {
             res.status(404).json({ message: "Proveedor no encontrado" });
             return;
         }
-        const productTypeEntity = await productTypeRepository.findOne({ where: { product_type_id: productTypeId } });
+
+        // Verificar tipo de producto
+        const productTypeEntity = await productTypeRepository.findOne({
+            where: { product_type_id },
+            relations: ["category"]
+        });
         if (!productTypeEntity) {
             res.status(404).json({ message: "Tipo de producto no encontrado" });
             return;
         }
 
-        // Asignamos las entidades encontradas al producto
-        productData.supplier = supplierEntity as unknown as { name: string; address: string; city: string; description: string; phone: string; product_id: number; supplier_id?: number | undefined; products?: any[] | undefined; };
-        productData.type = { ...productTypeEntity, product_category_id: productTypeEntity.category?.product_category_id };
+        // **Paso 1: Insertar el producto SIN el stock aún**
+        let product = productRepository.create({
+            ...restData,
+            product_quantity: product_quantity ?? 0,
+            supplier: supplierEntity,
+            type: productTypeEntity
+        });
 
+        product = await productRepository.save(product); // Guardar producto y obtener su ID
 
+        // **Paso 2: Insertar el stock con el `product_id` generado**
+        const newStock = stockProductRepository.create({
+            product: product, // Aquí se enlaza con el producto creado
+            quantity: product_quantity
+        });
+        await stockProductRepository.save(newStock);
 
-        console.log("VALIDACION: " + JSON.stringify(productData, null, 2));
-        const product = productRepository.create(productData);
-        console.log("PRODUCTO FINAL :" + JSON.stringify(product, null, 2));
-        await productRepository.save(product);
         res.status(201).json({ message: "Producto creado exitosamente", product });
-    } catch (error) {
-        if (error instanceof QueryFailedError) {
-            res.status(409).json({ message: "Error al crear el producto", error: error.message });
-            return;
-        }
-        res.status(500).json({ message: "Error interno al crear el producto", error });
+    } catch (error: any) {
+        console.error("Error al crear producto:", error);
+        res.status(500).json({ message: "Error interno al crear producto", error: error.message || error });
     }
 };
+
+
+
 
 export const updateProduct = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {

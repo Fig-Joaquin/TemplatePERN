@@ -29,6 +29,8 @@ export const ProductSchema = z.object({
     product_quantity: z.number()
         .int()
         .min(0, "La cantidad de productos no puede ser negativa")
+        .nonnegative("La cantidad no puede ser negativa")
+        .default(0),  
 });
 
 export type ProductInput = z.infer<typeof ProductSchema>;

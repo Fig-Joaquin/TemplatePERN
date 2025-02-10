@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
-import { StockProduct } from "../entities/stock_products";
+import { StockProduct } from "../entities/stockProductEntity";
 import { StockProductSchema } from "../schema/stock_productsValidator";
 import { DeepPartial } from "typeorm";
 import { Product } from "../entities/productEntity"; // <-- nueva importación
@@ -48,22 +48,27 @@ export const createStockProduct = async (req: Request, res: Response, _next: Nex
             });
             return;
         }
-        // Extraer product_id directamente
-        const { product_id, ...stockProductData } = validationResult.data as any;
-        // Verificar que el product_id exista en el repositorio de Product
+
+        const { product_id, quantity } = validationResult.data;
+
+        // Verificar si el producto ya tiene un stock
+        const existingStock = await stockProductRepository.findOneBy({ product: { product_id } });
+        if (existingStock) {
+            res.status(400).json({ message: "El producto ya tiene stock registrado." });
+            return;
+        }
+
         const product = await productRepository.findOneBy({ product_id });
         if (!product) {
             res.status(404).json({ message: "Producto no encontrado" });
             return;
         }
-        const newStockProduct = stockProductRepository.create({
-            ...stockProductData,
-            product  // Se usa el objeto verificado
-        } as DeepPartial<StockProduct>);
+
+        const newStockProduct = stockProductRepository.create({ product, quantity });
         await stockProductRepository.save(newStockProduct);
-        res.status(201).json({ message: "Producto en stock creado exitosamente", stockProduct: newStockProduct });
+        res.status(201).json({ message: "Stock creado exitosamente", stockProduct: newStockProduct });
     } catch (error) {
-        res.status(500).json({ message: "Error al crear el producto en stock", error });
+        res.status(500).json({ message: "Error al crear el stock", error });
     }
 };
 

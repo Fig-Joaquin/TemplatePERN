@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne
 import { IsString, Length, IsNumber, Min } from "class-validator";
 import { ProductType } from "./productTypeEntity";
 import { Supplier } from "./suppliersEntity";
-import { StockProduct } from "./stock_products";
+import { StockProduct } from "./stockProductEntity";
 import { ProductHistory } from "./productsHistoryEntity";
 
 @Entity("products")
@@ -13,16 +13,13 @@ export class Product {
     @OneToMany(() => ProductHistory, (history) => history.product)
     history!: ProductHistory[];
 
-
-    @ManyToOne(() => Supplier,  { nullable: false, eager: true })
+    @ManyToOne(() => Supplier, { nullable: false, eager: true })
     @JoinColumn({ name: "supplier_id" })
     supplier!: Supplier;
 
-
-    @OneToOne(() => StockProduct, (stock) => stock.product, { cascade: true, nullable: true })
-    @JoinColumn({ name: "product_id" })
-    stock?: StockProduct;
-    
+    // Aquí se elimina el @JoinColumn, ya que StockProduct es el dueño de la relación.
+    @OneToOne(() => StockProduct, (stock) => stock.product, { cascade: true, nullable: true, onDelete: "CASCADE" })
+    stock?: StockProduct;    
 
     @ManyToOne(() => ProductType, type => type.products, { nullable: false })
     @JoinColumn({ name: "product_type_id" })
