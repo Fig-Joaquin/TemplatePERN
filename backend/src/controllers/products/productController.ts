@@ -10,7 +10,7 @@ const stockProductRepository = AppDataSource.getRepository(StockProduct);
 
 export const getAllProducts = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const products = await productRepository.find({ relations: ["type", "type.category"] });
+        const products = await productRepository.find({ relations: ["type", "type.category", "stock"] });
         res.json(products);
     } catch (error) {
         res.status(500).json({ message: "Error al obtener los productos", error });
