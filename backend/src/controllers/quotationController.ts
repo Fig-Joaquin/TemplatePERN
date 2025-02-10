@@ -3,9 +3,12 @@ import { AppDataSource } from "../config/ormconfig";
 import { Quotation } from "../entities/quotationEntity";
 import { QuotationSchema } from "../schema/quotationValidator";
 import { Vehicle } from "../entities/vehicleEntity"; // <-- nueva importación
-
+import { Person } from "../entities/personsEntity";
+import { Company } from "../entities/companiesEntity";
 const quotationRepository = AppDataSource.getRepository(Quotation);
 const vehicleRepository = AppDataSource.getRepository(Vehicle); // <-- nuevo repositorio
+const personRepository = AppDataSource.getRepository(Person);
+const companyRepository = AppDataSource.getRepository(Company);
 
 export const getAllQuotations = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -53,17 +56,47 @@ export const createQuotation = async (req: Request, res: Response, _next: NextFu
             });
             return;
         }
-        // Expect vehicle_id directly instead of a nested vehicle object
-        const { vehicle_id, ...quotationData } = validationResult.data as any;
+        
+        const { vehicle_id, person_id, company_id, ...quotationData } = validationResult.data as any;
+
+        // Verificar que al menos person_id o company_id esté presente
+        if (!person_id && !company_id) {
+            res.status(400).json({ message: "Debe proporcionar una persona o compañia" });
+            return;
+        }
+
         // Verificar que el vehicle_id exista en el repositorio de Vehicle
         const vehicle = await vehicleRepository.findOneBy({ vehicle_id });
         if (!vehicle) {
             res.status(404).json({ message: "Vehículo no encontrado" });
             return;
         }
+
+        // Verificar que el person_id exista en el repositorio de Person
+        if (person_id) {
+            const person = await personRepository.findOneBy({ person_id });
+            if (!person) {
+                res.status(404).json({ message: "Persona no encontrada" });
+                return;
+            }
+            quotationData.person = person;
+        }
+
+        // Verificar que el company_id exista en el repositorio de Company
+        if (company_id) {
+            const company = await companyRepository.findOneBy({ company_id });
+            if (!company) {
+                res.status(404).json({ message: "Compañía no encontrada" });
+                return;
+            }
+            quotationData.company = company;
+        }
+
         const newQuotation = quotationRepository.create({
             ...quotationData,
-            vehicle
+            vehicle,
+            person: quotationData.person,
+            company: quotationData.company
         });
         await quotationRepository.save(newQuotation);
         res.status(201).json({ message: "Cotización creada exitosamente", quotation: newQuotation });

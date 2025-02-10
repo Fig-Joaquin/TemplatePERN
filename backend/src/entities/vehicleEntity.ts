@@ -3,6 +3,7 @@ import { IsString, Length, IsInt, Min, Max } from "class-validator";
 import { VehicleModel } from "./vehicleModelEntity";
 import { Person } from "./personsEntity";
 import { MileageHistory } from "./mileageHistoryEntity";
+import { Company } from "./companiesEntity";
 
 @Entity("vehicles")
 export class Vehicle {
@@ -14,9 +15,13 @@ export class Vehicle {
     @JoinColumn({ name: "vehicle_model_id" })
     model!: VehicleModel;
 
-    @ManyToOne(() => Person, { nullable: false })
+    @ManyToOne(() => Person, { nullable: true })
     @JoinColumn({ name: "person_id" })
     owner!: Person;
+
+    @ManyToOne(() => Company, { nullable: true })
+    @JoinColumn({ name: "company_id" })
+    company!: Company;
 
     @OneToMany(() => MileageHistory, mileageHistory => mileageHistory.vehicle, { cascade: true })
     mileage_history!: MileageHistory[];

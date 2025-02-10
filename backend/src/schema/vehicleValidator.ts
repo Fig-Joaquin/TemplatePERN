@@ -6,6 +6,7 @@ export const vehicleSchema = z.object({
     vehicle_id: z.number().optional(),
     vehicle_model_id: z.number().int().positive(),
     person_id: z.number().int().positive(),
+    company_id: z.number().int().positive(),
     model: vehicleModelSchema.optional(),
     owner: PersonSchema.optional(),
     license_plate: z.string()

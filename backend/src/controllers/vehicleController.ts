@@ -5,12 +5,17 @@ import { vehicleSchema } from "../schema/vehicleValidator";
 import { VehicleModel } from "../entities/vehicleModelEntity";
 import { Person } from "../entities/personsEntity";
 import { MileageHistory } from "../entities/mileageHistoryEntity";
+import { Company } from "../entities/companiesEntity";
 import { DeepPartial, QueryFailedError } from "typeorm";
 
 
 // src/controllers/vehicleController.ts
 
 const vehicleRepository = AppDataSource.getRepository(Vehicle);
+const companiesEntity = AppDataSource.getRepository(Company);
+const modelRepository = AppDataSource.getRepository(VehicleModel);
+const ownerRepository = AppDataSource.getRepository(Person);
+const mileageHistoryRepository = AppDataSource.getRepository(MileageHistory);
 
 export const getAllVehicles = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -62,9 +67,6 @@ export const getVehicleById = async (req: Request, res: Response, _next: NextFun
     }
 };
 
-const modelRepository = AppDataSource.getRepository(VehicleModel);
-const ownerRepository = AppDataSource.getRepository(Person);
-const mileageHistoryRepository = AppDataSource.getRepository(MileageHistory);
 
 export const createVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -82,8 +84,22 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             return;
         }
         // Extraer IDs directamente, ya vienen sin nestear.
-        const { vehicle_model_id, person_id, ...vehicleData } = validationResult.data;
+        const { vehicle_model_id, person_id, company_id, ...vehicleData } = validationResult.data;
         const mileageHistoryData = req.body.mileageHistory;
+
+        //Verificar si person_id o company_id está presente
+        if (!person_id && !company_id) {
+            res.status(400).json({ message: "Debe proporcionar una persona o compañía" });
+            return;
+        }
+        // Verificar si la compañía existe usando el ID directo
+    
+            const company = await companiesEntity.findOneBy({ company_id });
+            if (!company) {
+                res.status(404).json({ message: "La compañía especificada no existe." });
+                return;
+            } 
+
         // Verificar si el modelo existe usando el ID directo
         const model = await modelRepository.findOneBy({ vehicle_model_id });
         if (!model) {
@@ -109,6 +125,7 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             ...vehicleData,
             model,
             owner,
+            company: company,
             mileage_history: mileageRecords
         });
         await vehicleRepository.save(vehicle);
