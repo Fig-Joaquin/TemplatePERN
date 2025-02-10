@@ -2,8 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { Debtor } from "../entities/debtorsEntity";
 import { DebtorSchema } from "../schema/debtorsValidator";
+import { WorkOrder } from "../entities/workOrderEntity"; // <-- nueva importación
 
 const debtorRepository = AppDataSource.getRepository(Debtor);
+const workOrderRepository = AppDataSource.getRepository(WorkOrder); // <-- nuevo repositorio
 
 export const getAllDebtors = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -40,53 +42,59 @@ export const getDebtorById = async (req: Request, res: Response, _next: NextFunc
     }
 };
 
-export const createDebtor = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const createDebtor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const validationResult = DebtorSchema.safeParse(req.body);
+    if (!validationResult.success) {
+        return next({
+            status: 400,
+            message: "Error de validación",
+            errors: validationResult.error.errors
+        });
+    }
     try {
-        const validationResult = DebtorSchema.safeParse(req.body);
-        if (!validationResult.success) {
-            res.status(400).json({
-                message: "Error de validación",
-                errors: validationResult.error.errors
-            });
-            return;
+        // Extraer work_order_id sin buscar el objeto workOrder
+        const { work_order_id, ...debtorData } = validationResult.data;
+        // Verificar que el work_order_id exista en el repositorio de WorkOrder
+        const workOrder = await workOrderRepository.findOneBy({ work_order_id });
+        if (!workOrder) {
+            return next({ status: 404, message: "Orden de trabajo no encontrada" });
         }
-
-        const newDebtor = debtorRepository.create(validationResult.data);
+        const newDebtor = debtorRepository.create({
+            ...debtorData,
+            workOrder: workOrder  // Se utiliza el objeto de orden de trabajo
+        });
         await debtorRepository.save(newDebtor);
-        res.status(201).json(newDebtor);
+        res.status(201).json({ data: newDebtor });
     } catch (error) {
-        res.status(500).json({ message: "Error al crear el deudor", error });
+        next(error);
     }
 };
 
-export const updateDebtor = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const updateDebtor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+        return next({ status: 400, message: "ID inválido" });
+    }
+    const validationResult = DebtorSchema.safeParse(req.body);
+    if (!validationResult.success) {
+        return next({
+            status: 400,
+            message: "Error de validación",
+            errors: validationResult.error.errors
+        });
+    }
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
-            return;
-        }
-
-        const validationResult = DebtorSchema.safeParse(req.body);
-        if (!validationResult.success) {
-            res.status(400).json({
-                message: "Error de validación",
-                errors: validationResult.error.errors
-            });
-            return;
-        }
-
-        const debtor = await debtorRepository.findOneBy({ debtor_id: id });
+        let debtor = await debtorRepository.findOneBy({ debtor_id: id });
         if (!debtor) {
-            res.status(404).json({ message: "Deudor no encontrado" });
-            return;
+            return next({ status: 404, message: "Deudor no encontrado" });
         }
-
-        debtorRepository.merge(debtor, validationResult.data);
-        await debtorRepository.save(debtor);
-        res.json(debtor);
+        // Eliminar work_order_id de los datos a actualizar
+        const { work_order_id, ...debtorData } = validationResult.data;
+        debtorRepository.merge(debtor, debtorData);
+        debtor = await debtorRepository.save(debtor);
+        res.status(200).json({ data: debtor });
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar el deudor", error });
+        next(error);
     }
 };
 

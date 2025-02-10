@@ -2,8 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { ProductType } from "../entities/productTypeEntity";
 import { ProductTypeSchema, ProductTypeInput } from "../schema/productTypeValidator";
+import { ProductCategory } from "../entities/productCategoryEntity"; // <-- nueva importación
 
 const productTypeRepository = AppDataSource.getRepository(ProductType);
+const ProductCategoryRepository = AppDataSource.getRepository(ProductCategory); // <-- nuevo repositorio
 
 export const getAllProductTypes = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -45,10 +47,20 @@ export const createProductType = async (req: Request, res: Response, _next: Next
             return;
         }
         const data: ProductTypeInput = validationResult.data;
-
-        const newType = productTypeRepository.create(data);
+        const { product_category_id, ...typeData } = data;
+        
+        // Verificar que la categoría exista usando el id proporcionado directamente
+        const category = await ProductCategoryRepository.findOneBy({ product_category_id });
+        if (!category) {
+            res.status(404).json({ message: "Categoría no encontrada" });
+            return;
+        }
+        
+        const newType = productTypeRepository.create({
+            ...typeData,
+            category  // Se utiliza el objeto de categoría verificado
+        });
         await productTypeRepository.save(newType);
-
         res.status(201).json({ message: "Tipo de producto creado exitosamente", productType: newType });
     } catch (error) {
         res.status(500).json({ message: "Error al crear el tipo de producto", error });
@@ -75,9 +87,19 @@ export const updateProductType = async (req: Request, res: Response, _next: Next
             return;
         }
         const data: ProductTypeInput = validationResult.data;
-        productTypeRepository.merge(type, data);
-        await productTypeRepository.save(type);
+        const { product_category_id, ...typeData } = data;
 
+        productTypeRepository.merge(type, typeData);
+        if (product_category_id) {
+            // Verificar que la categoría exista usando el id proporcionado directamente
+            const category = await ProductCategoryRepository.findOneBy({ product_category_id });
+            if (!category) {
+                res.status(404).json({ message: "Categoría no encontrada" });
+                return;
+            }
+            type.category = category;
+        }
+        await productTypeRepository.save(type);
         res.json({ message: "Tipo de producto actualizado exitosamente", productType: type });
     } catch (error) {
         res.status(500).json({ message: "Error al actualizar el tipo de producto", error });

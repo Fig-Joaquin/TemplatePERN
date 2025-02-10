@@ -3,7 +3,8 @@ import { WorkOrderSchema } from "./workOrderValidator";
 
 export const DebtorSchema = z.object({
     debtor_id: z.number().optional(), // Optional because it's auto-generated
-    work_order: WorkOrderSchema,
+    work_order_id: z.number().int().positive(),
+    work_order: WorkOrderSchema.optional(),
     description: z.string().min(1, { message: "La descripción no puede estar vacía" }).max(255, { message: "La descripción no puede exceder los 255 caracteres" }),
     created_at: z.date().optional()
 });

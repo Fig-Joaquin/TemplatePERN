@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { vehicleModelSchema } from "./vehicleModelValidator";
+import { vehicleSchema } from "./vehicleValidator";
 
 export const QuotationSchema = z.object({
-    vehicle: vehicleModelSchema,
+    vehicle_id: z.number().int().positive(),
+    vehicle: vehicleSchema.optional(),
     description: z.string().min(10, {
         message: "La descripción debe tener al menos 10 caracteres"
     }).max(1000, {

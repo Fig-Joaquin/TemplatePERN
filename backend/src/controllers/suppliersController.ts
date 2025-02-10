@@ -3,10 +3,10 @@ import { AppDataSource } from "../config/ormconfig";
 import { Supplier } from "../entities/suppliersEntity";
 import { SupplierSchema } from "../schema/suppliersValidator";
 import { DeepPartial } from "typeorm";
-//import { Product } from "../entities/productEntity";
+import { Product } from "../entities/productEntity"; // <-- nueva importación
 
 const supplierRepository = AppDataSource.getRepository(Supplier);
-// const productRepository = AppDataSource.getRepository(Product);
+const productRepository = AppDataSource.getRepository(Product); // <-- nuevo repositorio
 
 export const getAllSuppliers = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -50,23 +50,17 @@ export const createSupplier = async (req: Request, res: Response, _next: NextFun
             });
             return;
         }
-
-        const newSupplier = supplierRepository.create(validationResult.data as DeepPartial<Supplier>);
-
-        // const supllierData = validationResult.data;
-
-        // const product_id = supllierData.product_id;
-
-        // const product = await productRepository.findOne({ where: { product_id: product_id } });
-        // if (!product) {
-        //     res.status(404).json({ message: "Producto no encontrado" });
-        //     return;
-        // }
-
-        // supllierData.products = [product];
-
-        // const newSupplier = supplierRepository.create(supllierData);
-
+        // Extraer product_id y demás datos
+        const { product_id, ...supplierData } = validationResult.data as any;
+        if (product_id) {
+            const product = await productRepository.findOneBy({ product_id });
+            if (!product) {
+                res.status(404).json({ message: "Producto no encontrado" });
+                return;
+            }
+            supplierData.products = [product];
+        }
+        const newSupplier = supplierRepository.create(supplierData as DeepPartial<Supplier>);
         await supplierRepository.save(newSupplier);
         res.status(201).json({ message: "Proveedor creado exitosamente", supplier: newSupplier });
     } catch (error) {
@@ -100,7 +94,18 @@ export const updateSupplier = async (req: Request, res: Response, _next: NextFun
             return;
         }
 
-        supplierRepository.merge(supplier, validationResult.data as DeepPartial<Supplier>);
+        const updateData = validationResult.data as any;
+        if (updateData.product_id) {
+            const product = await productRepository.findOneBy({ product_id: updateData.product_id });
+            if (!product) {
+                res.status(404).json({ message: "Producto no encontrado" });
+                return;
+            }
+            updateData.products = [product];
+            delete updateData.product_id;
+        }
+
+        supplierRepository.merge(supplier, updateData as DeepPartial<Supplier>);
         await supplierRepository.save(supplier);
         res.json({ message: "Proveedor actualizado exitosamente", supplier });
     } catch (error) {

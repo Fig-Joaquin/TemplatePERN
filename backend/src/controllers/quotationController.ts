@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { Quotation } from "../entities/quotationEntity";
 import { QuotationSchema } from "../schema/quotationValidator";
-import { DeepPartial } from "typeorm";
-import { Vehicle } from "entities/vehicleEntity";
+import { Vehicle } from "../entities/vehicleEntity"; // <-- nueva importación
 
 const quotationRepository = AppDataSource.getRepository(Quotation);
+const vehicleRepository = AppDataSource.getRepository(Vehicle); // <-- nuevo repositorio
 
 export const getAllQuotations = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -53,11 +53,18 @@ export const createQuotation = async (req: Request, res: Response, _next: NextFu
             });
             return;
         }
-        const data: DeepPartial<Quotation> = {
-            ...validationResult.data,
-            vehicle: validationResult.data.vehicle as DeepPartial<Vehicle>
-        };
-        const newQuotation = quotationRepository.create(data);
+        // Expect vehicle_id directly instead of a nested vehicle object
+        const { vehicle_id, ...quotationData } = validationResult.data as any;
+        // Verificar que el vehicle_id exista en el repositorio de Vehicle
+        const vehicle = await vehicleRepository.findOneBy({ vehicle_id });
+        if (!vehicle) {
+            res.status(404).json({ message: "Vehículo no encontrado" });
+            return;
+        }
+        const newQuotation = quotationRepository.create({
+            ...quotationData,
+            vehicle
+        });
         await quotationRepository.save(newQuotation);
         res.status(201).json({ message: "Cotización creada exitosamente", quotation: newQuotation });
     } catch (error) {
@@ -77,7 +84,6 @@ export const updateQuotation = async (req: Request, res: Response, _next: NextFu
             res.status(404).json({ message: "Cotización no encontrada" });
             return;
         }
-        // Permitir actualizaciones parciales
         const updateSchema = QuotationSchema.partial();
         const validationResult = updateSchema.safeParse(req.body);
         if (!validationResult.success) {
@@ -90,10 +96,17 @@ export const updateQuotation = async (req: Request, res: Response, _next: NextFu
             });
             return;
         }
-        const updateData: DeepPartial<Quotation> = {
-            ...validationResult.data,
-            vehicle: validationResult.data.vehicle as DeepPartial<Vehicle>
-        };
+        const updateData = validationResult.data as any;
+        // Si se provee vehicle_id directamente, se verifica la existencia y se reemplaza con el objeto vehicle
+        if (updateData.vehicle_id) {
+            const vehicle = await vehicleRepository.findOneBy({ vehicle_id: updateData.vehicle_id });
+            if (!vehicle) {
+                res.status(404).json({ message: "Vehículo no encontrado" });
+                return;
+            }
+            updateData.vehicle = vehicle;
+            delete updateData.vehicle_id;
+        }
         quotationRepository.merge(quotation, updateData);
         await quotationRepository.save(quotation);
         res.json({ message: "Cotización actualizada exitosamente", quotation });

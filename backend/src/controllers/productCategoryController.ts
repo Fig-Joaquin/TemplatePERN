@@ -95,12 +95,27 @@ export const updateProductCategory = async (req: Request, res: Response, _next: 
 export const deleteProductCategory = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const id = parseInt(req.params.id);
-        const result = await productCategoryRepository.delete(id);
-        if (result.affected === 0) {
+        // Buscar la categoría con las relaciones asociadas (ajuste "product_types" al nombre real de la relación)
+        const category = await productCategoryRepository.findOne({
+            where: { product_category_id: id },
+            relations: ['product_types']
+        });
+        if (!category) {
             res.status(404).json({ message: "Categoría de producto no encontrada" });
             return;
         }
-        res.json({ message: "Categoría eliminada exitosamente" });
+
+        // Eliminar manualmente los product_types asociados, si existen
+        if (category.product_types && category.product_types.length > 0) {
+            for (const productType of category.product_types) {
+                // Se usa el EntityManager para remover cada productType
+                await productCategoryRepository.manager.remove(productType);
+            }
+        }
+
+        // Ahora eliminar la categoría
+        await productCategoryRepository.remove(category);
+        res.json({ message: "Categoría y tipos de producto eliminados exitosamente" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar la categoría de producto", error });
     }

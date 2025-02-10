@@ -69,7 +69,6 @@ const mileageHistoryRepository = AppDataSource.getRepository(MileageHistory);
 export const createVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         console.log("Body:", req.body);
-        // Validar la entrada con Zod
         const validationResult = vehicleSchema.safeParse(req.body);
         if (!validationResult.success) {
             console.log("Error de validación:", validationResult.error.errors);
@@ -82,59 +81,40 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             });
             return;
         }
-
-        const { model: vehicle_model_id, owner: person_id, ...vehicleData } = validationResult.data;
+        // Extraer IDs directamente, ya vienen sin nestear.
+        const { vehicle_model_id, person_id, ...vehicleData } = validationResult.data;
         const mileageHistoryData = req.body.mileageHistory;
-
-        // Verificar si el modelo existe
-        const model = await modelRepository.findOneBy({ vehicle_model_id: vehicle_model_id.vehicle_model_id });
+        // Verificar si el modelo existe usando el ID directo
+        const model = await modelRepository.findOneBy({ vehicle_model_id });
         if (!model) {
             res.status(404).json({ message: "El modelo especificado no existe." });
             return;
         }
-
-        // Verificar si el dueño existe
-        const owner = await ownerRepository.findOneBy({ person_id: person_id.person_id });
+        // Verificar si el dueño existe usando el ID directo; extraer ID si es objeto
+        const ownerId = typeof person_id === 'object' && person_id !== null ? person_id : person_id;
+        const owner = await ownerRepository.findOneBy({ person_id: ownerId });
         if (!owner) {
             res.status(404).json({ message: "El propietario especificado no existe." });
             return;
         }
-
-        // Verificar si ya existe un vehículo con la misma patente
-        const existingVehicle = await vehicleRepository.findOneBy({ license_plate: vehicleData.license_plate });
-        if (existingVehicle) {
-            res.status(409).json({ 
-                message: `El vehículo con patente '${vehicleData.license_plate}' ya existe.`,
-                vehicle: existingVehicle
-            });
-            return;
-        }
-
-        // Verificar si hay al menos un registro de kilometraje
+        // ...existing validation for mileageHistoryData...
         if (!mileageHistoryData || !Array.isArray(mileageHistoryData) || mileageHistoryData.length === 0) {
             res.status(400).json({ message: "Se requiere al menos un registro de kilometraje inicial." });
             return;
         }
-
-        // ✅ Crear historial de kilometraje correctamente sin transformación adicional
         const mileageRecords: DeepPartial<MileageHistory>[] = mileageHistoryData.map(record => ({
             ...record
         }));
-
-        // ✅ Crear el vehículo con las relaciones correctamente
         const vehicle = vehicleRepository.create({
             ...vehicleData,
-            model,   // Se usa la entidad encontrada
-            owner,   // Se usa la entidad encontrada
-            mileage_history: mileageRecords // Pasamos el array correctamente sin transformación adicional
+            model,
+            owner,
+            mileage_history: mileageRecords
         });
-
-        // Guardar el vehículo y su historial de kilometraje en cascada
         await vehicleRepository.save(vehicle);
         res.status(201).json({ message: "Vehículo creado exitosamente", vehicle });
     } catch (error) {
         if (error instanceof QueryFailedError) {
-            // Manejo específico de errores de PostgreSQL
             if ((error as any).code === "23505") {
                 res.status(409).json({
                     message: `El vehículo con patente '${req.body.license_plate}' ya está registrado.`,
@@ -143,7 +123,6 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
                 return;
             }
         }
-
         console.error("Error al crear vehículo:", error);
         res.status(500).json({ 
             message: "Error interno al crear vehículo",

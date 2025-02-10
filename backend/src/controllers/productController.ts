@@ -71,7 +71,7 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
 
         // Asignamos las entidades encontradas al producto
         productData.supplier = supplierEntity as unknown as { name: string; address: string; city: string; description: string; phone: string; product_id: number; supplier_id?: number | undefined; products?: any[] | undefined; };
-        productData.type = productTypeEntity;
+        productData.type = { ...productTypeEntity, product_category_id: productTypeEntity.category?.product_category_id };
 
 
 

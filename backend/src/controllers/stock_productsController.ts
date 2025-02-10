@@ -3,8 +3,10 @@ import { AppDataSource } from "../config/ormconfig";
 import { StockProduct } from "../entities/stock_products";
 import { StockProductSchema } from "../schema/stock_productsValidator";
 import { DeepPartial } from "typeorm";
+import { Product } from "../entities/productEntity"; // <-- nueva importación
 
 const stockProductRepository = AppDataSource.getRepository(StockProduct);
+const productRepository = AppDataSource.getRepository(Product); // <-- nuevo repositorio
 
 export const getAllStockProducts = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -46,7 +48,18 @@ export const createStockProduct = async (req: Request, res: Response, _next: Nex
             });
             return;
         }
-        const newStockProduct = stockProductRepository.create(validationResult.data as DeepPartial<StockProduct>);
+        // Extraer product_id directamente
+        const { product_id, ...stockProductData } = validationResult.data as any;
+        // Verificar que el product_id exista en el repositorio de Product
+        const product = await productRepository.findOneBy({ product_id });
+        if (!product) {
+            res.status(404).json({ message: "Producto no encontrado" });
+            return;
+        }
+        const newStockProduct = stockProductRepository.create({
+            ...stockProductData,
+            product  // Se usa el objeto verificado
+        } as DeepPartial<StockProduct>);
         await stockProductRepository.save(newStockProduct);
         res.status(201).json({ message: "Producto en stock creado exitosamente", stockProduct: newStockProduct });
     } catch (error) {
@@ -66,15 +79,18 @@ export const updateStockProduct = async (req: Request, res: Response, _next: Nex
             res.status(404).json({ message: "Producto en stock no encontrado" });
             return;
         }
-        const validationResult = StockProductSchema.partial().safeParse(req.body);
-        if (!validationResult.success) {
-            res.status(400).json({
-                message: "Error de validación",
-                errors: validationResult.error.errors
-            });
-            return;
+        const updateData = (await StockProductSchema.partial().safeParse(req.body)).data as any;
+        // Verificar si se provee product_id directamente en la actualización
+        if (updateData.product_id) {
+            const product = await productRepository.findOneBy({ product_id: updateData.product_id });
+            if (!product) {
+                res.status(404).json({ message: "Producto no encontrado" });
+                return;
+            }
+            updateData.product = product;
+            delete updateData.product_id;
         }
-        stockProductRepository.merge(stockProduct, validationResult.data as DeepPartial<StockProduct>);
+        stockProductRepository.merge(stockProduct, updateData as DeepPartial<StockProduct>);
         await stockProductRepository.save(stockProduct);
         res.json({ message: "Producto en stock actualizado exitosamente", stockProduct });
     } catch (error) {

@@ -5,7 +5,7 @@ export const MileageHistorySchema = z.object({
     mileage_history_id: z.number().optional(),
     current_mileage: z.number().int().min(0, { message: "El kilometraje no puede ser negativo" }),
     registration_date: z.coerce.date(),
-    vehicle: vehicleSchema  // Se añade la validación de la entidad vehicle
+    vehicle: vehicleSchema.optional(),  // Se añade la validación de la entidad vehicle
 });
 
 export const updateMileageHistorySchema = MileageHistorySchema.partial();

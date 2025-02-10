@@ -19,9 +19,9 @@ export class Product {
     supplier!: Supplier;
 
 
-    @OneToOne(() => StockProduct, (stock) => stock.product, { cascade: true })
+    @OneToOne(() => StockProduct, (stock) => stock.product, { cascade: true, nullable: true })
     @JoinColumn({ name: "product_id" })
-    stock!: StockProduct;
+    stock?: StockProduct;
     
 
     @ManyToOne(() => ProductType, type => type.products, { nullable: false })

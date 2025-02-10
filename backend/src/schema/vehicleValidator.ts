@@ -4,8 +4,10 @@ import { PersonSchema } from "./personsValidator";
 
 export const vehicleSchema = z.object({
     vehicle_id: z.number().optional(),
-    model: vehicleModelSchema,
-    owner: PersonSchema,
+    vehicle_model_id: z.number().int().positive(),
+    person_id: z.number().int().positive(),
+    model: vehicleModelSchema.optional(),
+    owner: PersonSchema.optional(),
     license_plate: z.string()
         .min(6, "La patente debe tener entre 6 y 8 caracteres")
         .max(8, "La patente debe tener entre 6 y 8 caracteres"),

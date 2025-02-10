@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { VehicleModel } from "../entities/vehicleModelEntity";
 import { vehicleModelSchema } from "../schema/vehicleModelValidator";
+import { VehicleBrand } from "../entities/vehicleBrandEntity"; // nuevo import
 
 // src/controllers/vehicleModelController.ts
 
 const vehicleModelRepository = AppDataSource.getRepository(VehicleModel);
+const vehicleBrandRepository = AppDataSource.getRepository(VehicleBrand); // nuevo repository
 
 export const getAllVehicleModels = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -44,7 +46,16 @@ export const createVehicleModel = async (req: Request, res: Response, _next: Nex
             res.status(400).json({ errors: validationResult.error.errors });
             return;
         }
-        const model = vehicleModelRepository.create(validationResult.data);
+
+        // Extraer vehicle_brand_id y buscar la marca
+        const { vehicle_brand_id, ...rest } = validationResult.data;
+        const brand = await vehicleBrandRepository.findOneBy({ vehicle_brand_id });
+        if (!brand) {
+            res.status(400).json({ message: "La marca del vehículo no existe" });
+            return;
+        }
+
+        const model = vehicleModelRepository.create({ ...rest, brand }); // asociar la marca
         await vehicleModelRepository.save(model);
         res.status(201).json(model);
     } catch (error) {

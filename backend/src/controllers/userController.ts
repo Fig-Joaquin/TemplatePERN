@@ -28,23 +28,23 @@ export const createUser = async (req: Request, res: Response, _next: NextFunctio
       res.status(400).json({ errors: validationResult.error.errors });
       return;
     }
-
-    const { person: { person_id }, user_role, username, password } = validationResult.data;
-
+    // Extraer person_id directamente de los datos validados
+    const { user_role, username, password, person_id } = validationResult.data;
+    if (!person_id) {
+      res.status(400).json({ message: "Person ID missing" });
+      return;
+    }
     const person = await personRepository.findOne({ where: { person_id } });
     if (!person) {
       res.status(404).json({ message: "Person not found" });
       return;
     }
-
     const hashedPassword = await hash(password, 10);
-
     const user = new User();
     user.person = person;
     user.user_role = user_role;
     user.username = username;
     user.password = hashedPassword;
-
     await userRepository.save(user);
     res.status(201).json({ message: "User created successfully" });
     return;

@@ -1,6 +1,6 @@
 // frontend/src/services/personService.ts
 import api from "../utils/axiosConfig";
-import { Person } from "../components/clientList";
+import { Person } from "../types/interfaces";
 
 export const createPerson = async (personData: Partial<Person>) => {
     return await api.post("/persons/", personData);

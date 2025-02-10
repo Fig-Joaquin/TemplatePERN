@@ -3,8 +3,14 @@ import { AppDataSource } from "../config/ormconfig";
 import { WorkOrder } from "../entities/workOrderEntity";
 import { WorkOrderSchema } from "../schema/workOrderValidator";
 import { DeepPartial } from "typeorm";
+import { Vehicle } from "../entities/vehicleEntity"; // nuevo import
+import { Person } from "../entities/personsEntity";   // nuevo import
+import { Quotation } from "../entities/quotationEntity"; // nuevo import
 
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
+const vehicleRepository = AppDataSource.getRepository(Vehicle);  // nuevo repository
+const personRepository = AppDataSource.getRepository(Person);    // nuevo repository
+const quotationRepository = AppDataSource.getRepository(Quotation); // nuevo repository
 
 export const getAllWorkOrders = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -54,7 +60,37 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        const newWorkOrder = workOrderRepository.create(validationResult.data as DeepPartial<WorkOrder>);
+        // Extraer IDs y datos restantes
+        const { vehicle_id, person_id, quotation_id, ...rest } = validationResult.data as any;
+        
+        // Verificar existencia de vehicle
+        const vehicle = await vehicleRepository.findOneBy({ vehicle_id: parseInt(vehicle_id) });
+        if (!vehicle) {
+            res.status(400).json({ message: "El vehículo no existe" });
+            return;
+        }
+
+        // Verificar existencia de person
+        const person = await personRepository.findOneBy({ person_id: parseInt(person_id) });
+        if (!person) {
+            res.status(400).json({ message: "La persona no existe" });
+            return;
+        }
+
+        // Verificar existencia de quotation
+        const quotation = await quotationRepository.findOneBy({ quotation_id: parseInt(quotation_id) });
+        if (!quotation) {
+            res.status(400).json({ message: "La cotización no existe" });
+            return;
+        }
+      
+        const newWorkOrder = workOrderRepository.create({ 
+            ...rest,
+            vehicle,
+            person,
+            quotation
+        } as DeepPartial<WorkOrder>);
+      
         await workOrderRepository.save(newWorkOrder);
         res.status(201).json({ message: "Orden de trabajo creada exitosamente", workOrder: newWorkOrder });
     } catch (error) {

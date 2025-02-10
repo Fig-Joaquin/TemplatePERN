@@ -2,7 +2,9 @@ import { z } from "zod";
 import { PersonSchema } from "./personsValidator";
 
 export const UserSchema = z.object({ // Optional because it's auto-generated
-    person: PersonSchema,
+    user_id: z.number().optional(),
+    person_id: z.number().int().positive(),
+    person: PersonSchema.optional(),
     user_role: z.string()
         .min(3, "Rol de usuario debe tener entre 3 y 20 caracteres")
         .max(20, "Rol de usuario debe tener entre 3 y 20 caracteres"),

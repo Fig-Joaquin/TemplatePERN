@@ -12,6 +12,6 @@ export class ProductCategory {
     @Length(2, 50, { message: "El nombre de la categoría debe tener entre 2 y 50 caracteres" })
     category_name!: string;
 
-    @OneToMany(() => ProductType, type => type.category)
+    @OneToMany(() => ProductType, type => type.category, { cascade: true })
     product_types!: ProductType[];
 }
