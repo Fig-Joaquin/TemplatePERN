@@ -6,7 +6,7 @@ getVehicleModelById,
 createVehicleModel,
 updateVehicleModel,
 deleteVehicleModel,
-} from "../controllers/vehicleModelController";
+} from "../controllers/vehicles/vehicleModelController";
 
 const vehicleModelRoutes = Router();
 

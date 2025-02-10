@@ -6,7 +6,7 @@ import {
   createProductHistory, 
   updateProductHistory, 
   deleteProductHistory 
-} from "../controllers/productHistoryController";
+} from "../controllers/products/productHistoryController";
 
 const productHistoryRoutes = Router();
 

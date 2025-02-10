@@ -6,7 +6,7 @@ getMileageHistoryById,
 createMileageHistory, 
 updateMileageHistory, 
 deleteMileageHistory 
-} from "../controllers/mileageHistoryController";
+} from "../controllers/vehicles/mileageHistoryController";
 
 const mileageHistoryRoutes = Router();
 

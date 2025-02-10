@@ -7,7 +7,7 @@ createVehicle,
 updateVehicle, 
 deleteVehicle, 
 getVehiclesByPersonId
-} from "../controllers/vehicleController";
+} from "../controllers/vehicles/vehicleController";
 
 const vehicleRoutes = Router();
 

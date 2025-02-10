@@ -6,7 +6,7 @@ getProductCategoryById,
 createProductCategory, 
 updateProductCategory, 
 deleteProductCategory 
-} from "../controllers/productCategoryController";
+} from "../controllers/products/productCategoryController";
 
 const router = Router();
 

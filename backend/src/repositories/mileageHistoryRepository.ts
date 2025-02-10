@@ -1,6 +1,6 @@
 // src/repositories/mileageHistoryRepository.ts
 import { AppDataSource } from "../config/ormconfig";
-import { MileageHistory } from "../entities/mileageHistoryEntity";
+import { MileageHistory } from "../entities/vehicles/mileageHistoryEntity";
 
 /**
  * Repositorio para acceder a la entidad MileageHistory.

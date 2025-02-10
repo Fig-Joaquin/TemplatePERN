@@ -6,7 +6,7 @@ getWorkOrderById,
 createWorkOrder,
 updateWorkOrder,
 deleteWorkOrder,
-} from "../controllers/workOrderController";
+} from "../controllers/work/workOrderController";
 
 const workOrderRoutes = Router();
 

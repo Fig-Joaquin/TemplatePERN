@@ -1,8 +1,7 @@
 // src/controllers/userController.ts
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
-import { User } from "../entities/usersEntity";
-import { Person } from "../entities/personsEntity";
+import { User, Person } from "../entities";
 import { hash, compare } from "bcryptjs";
 import { UserSchema, UpdateUserSchema } from "../schema/usersValidator";
 import { AuthRequest } from "../middleware/authMiddleware";

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { IsString, Length, Matches } from "class-validator";
-import { Person } from "./personsEntity";
+import { Person } from "./";
 
 @Entity("users")
 export class User {

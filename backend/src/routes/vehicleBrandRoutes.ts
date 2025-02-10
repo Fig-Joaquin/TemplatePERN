@@ -8,7 +8,7 @@ import {
     updateVehicleBrand,
     deleteVehicleBrand,
     getModelsByBrand
-} from "../controllers/vehicleBrandController";
+} from "../controllers/vehicles/vehicleBrandController";
 
 const vehicleBrandRoutes = Router();
 

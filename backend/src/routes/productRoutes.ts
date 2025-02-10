@@ -6,7 +6,7 @@ getProductById,
 createProduct,
 updateProduct,
 deleteProduct
-} from "../controllers/productController";
+} from "../controllers/products/productController";
 
 const productRoutes = Router();
 
