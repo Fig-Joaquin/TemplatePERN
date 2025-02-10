@@ -6,6 +6,7 @@ import { fetchVehicles } from "../services/vehicleService";
 import { createQuotation } from "../services/quotationService";
 import { Quotation } from "../types/interfaces";
 import { fetchProducts } from "../services/productService"; // Import the fetchProducts function
+import { getStockProducts } from "../services/stockProductService"; // Import the getStockProducts function
 import React from "react";
 
 const QuotationCreatePage = () => {
@@ -13,7 +14,8 @@ const QuotationCreatePage = () => {
     const [vehicleId, setVehicleId] = useState("");
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]); // State for products
-    const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // State for selected products
+    const [stockProducts, setStockProducts] = useState<any[]>([]); // State for stock products
+    const [selectedProducts, setSelectedProducts] = useState<{ productId: string, quantity: number }[]>([]); // State for selected products with quantity
     const [showProductModal, setShowProductModal] = useState(false); // State for modal visibility
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -37,15 +39,36 @@ const QuotationCreatePage = () => {
             }
         };
 
+        const fetchStockProductsData = async () => {
+            try {
+                const res = await getStockProducts();
+                setStockProducts(res);
+            } catch (error) {
+                toast.error("Error al cargar stock de productos");
+            }
+        };
+
         fetchVehiclesData();
         fetchProductsData();
+        fetchStockProductsData();
     }, []);
 
-    const handleProductChange = (productId: string) => {
-        setSelectedProducts((prevSelectedProducts) => 
-            prevSelectedProducts.includes(productId)
-                ? prevSelectedProducts.filter((id) => id !== productId)
-                : [...prevSelectedProducts, productId]
+    const handleProductChange = (productId: string, quantity: number) => {
+        setSelectedProducts((prevSelectedProducts) => {
+            const existingProduct = prevSelectedProducts.find(p => p.productId === productId);
+            if (existingProduct) {
+                return prevSelectedProducts.map(p =>
+                    p.productId === productId ? { ...p, quantity } : p
+                );
+            } else {
+                return [...prevSelectedProducts, { productId, quantity }];
+            }
+        });
+    };
+
+    const handleRemoveProduct = (productId: string) => {
+        setSelectedProducts((prevSelectedProducts) =>
+            prevSelectedProducts.filter((p) => p.productId !== productId)
         );
     };
 
@@ -81,9 +104,9 @@ const QuotationCreatePage = () => {
         return price.toLocaleString("es-CL", { style: "currency", currency: "CLP", minimumFractionDigits: 0, maximumFractionDigits: 0 });
     };
 
-    const totalPrice = selectedProducts.reduce((total, productId) => {
+    const totalPrice = selectedProducts.reduce((total, { productId, quantity }) => {
         const product = products.find(p => p.product_id === productId);
-        return total + (product ? Number(product.sale_price) : 0);
+        return total + (product ? Number(product.sale_price) * quantity : 0);
     }, 0);
 
     return (
@@ -152,14 +175,23 @@ const QuotationCreatePage = () => {
                 <div>
                     <label className="block mb-2">Respuestos Seleccionados</label>
                     <ul className="mt-2 space-y-2">
-                        {selectedProducts.map((productId) => {
+                        {selectedProducts.map(({ productId, quantity }) => {
                             const product = products.find(p => p.product_id === productId);
+                            const stockProduct = stockProducts.find(sp => sp.product.product_id === productId);
                             return (
                                 <li key={productId} className="flex items-center justify-between bg-gray-100 p-2 rounded">
-                                    <span>{product?.product_name} - {formatPriceCLP(Number(product?.sale_price))}</span>
+                                    <span>{product?.product_name} - {formatPriceCLP(Number(product?.sale_price))} - Stock: {stockProduct?.quantity}</span>
+                                    <input
+                                        type="number"
+                                        value={quantity}
+                                        min="1"
+                                        max={stockProduct?.quantity}
+                                        onChange={(e) => handleProductChange(productId, Number(e.target.value))}
+                                        className="w-20 border border-gray-300 rounded p-1"
+                                    />
                                     <button
                                         type="button"
-                                        onClick={() => handleProductChange(productId)}
+                                        onClick={() => handleRemoveProduct(productId)}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         Eliminar
@@ -218,20 +250,34 @@ const QuotationCreatePage = () => {
                             </Dialog.Title>
                             <div className="mt-2">
                                 <ul className="space-y-2">
-                                    {products.map((product) => (
-                                        <li key={product.product_id}>
-                                            <label className="flex items-center space-x-3">
-                                                <input
-                                                    type="checkbox"
-                                                    value={product.product_id}
-                                                    checked={selectedProducts.includes(product.product_id)}
-                                                    onChange={() => handleProductChange(product.product_id)}
-                                                    className="form-checkbox h-5 w-5 text-blue-600"
-                                                />
-                                                <span className="text-gray-900">{product.product_name} - {formatPriceCLP(Number(product.sale_price))}</span>
-                                            </label>
-                                        </li>
-                                    ))}
+                                    {products.map((product) => {
+                                        const stockProduct = stockProducts.find(sp => sp.product.product_id === product.product_id);
+                                        const selectedProduct = selectedProducts.find(p => p.productId === product.product_id);
+                                        return (
+                                            <li key={product.product_id}>
+                                                <label className="flex items-center space-x-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        value={product.product_id}
+                                                        checked={!!selectedProduct}
+                                                        onChange={(e) => handleProductChange(product.product_id, selectedProduct ? selectedProduct.quantity : 1)}
+                                                        className="form-checkbox h-5 w-5 text-blue-600"
+                                                    />
+                                                    <span className="text-gray-900">{product.product_name} - {formatPriceCLP(Number(product.sale_price))} - Stock: {stockProduct?.quantity}</span>
+                                                    {selectedProduct && (
+                                                        <input
+                                                            type="number"
+                                                            value={selectedProduct.quantity}
+                                                            min="1"
+                                                            max={stockProduct?.quantity}
+                                                            onChange={(e) => handleProductChange(product.product_id, Number(e.target.value))}
+                                                            className="w-20 border border-gray-300 rounded p-1"
+                                                        />
+                                                    )}
+                                                </label>
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             </div>
                             <div className="mt-4 flex justify-end gap-2">
