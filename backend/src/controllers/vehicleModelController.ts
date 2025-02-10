@@ -35,6 +35,8 @@ export const getVehicleModelById = async (req: Request, res: Response, _next: Ne
     }
 };
 
+
+
 export const createVehicleModel = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const validationResult = vehicleModelSchema.safeParse(req.body);

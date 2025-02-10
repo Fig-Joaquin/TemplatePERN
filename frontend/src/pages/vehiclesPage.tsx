@@ -4,51 +4,12 @@ import { Car, Edit, Trash2, Search, Plus, Check, ChevronsUpDown } from "lucide-r
 import api from "../utils/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Person, Vehicle, brand, model } from "../types/interfaces";
+import { formatDate } from "../utils/formDate";
 
-// Tipos e Interfaces
 
-interface MileageHistory {
-    registration_date: string;
-    current_mileage: number;
-}
 
-interface Person {
-    person_id: number;
-    name: string;
-    first_surname: string;
-}
 
-interface Vehicle {
-    vehicle_id: number;
-    license_plate: string;
-    year: number;
-    color: string;
-    model: {
-        model_name: string;
-        brand: {
-            brand_name: string;
-        };
-    };
-    owner: {
-        person_id?: number;
-        name: string;
-        first_surname: string;
-    };
-    mileage_history: MileageHistory[];
-}
-
-interface VehicleBrand {
-    vehicle_brand_id: number;
-    brand_name: string;
-    models: VehicleModel[];
-}
-
-interface VehicleModel {
-    vehicle_model_id: number;
-    vehicle_brand_id: number;
-    model_name: string;
-    brand: VehicleBrand;
-}
 
 type ModalType = "create" | "edit" | "delete";
 
@@ -128,10 +89,10 @@ const VehiclesPage = () => {
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
     // Estados para marcas y modelos
-    const [brands, setBrands] = useState<VehicleBrand[]>([]);
-    const [selectedBrand, setSelectedBrand] = useState<VehicleBrand | null>(null);
-    const [models, setModels] = useState<VehicleModel[]>([]);
-    const [selectedModel, setSelectedModel] = useState<VehicleModel | null>(null);
+    const [brands, setBrands] = useState<brand[]>([]);
+    const [selectedBrand, setSelectedBrand] = useState<brand | null>(null);
+    const [models, setModels] = useState<model[]>([]);
+    const [selectedModel, setSelectedModel] = useState<model | null>(null);
 
     // Estado para controlar el historial de kilometraje expandido por vehículo
     const [expandedMileage, setExpandedMileage] = useState<{ [key: number]: boolean }>({});
@@ -187,6 +148,23 @@ const VehiclesPage = () => {
         fetchModels();
     }, []);
 
+    useEffect(() => {
+        const fetchModelsByBrand = async () => {
+            if (selectedBrand) {
+                try {
+                    const response = await api.get(`/vehicleBrands/${selectedBrand.vehicle_brand_id}/models`);
+                    setModels(response.data);
+                } catch (error: any) {
+                    toast.error("Error al cargar los modelos");
+                }
+            } else {
+                setModels([]);
+            }
+        };
+
+        fetchModelsByBrand();
+    }, [selectedBrand]);
+
     // Función para abrir el modal (create, edit o delete)
     const openModal = (type: ModalType, vehicle: Vehicle | null = null) => {
         setModalType(type);
@@ -238,12 +216,11 @@ const VehiclesPage = () => {
                     year: year,
                     color: color,
                     vehicle_status: vehicleStatus, // Se envía el estado seleccionado ("running" o "not_running")
-                    person_id: selectedPerson.person_id,
-                    //vehicle_brand_id: selectedBrand.vehicle_brand_id,
-                    vehicle_model_id: selectedModel.vehicle_model_id,
+                    owner: selectedPerson,
+                    model: { vehicle_model_id: selectedModel.vehicle_model_id, model_name: selectedModel.model_name, brand: {vehicle_brand_id: selectedBrand.vehicle_brand_id, brand_name: selectedBrand.brand_name   } },
                     mileageHistory: [{ current_mileage: mileage }],
                 });
-                console.log(licensePlate, year, color, vehicleStatus, selectedPerson.person_id, selectedBrand.vehicle_brand_id, selectedModel.vehicle_model_id, mileage);
+                console.log(licensePlate, year, color, vehicleStatus, selectedPerson, selectedBrand, selectedModel, mileage);
                 toast.success("Vehículo creado correctamente");
                 fetchVehicles();
                 closeModal();
@@ -396,7 +373,7 @@ const VehiclesPage = () => {
                                                 {latestMileage ? (
                                                     <div>
                                                         <div>
-                                                            {latestMileage.current_mileage} km - {latestMileage.registration_date}
+                                                            {latestMileage.current_mileage} km - {formatDate(latestMileage.registration_date)}
                                                         </div>
                                                         {additionalMileage.length > 0 && (
                                                             <button
@@ -409,7 +386,7 @@ const VehiclesPage = () => {
                                                         {isExpanded &&
                                                             additionalMileage.map((mh, idx) => (
                                                                 <div key={idx} className="mt-1 text-sm">
-                                                                    {mh.current_mileage} km - {mh.registration_date}
+                                                                    {mh.current_mileage} km - {formatDate(mh.registration_date)}
                                                                 </div>
                                                             ))}
                                                     </div>
@@ -625,27 +602,22 @@ const VehiclesPage = () => {
                                                             </Listbox.Button>
                                                             {selectedBrand && (
                                                                 <Listbox.Options className="border rounded mt-1 max-h-60 overflow-auto bg-white">
-                                                                    {models
-                                                                        .filter(
-                                                                            (model) =>
-                                                                                model.vehicle_brand_id === selectedBrand.vehicle_brand_id
-                                                                        )
-                                                                        .map((model) => (
-                                                                            <Listbox.Option
-                                                                                key={model.vehicle_model_id}
-                                                                                value={model}
-                                                                                className={({ active }) =>
-                                                                                    `cursor-pointer p-2 ${active ? "bg-blue-600 text-white" : "bg-white text-black"}`
-                                                                                }
-                                                                            >
-                                                                                {({ selected }) => (
-                                                                                    <div className="flex justify-between items-center">
-                                                                                        <span>{model.model_name}</span>
-                                                                                        {selected && <Check className="w-4 h-4" />}
-                                                                                    </div>
-                                                                                )}
-                                                                            </Listbox.Option>
-                                                                        ))}
+                                                                        {models.map((model) => (
+                                                                        <Listbox.Option
+                                                                            key={model.vehicle_model_id}
+                                                                            value={model}
+                                                                            className={({ active }) =>
+                                                                                `cursor-pointer p-2 ${active ? "bg-blue-600 text-white" : "bg-white text-black"}`
+                                                                            }
+                                                                        >
+                                                                            {({ selected }) => (
+                                                                                <div className="flex justify-between items-center">
+                                                                                    <span>{model.model_name}</span>
+                                                                                    {selected && <Check className="w-4 h-4" />}
+                                                                                </div>
+                                                                            )}
+                                                                        </Listbox.Option>
+                                                                    ))}
                                                                 </Listbox.Options>
                                                             )}
                                                         </>

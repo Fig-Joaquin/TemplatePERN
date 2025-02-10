@@ -13,6 +13,10 @@ import quotationRoutes from "./quotationRoutes";
 import taxRoutes from "./taxRoutes";
 import workOrderRoutes from "./workOrderRoutes";
 import  WorkProductDetail  from "./workProductDetailRoutes";
+import  Debtor  from "./debtorRoutes";
+import Supplier  from "./supliersRoutes";
+import  StockProduct  from "./stock_productsController";
+import Companies from "./companiesRoutes";
 
 const router = Router();
 
@@ -30,5 +34,9 @@ router.use("/quotations", quotationRoutes);
 router.use("/taxes", taxRoutes);
 router.use("/workOrders", workOrderRoutes);
 router.use("/workProductDetails", WorkProductDetail);
+router.use("/debtors", Debtor);
+router.use("/suppliers", Supplier);
+router.use("/stockProducts", StockProduct);
+router.use("/companies", Companies);
 
 export default router;

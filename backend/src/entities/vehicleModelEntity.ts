@@ -8,7 +8,7 @@ export class VehicleModel {
     vehicle_model_id!: number;
 
 
-    @ManyToOne(() => VehicleBrand, brand => brand.models, { nullable: false })
+    @ManyToOne(() => VehicleBrand, { nullable: false })
     @JoinColumn({ name: "vehicle_brand_id" })
     brand!: VehicleBrand;
 

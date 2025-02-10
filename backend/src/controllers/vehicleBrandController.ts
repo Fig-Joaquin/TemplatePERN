@@ -31,6 +31,23 @@ export const getVehicleBrandById = async (req: Request, res: Response, _next: Ne
     }
 };
 
+export const getModelsByBrand = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const brand = await vehicleBrandRepository.findOne({
+            where: { vehicle_brand_id: parseInt(id) },
+            relations: ["models"]
+        });
+        if (!brand) {
+            res.status(404).json({ message: "Marca de vehículo no encontrada" });
+            return;
+        }
+        res.json(brand.models);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los modelos de la marca de vehículo", error });
+    }
+};
+
 export const createVehicleBrand = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         // Validar con Zod

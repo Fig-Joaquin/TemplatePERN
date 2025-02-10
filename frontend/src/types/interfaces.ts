@@ -36,13 +36,13 @@ export interface Vehicle {
 }
 
 export interface model {
-    model_id: number;
+    vehicle_model_id: number;
     model_name: string;
     brand: brand;
 }
 
 export interface brand {
-    brand_id: number;
+    vehicle_brand_id: number;
     brand_name: string;
 }
 

@@ -13,9 +13,11 @@ export class Product {
     @OneToMany(() => ProductHistory, (history) => history.product)
     history!: ProductHistory[];
 
-    @ManyToOne(() => Supplier, (supplier) => supplier.products, { nullable: false })
+
+    @ManyToOne(() => Supplier,  { nullable: false, eager: true })
     @JoinColumn({ name: "supplier_id" })
     supplier!: Supplier;
+
 
     @OneToOne(() => StockProduct, (stock) => stock.product, { cascade: true })
     @JoinColumn({ name: "product_id" })

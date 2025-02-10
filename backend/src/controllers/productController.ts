@@ -2,9 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import { QueryFailedError } from "typeorm";
 import { AppDataSource } from "../config/ormconfig";
 import { Product } from "../entities/productEntity";
+import { ProductType } from "../entities/productTypeEntity";
+import { Supplier } from "../entities/suppliersEntity";
 import { ProductSchema } from "../schema/productValidator";
 
 const productRepository = AppDataSource.getRepository(Product);
+const productTypeRepository = AppDataSource.getRepository(ProductType);
+const supplierRepository = AppDataSource.getRepository(Supplier);
 
 export const getAllProducts = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -34,8 +38,9 @@ export const getProductById = async (req: Request, res: Response, _next: NextFun
 
 export const createProduct = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        console.log(req.body);
+        console.log("Request Body:", JSON.stringify(req.body, null, 2));
         const validationResult = ProductSchema.safeParse(req.body);
+
         if (!validationResult.success) {
             res.status(400).json({
                 message: "Error de validación",
@@ -48,9 +53,31 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         }
 
         const productData = validationResult.data;
-        console.log(productData);
+
+        // Buscamos las entidades existentes según los IDs recibidos
+        const supplierId = productData.supplier_id;
+        const productTypeId = productData.product_type_id;
+
+        const supplierEntity = await supplierRepository.findOne({ where: { supplier_id: supplierId } });
+        if (!supplierEntity) {
+            res.status(404).json({ message: "Proveedor no encontrado" });
+            return;
+        }
+        const productTypeEntity = await productTypeRepository.findOne({ where: { product_type_id: productTypeId } });
+        if (!productTypeEntity) {
+            res.status(404).json({ message: "Tipo de producto no encontrado" });
+            return;
+        }
+
+        // Asignamos las entidades encontradas al producto
+        productData.supplier = supplierEntity as unknown as { name: string; address: string; city: string; description: string; phone: string; product_id: number; supplier_id?: number | undefined; products?: any[] | undefined; };
+        productData.type = productTypeEntity;
+
+
+
+        console.log("VALIDACION: " + JSON.stringify(productData, null, 2));
         const product = productRepository.create(productData);
-        console.log(product);
+        console.log("PRODUCTO FINAL :" + JSON.stringify(product, null, 2));
         await productRepository.save(product);
         res.status(201).json({ message: "Producto creado exitosamente", product });
     } catch (error) {
@@ -105,3 +132,4 @@ export const deleteProduct = async (req: Request, res: Response, _next: NextFunc
         res.status(500).json({ message: "Error interno al eliminar el producto", error });
     }
 };
+

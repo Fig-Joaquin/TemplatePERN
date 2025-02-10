@@ -9,7 +9,7 @@ export class ProductType {
     product_type_id!: number;
 
 
-    @ManyToOne(() => ProductCategory, category => category.product_types, { nullable: false })
+    @ManyToOne(() => ProductCategory, { nullable: false })
     @JoinColumn({ name: "product_category_id" })
     category!: ProductCategory;
 
