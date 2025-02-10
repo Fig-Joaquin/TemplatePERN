@@ -25,6 +25,7 @@ export const getAllVehicles = async (_req: Request, res: Response, _next: NextFu
             .leftJoinAndSelect("model.brand", "brand")
             .leftJoinAndSelect("vehicle.owner", "owner")
             .leftJoinAndSelect("vehicle.mileage_history", "mileage_history")
+            .leftJoinAndSelect("vehicle.company", "company")
             .getMany();
 
         res.json(vehicles);
@@ -38,7 +39,7 @@ export const getVehiclesByPersonId = async (req: Request, res: Response, _next: 
         const { personId } = req.params;
         const vehicles = await vehicleRepository.find({
             where: { owner: { person_id: parseInt(personId) } },
-            relations: ["model", "model.brand", "owner", "mileage_history"]
+            relations: ["model", "model.brand", "owner", "mileage_history", "company"]
         });
         if (vehicles.length === 0) {
             res.status(404).json({ message: "No se encontraron vehículos para el propietario especificado" });
@@ -55,7 +56,7 @@ export const getVehicleById = async (req: Request, res: Response, _next: NextFun
         const { id } = req.params;
         const vehicle = await vehicleRepository.findOne({
             where: { vehicle_id: parseInt(id) },
-            relations: ["model", "model.brand", "owner", "mileage_history"]
+            relations: ["model", "model.brand", "owner", "mileage_history", "company"]
         });
         if (!vehicle) {
             res.status(404).json({ message: "Vehículo no encontrado" });
@@ -87,18 +88,20 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
         const { vehicle_model_id, person_id, company_id, ...vehicleData } = validationResult.data;
         const mileageHistoryData = req.body.mileageHistory;
 
+        console.log("Datos validados:", vehicleData);
         //Verificar si person_id o company_id está presente
         if (!person_id && !company_id) {
             res.status(400).json({ message: "Debe proporcionar una persona o compañía" });
             return;
         }
-        // Verificar si la compañía existe usando el ID directo
-    
-            const company = await companiesEntity.findOneBy({ company_id });
+        let company: Company | undefined;
+        if (company_id) {
+            company = await companiesEntity.findOneBy({ company_id }) ?? undefined;
             if (!company) {
                 res.status(404).json({ message: "La compañía especificada no existe." });
                 return;
-            } 
+            }   
+        }
 
         // Verificar si el modelo existe usando el ID directo
         const model = await modelRepository.findOneBy({ vehicle_model_id });
@@ -106,14 +109,15 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             res.status(404).json({ message: "El modelo especificado no existe." });
             return;
         }
-        // Verificar si el dueño existe usando el ID directo; extraer ID si es objeto
-        const ownerId = typeof person_id === 'object' && person_id !== null ? person_id : person_id;
-        const owner = await ownerRepository.findOneBy({ person_id: ownerId });
-        if (!owner) {
-            res.status(404).json({ message: "El propietario especificado no existe." });
-            return;
+        let owner: Person | undefined;
+        if (person_id) {
+            owner = await ownerRepository.findOneBy({ person_id }) || undefined;
+            if (!owner) {
+                res.status(404).json({ message: "El propietario especificado no existe." });
+                return;
+            }
         }
-        // ...existing validation for mileageHistoryData...
+        // Validar mileageHistoryData
         if (!mileageHistoryData || !Array.isArray(mileageHistoryData) || mileageHistoryData.length === 0) {
             res.status(400).json({ message: "Se requiere al menos un registro de kilometraje inicial." });
             return;
@@ -124,8 +128,8 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
         const vehicle = vehicleRepository.create({
             ...vehicleData,
             model,
-            owner,
-            company: company,
+            ...(owner ? { owner } : {}),
+            ...(company ? { company } : {}),
             mileage_history: mileageRecords
         });
         await vehicleRepository.save(vehicle);

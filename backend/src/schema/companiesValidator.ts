@@ -5,8 +5,7 @@ export const companiesSchema = z.object({
     
     rut: z.string()
         .min(9, { message: "El RUT debe tener al menos 9 caracteres" })
-        .max(10, { message: "El RUT no puede superar los 10 caracteres" })
-        .regex(/^\d{8,9}\d[Kk]$/, { message: "El RUT debe contener solo números y una 'K' opcional al final" }),
+        .max(10, { message: "El RUT no puede superar los 10 caracteres" }),
 
     name: z.string()
         .min(2, { message: "El nombre debe tener al menos 2 caracteres" })

@@ -1,8 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
 import { IsString, Length } from "class-validator";
 import { Vehicle } from "./vehicleEntity";
-import { Person } from "./personsEntity";
-import { Company } from "./companiesEntity";
 
 
 @Entity("quotations")
@@ -10,21 +8,9 @@ export class Quotation {
     @PrimaryGeneratedColumn()
     quotation_id!: number;
 
-
-
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })
     vehicle!: Vehicle;
-
-    @ManyToOne(() => Person, { nullable: true })
-    @JoinColumn({ name: "person_id" })
-    person!: Person;
-
-
-    @ManyToOne(() => Company, { nullable: true })
-    @JoinColumn({ name: "company_id" })
-    company!: Company;
-
 
     @Column({ type: "text" })
     @IsString()

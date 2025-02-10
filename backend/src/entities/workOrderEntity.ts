@@ -2,8 +2,6 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDa
 import { IsString, IsNumber, Min } from "class-validator";
 import { Vehicle } from "./vehicleEntity";
 import { Quotation } from "./quotationEntity";
-import { Person } from "./personsEntity";
-import { Company } from "./companiesEntity";
 import { Debtor } from "./debtorsEntity";
 
 
@@ -12,13 +10,8 @@ export class WorkOrder {
     @PrimaryGeneratedColumn()
     work_order_id!: number;
 
-
     @OneToMany(() => Debtor, (debtor) => debtor.workOrder)
     debtors!: Debtor[];
-
-    @ManyToOne(() => Company, (company) => company.workOrders, { nullable: true })
-    @JoinColumn({ name: "company_id" })
-    company!: Company;
 
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })
@@ -27,11 +20,6 @@ export class WorkOrder {
     @ManyToOne(() => Quotation, { nullable: true })
     @JoinColumn({ name: "quotation_id" })
     quotation!: Quotation;
-
-    @ManyToOne(() => Person, { nullable: false })
-    @JoinColumn({ name: "person_id" })
-    person!: Person;
-
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
     @IsNumber()

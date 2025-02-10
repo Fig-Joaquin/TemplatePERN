@@ -1,5 +1,4 @@
-import { WorkOrder } from "./workOrderEntity";
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column} from "typeorm";
 import { IsString, Length, IsEmail } from "class-validator";
 
 @Entity("companies")
@@ -22,6 +21,4 @@ export class Company {
     @IsEmail({}, { message: "Email inválido" })
     email!: string;
 
-    @OneToMany(() => WorkOrder, (workOrder) => workOrder.company)
-    workOrders!: WorkOrder[];
 }
