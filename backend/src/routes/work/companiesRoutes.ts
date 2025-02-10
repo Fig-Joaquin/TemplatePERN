@@ -6,7 +6,7 @@ getCompanyById,
 createCompany,
 updateCompany,
 deleteCompany
-} from "../controllers/companiesController";
+} from "../../controllers/work/companiesController";
 
 const router = Router();
 

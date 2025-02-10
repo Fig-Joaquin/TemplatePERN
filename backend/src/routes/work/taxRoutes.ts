@@ -6,7 +6,7 @@ getTaxById,
 createTax,
 updateTax,
 deleteTax
-} from "../controllers/work/taxController";
+} from "../../controllers/work/taxController";
 
 const router = Router();
 

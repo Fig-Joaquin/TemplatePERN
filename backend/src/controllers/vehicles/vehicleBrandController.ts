@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { VehicleBrand } from "../../entities";
-import { VehicleBrandSchema, updateVehicleBrandSchema } from "../../schema/vehicleBrandValidator";
+import { VehicleBrandSchema, updateVehicleBrandSchema } from "../../schema/vehicles/vehicleBrandValidator";
 import { QueryFailedError } from "typeorm";
 
 // src/controllers/vehicleBrandController.ts

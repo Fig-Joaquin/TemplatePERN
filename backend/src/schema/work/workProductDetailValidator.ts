@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { WorkOrderSchema } from "./workOrderValidator";
-import { ProductSchema } from "./productValidator";
+import { ProductSchema } from "../../schema/products/productValidator";
 import { QuotationSchema } from "./quotationValidator";
 import { TaxSchema } from "./taxValidator";
+
 
 export const workProductDetailSchema = z.object({
     word_order_id: z.number().int().positive(),

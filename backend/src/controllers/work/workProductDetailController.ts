@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { workProductDetailSchema } from "../../schema/workProductDetailValidator";
 import { DeepPartial } from "typeorm";
 import { WorkProductDetail, WorkOrder, Product, Quotation, Tax} from "../../entities";
+import { workProductDetailSchema } from "../../schema/work/workProductDetailValidator";
 
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);      // nuevo repository

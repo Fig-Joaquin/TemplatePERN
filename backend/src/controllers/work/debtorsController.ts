@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { Debtor } from "../../entities";
-import { DebtorSchema } from "../../schema/debtorsValidator";
+import { DebtorSchema } from "../../schema/work/debtorsValidator";
 import { WorkOrder } from "../../entities/work/workOrderEntity"; // <-- nueva importación
 
 const debtorRepository = AppDataSource.getRepository(Debtor);

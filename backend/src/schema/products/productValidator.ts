@@ -1,6 +1,7 @@
 import { z } from "zod";
+
+import { SupplierSchema } from "../work/suppliersValidator";
 import { ProductTypeSchema } from "./productTypeValidator";
-import { SupplierSchema } from "./suppliersValidator";
 
 
 export const ProductSchema = z.object({

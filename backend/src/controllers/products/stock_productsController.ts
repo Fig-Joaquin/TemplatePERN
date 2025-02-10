@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { StockProduct, Product } from "../../entities";
-import { StockProductSchema } from "../../schema/stock_productsValidator";
+import { StockProductSchema } from "../../schema/products/stock_productsValidator";
 import { DeepPartial } from "typeorm";
 
 const stockProductRepository = AppDataSource.getRepository(StockProduct);

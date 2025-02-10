@@ -2,9 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { mileageHistoryRepository } from "../../repositories/mileageHistoryRepository";
 import { formatDate } from "../../utils/dateUtils";
 import { handleError } from "../../utils/errorHandler";
-import { MileageHistorySchema, updateMileageHistorySchema } from "../../schema/mileageHistoryValidator";
 import { AppDataSource } from "../../config/ormconfig";
 import { Vehicle } from "../../entities";
+import { MileageHistorySchema, updateMileageHistorySchema } from "../../schema/vehicles/mileageHistoryValidator";
 
 export const getAllMileageHistories = async (_req: Request, res: Response): Promise<void> => {
     try {

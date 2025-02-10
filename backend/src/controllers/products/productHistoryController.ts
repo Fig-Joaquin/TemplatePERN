@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { Product, ProductHistory } from "../../entities";
-import { productHistorySchema, updateProductHistorySchema } from "schema/productHistoryValidator";
+import { productHistorySchema, updateProductHistorySchema } from "../../schema/products/productHistoryValidator";
 
 const productHistoryRepository = AppDataSource.getRepository(ProductHistory);
 const productRepository = AppDataSource.getRepository(Product);

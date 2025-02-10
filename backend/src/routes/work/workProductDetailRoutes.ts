@@ -6,7 +6,7 @@ getWorkProductDetailById,
 createWorkProductDetail,
 updateWorkProductDetail,
 deleteWorkProductDetail,
-} from "../controllers/work/workProductDetailController";
+} from "../../controllers/work/workProductDetailController";
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { Quotation } from "../../entities/work/quotationEntity";
-import { QuotationSchema } from "../../schema/quotationValidator";
+import { QuotationSchema } from "../../schema/work/quotationValidator";
 import { Vehicle, Person, Company } from "../../entities"; // <-- nueva importación
 
 const quotationRepository = AppDataSource.getRepository(Quotation);

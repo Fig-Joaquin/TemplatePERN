@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { vehicleModelSchema } from "../../schema/vehicleModelValidator";
 import { VehicleBrand, VehicleModel } from "../../entities"; // nuevo import
+import { vehicleModelSchema } from "../../schema/vehicles/vehicleModelValidator";
 
 // src/controllers/vehicleModelController.ts
 

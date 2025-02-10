@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { Tax } from "../../entities";
 import { AppDataSource } from "../../config/ormconfig";
-import { TaxSchema } from "../../schema/taxValidator";
+import { TaxSchema } from "../../schema/work/taxValidator";
 
 const taxRepository = AppDataSource.getRepository(Tax);
 

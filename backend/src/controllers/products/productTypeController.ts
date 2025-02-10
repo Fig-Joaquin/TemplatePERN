@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { ProductType, ProductCategory } from "../../entities";
-import { ProductTypeSchema, ProductTypeInput } from "../../schema/productTypeValidator";
+import { ProductTypeInput, ProductTypeSchema } from "../../schema/products/productTypeValidator";
 
 const productTypeRepository = AppDataSource.getRepository(ProductType);
 const ProductCategoryRepository = AppDataSource.getRepository(ProductCategory); // <-- nuevo repositorio

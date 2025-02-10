@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WorkOrderSchema } from "./workOrderValidator";
+import { WorkOrderSchema } from "./work/workOrderValidator";
 
 export const WorkTicketSchema = z.object({
     work_order_id: z.number().int().positive(),

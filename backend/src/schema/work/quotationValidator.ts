@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { vehicleSchema } from "./vehicleValidator";
+import { vehicleSchema } from "../vehicles/vehicleValidator";
 
 export const QuotationSchema = z.object({
     vehicle_id: z.number().int().positive(),

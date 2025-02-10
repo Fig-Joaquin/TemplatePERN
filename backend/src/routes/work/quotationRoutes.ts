@@ -6,7 +6,7 @@ getQuotationById,
 createQuotation,
 updateQuotation,
 deleteQuotation,
-} from "../controllers/work/quotationController";
+} from "../../controllers/work/quotationController";
 
 const quotationRoutes = Router();
 

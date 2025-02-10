@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProductSchema } from "../schema/productValidator";
+import { ProductSchema } from "./productValidator";
 
 export const ProductPurchaseSchema = z.object({
     tax_id: z.number().int().positive(),

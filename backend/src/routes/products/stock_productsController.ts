@@ -6,7 +6,7 @@ getStockProductById,
 createStockProduct,
 updateStockProduct,
 deleteStockProduct,
-} from '../controllers/products/stock_productsController';
+} from '../../controllers/products/stock_productsController';
 
 const router = Router();
 

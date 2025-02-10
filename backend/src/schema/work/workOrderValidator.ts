@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { PersonSchema } from "./personsValidator";
-import { vehicleSchema } from "./vehicleValidator";
+import { PersonSchema } from "../personsValidator";
 import { QuotationSchema } from "./quotationValidator";
+import { vehicleSchema } from "../vehicles/vehicleValidator";
 
 export const WorkOrderSchema = z.object({
     vehicle_id: z.number().int().positive(),

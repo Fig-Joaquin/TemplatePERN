@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { vehicleSchema } from "../../schema/vehicleValidator";
 import { MileageHistory } from "../../entities/vehicles/mileageHistoryEntity";
 import { DeepPartial, QueryFailedError } from "typeorm";
 import { VehicleModel, Person, Company, Vehicle } from "../../entities";
+import { vehicleSchema } from "../../schema/vehicles/vehicleValidator";
 
 
 

@@ -1,6 +1,7 @@
+import { PersonSchema } from "../../schema/personsValidator";
 import { z } from "zod";
 import { vehicleModelSchema } from "./vehicleModelValidator";
-import { PersonSchema } from "./personsValidator";
+
 
 export const vehicleSchema = z.object({
     vehicle_id: z.number().optional(),

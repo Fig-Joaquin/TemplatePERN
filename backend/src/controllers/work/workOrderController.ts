@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { WorkOrderSchema } from "../../schema/workOrderValidator";
+import { WorkOrderSchema } from "../../schema/work/workOrderValidator";
 import { DeepPartial } from "typeorm";
 import { WorkOrder, Vehicle, Person, Quotation} from "../../entities";
 

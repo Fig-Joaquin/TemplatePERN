@@ -6,7 +6,7 @@ getSupplierById,
 createSupplier,
 updateSupplier,
 deleteSupplier,
-} from '../controllers/work/suppliersController';
+} from '../../controllers/work/suppliersController';
 
 const router = Router();
 

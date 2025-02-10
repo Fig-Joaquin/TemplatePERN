@@ -6,7 +6,7 @@ getProductTypeById,
 createProductType,
 updateProductType,
 deleteProductType,
-} from "../controllers/products/productTypeController";
+} from "../../controllers/products/productTypeController";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllDebtors, getDebtorById, createDebtor, updateDebtor, deleteDebtor } from "../controllers/work/debtorsController";
+import { getAllDebtors, getDebtorById, createDebtor, updateDebtor, deleteDebtor } from "../../controllers/work/debtorsController";
 
 // src/routes/debtorRoutes.ts
 

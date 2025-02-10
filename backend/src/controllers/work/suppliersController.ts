@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { SupplierSchema } from "../../schema/suppliersValidator";
+import { SupplierSchema } from "../../schema/work/suppliersValidator";
 import { DeepPartial } from "typeorm";
 import { Product, Supplier } from "../../entities"; // <-- nueva importación
 
