@@ -133,12 +133,23 @@ const QuotationPage = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold">Información del Propietario</h4>
-                                        <p>
-                                            {`${selectedQuotation.vehicle?.owner.name} ${selectedQuotation.vehicle?.owner.first_surname} ${selectedQuotation.vehicle?.owner.second_surname}`}
-                                        </p>
-                                        <p>RUT: {selectedQuotation.vehicle?.owner.rut}</p>
-                                        <p>Email: {selectedQuotation.vehicle?.owner.email}</p>
-                                        <p>Teléfono: {selectedQuotation.vehicle?.owner.number_phone}</p>
+                                        {selectedQuotation.vehicle?.owner ? (
+                                            <div>
+                                                <p>
+                                                    {`${selectedQuotation.vehicle?.owner.name} ${selectedQuotation.vehicle?.owner.first_surname} ${selectedQuotation.vehicle?.owner.second_surname}`}
+                                                </p>
+                                                <p>RUT: {selectedQuotation.vehicle?.owner.rut}</p>
+                                                <p>Email: {selectedQuotation.vehicle?.owner.email}</p>
+                                                <p>Teléfono: {selectedQuotation.vehicle?.owner.number_phone}</p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <p>Empresa: {selectedQuotation.vehicle?.company?.name}</p>
+                                                <p>RUT: {selectedQuotation.vehicle?.company?.rut}</p>
+                                                <p>Email: {selectedQuotation.vehicle?.company?.email}</p>
+                                                {/* <p>Teléfono: {selectedQuotation.vehicle?.company?.number_phone}</p> */}
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <h4 className="font-bold">Historial de Kilometraje</h4>

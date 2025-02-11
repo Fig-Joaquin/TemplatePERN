@@ -20,7 +20,12 @@ export const VehicleCard = ({ vehicle }: { vehicle: Quotation["vehicle"] }) => {
                     <strong>Estado:</strong> {vehicle?.vehicle_status}
                 </p>
                 <p>
-                    <strong>Propietario:</strong> {vehicle?.owner.name} {vehicle?.owner.first_surname}
+                    <strong>Propietario:</strong> 
+                    {vehicle?.owner ? (
+                        `${vehicle.owner.name} ${vehicle.owner.first_surname}`
+                    ) : (
+                        `Empresa: ${vehicle?.company?.name}`
+                    )}
                 </p>
                 <p>
                     <strong>Kilometraje actual:</strong>{" "}

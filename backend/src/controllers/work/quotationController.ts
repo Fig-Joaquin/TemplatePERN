@@ -12,7 +12,7 @@ const companyRepository = AppDataSource.getRepository(Company);
 export const getAllQuotations = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const quotations = await quotationRepository.find({
-            relations: ["vehicle", "vehicle.model", "vehicle.model.brand", "vehicle.owner", "vehicle.mileage_history"]
+            relations: ["vehicle", "vehicle.model", "vehicle.model.brand", "vehicle.owner", "vehicle.mileage_history", "vehicle.company"]
         });
         res.json(quotations);
     } catch (error) {

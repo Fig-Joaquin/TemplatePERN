@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface SearchBarProps {
     searchTerm: string;
@@ -8,7 +9,7 @@ interface SearchBarProps {
 const SearchBar = ({ searchTerm, handleSearch }: SearchBarProps) => {
     return (
         <div className="mb-4 relative">
-            <input
+            <Input
                 type="text"
                 placeholder="Buscar por nombre o RUT"
                 value={searchTerm}

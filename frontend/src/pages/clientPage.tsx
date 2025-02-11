@@ -1,15 +1,15 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState } from "react";
 import api from "../utils/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { Plus } from "lucide-react";
-import { Dialog, Transition } from "@headlessui/react";
 import ClientList from "../components/clientList";
 import ClientForm from "../components/clientForm";
 import SearchBar from "../components/searchBar";
 import { Person, Vehicle } from "../types/interfaces";
 import { createPerson, updatePerson, fetchPersonsClient } from "../services/personService";
 import { fetchVehicles, fetchVehiclesByPersonId } from "../services/vehicleService";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const ClientPage = () => {
     const [persons, setPersons] = useState<Person[]>([]);
@@ -159,13 +159,10 @@ const ClientPage = () => {
             <ToastContainer />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Lista de Clientes</h1>
-                <button
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                    onClick={() => setAddModalOpen(true)}
-                >
-                    <Plus className="w-4 h-4" />
+                <Button onClick={() => setAddModalOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
                     Nuevo Cliente
-                </button>
+                </Button>
             </div>
 
             <SearchBar searchTerm={searchTerm} handleSearch={handleSearch} />
@@ -183,107 +180,55 @@ const ClientPage = () => {
                 )}
             </div>
 
-            <Transition appear show={addModalOpen} as={Fragment}>
-                <Dialog
-                    as="div"
-                    className="fixed inset-0 backdrop-blur-md flex justify-center items-center z-10"
-                    onClose={() => setAddModalOpen(false)}
-                >
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0 scale-95"
-                        enterTo="opacity-100 scale-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100 scale-100"
-                        leaveTo="opacity-0 scale-95"
-                    >
-                        <Dialog.Panel className="w-96 bg-white shadow-lg rounded-lg p-6">
-                            <Dialog.Title className="text-xl font-bold mb-4">
-                                Nuevo Cliente
-                            </Dialog.Title>
-                            <ClientForm
-                                formData={createFormData}
-                                handleInputChange={handleCreateInputChange}
-                                handleSubmit={handleCreateSubmit}
-                                onCancel={() => setAddModalOpen(false)}
-                            />
-                        </Dialog.Panel>
-                    </Transition.Child>
-                </Dialog>
-            </Transition>
+            {/* Add Modal */}
+            <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
+                {addModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
+                <DialogContent className="w-96 bg-white shadow-lg rounded-lg p-6">
+                    <DialogHeader>
+                        <DialogTitle>Nuevo Cliente</DialogTitle>
+                    </DialogHeader>
+                    <ClientForm
+                        formData={createFormData}
+                        handleInputChange={handleCreateInputChange}
+                        handleSubmit={handleCreateSubmit}
+                        onCancel={() => setAddModalOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
 
-            <Transition appear show={editModalOpen} as={Fragment}>
-                <Dialog
-                    as="div"
-                    className="fixed inset-0 backdrop-blur-md flex justify-center items-center z-10"
-                    onClose={() => setEditModalOpen(false)}
-                >
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0 scale-95"
-                        enterTo="opacity-100 scale-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100 scale-100"
-                        leaveTo="opacity-0 scale-95"
-                    >
-                        <Dialog.Panel className="w-96 bg-white shadow-lg rounded-lg p-6">
-                            <Dialog.Title className="text-xl font-bold mb-4">
-                                Editar Cliente
-                            </Dialog.Title>
-                            <ClientForm
-                                formData={editFormData}
-                                handleInputChange={handleEditInputChange}
-                                handleSubmit={handleUpdateSubmit}
-                                onCancel={() => {
-                                    setEditModalOpen(false);
-                                    setSelectedPerson(null);
-                                }}
-                            />
-                        </Dialog.Panel>
-                    </Transition.Child>
-                </Dialog>
-            </Transition>
+            {/* Edit Modal */}
+            <Dialog open={editModalOpen} onOpenChange={() => { setEditModalOpen(false); setSelectedPerson(null); }}>
+                {editModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
+                <DialogContent className="w-96 bg-white shadow-lg rounded-lg p-6">
+                    <DialogHeader>
+                        <DialogTitle>Editar Cliente</DialogTitle>
+                    </DialogHeader>
+                    <ClientForm
+                        formData={editFormData}
+                        handleInputChange={handleEditInputChange}
+                        handleSubmit={handleUpdateSubmit}
+                        onCancel={() => {
+                            setEditModalOpen(false);
+                            setSelectedPerson(null);
+                        }}
+                    />
+                </DialogContent>
+            </Dialog>
 
-            <Transition appear show={deleteModalOpen} as={Fragment}>
-                <Dialog
-                    as="div"
-                    className="fixed inset-0 backdrop-blur-md flex justify-center items-center z-10"
-                    onClose={() => setDeleteModalOpen(false)}
-                >
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0 scale-95"
-                        enterTo="opacity-100 scale-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100 scale-100"
-                        leaveTo="opacity-0 scale-95"
-                    >
-                        <Dialog.Panel className="w-96 bg-white shadow-lg rounded-lg p-6">
-                            <Dialog.Title className="text-xl font-bold mb-4">
-                                Confirmar Eliminación
-                            </Dialog.Title>
-                            <p>¿Estás seguro de eliminar este cliente?</p>
-                            <div className="flex justify-end mt-4">
-                                <button
-                                    className="bg-gray-300 text-black px-4 py-2 rounded mr-2"
-                                    onClick={() => setDeleteModalOpen(false)}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    className="bg-red-600 text-white px-4 py-2 rounded"
-                                    onClick={handleConfirmDelete}
-                                >
-                                    Eliminar
-                                </button>
-                            </div>
-                        </Dialog.Panel>
-                    </Transition.Child>
-                </Dialog>
-            </Transition>
+            {/* Delete Modal */}
+            <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+                {deleteModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
+                <DialogContent className="w-96 bg-white shadow-lg rounded-lg p-6">
+                    <DialogHeader>
+                        <DialogTitle>Confirmar Eliminación</DialogTitle>
+                    </DialogHeader>
+                    <p>¿Estás seguro de eliminar este cliente?</p>
+                    <div className="flex justify-end mt-4 gap-2">
+                        <Button variant="secondary" onClick={() => setDeleteModalOpen(false)}>Cancelar</Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>Eliminar</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -2,7 +2,7 @@ import { Edit, Trash2 } from "lucide-react";
 import VehicleList from "./vehicleList";
 import { Vehicle, Person } from "../types/interfaces";
 import { useEffect, useState } from "react";
-
+import { Button } from "@/components/ui/button";
 
 interface ClientListProps {
     persons: Person[];
@@ -63,18 +63,20 @@ const ClientList: React.FC<ClientListProps> = ({ persons, getVehiclesByPersonId,
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex gap-2">
-                                    <button
+                                    <Button
+                                        variant="ghost"
                                         className="text-blue-600 hover:text-blue-800"
                                         onClick={() => handleEdit(person)}
                                     >
                                         <Edit className="w-5 h-5" />
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
                                         className="text-red-600 hover:text-red-800"
                                         onClick={() => handleDelete(person.person_id)}
                                     >
                                         <Trash2 className="w-5 h-5" />
-                                    </button>
+                                    </Button>
                                 </div>
                             </td>
                         </tr>
