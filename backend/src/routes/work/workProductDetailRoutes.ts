@@ -3,6 +3,7 @@ import {
 
 getAllWorkProductDetails,
 getWorkProductDetailById,
+getWorkProductDetailsByQuotationId,
 createWorkProductDetail,
 updateWorkProductDetail,
 deleteWorkProductDetail,
@@ -15,5 +16,6 @@ router.get("/:id", getWorkProductDetailById);
 router.post("/", createWorkProductDetail);
 router.put("/:id", updateWorkProductDetail);
 router.delete("/:id", deleteWorkProductDetail);
+router.get("/quotation/:quotationId", getWorkProductDetailsByQuotationId);
 
 export default router;

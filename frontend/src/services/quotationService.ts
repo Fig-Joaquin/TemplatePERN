@@ -11,10 +11,8 @@ export const fetchQuotationById = async (quotationId: number): Promise<Quotation
     return data;
 };
 
-export const createQuotation = async (
-    quotationData: Omit<Quotation, "quotation_id" | "entry_date">
-): Promise<Quotation> => {
-    const { data } = await api.post<Quotation>("/quotations", quotationData);
+export const createQuotation = async (quotationData: Partial<Quotation>): Promise<Quotation> => {
+    const { data } = await api.post("/quotations", quotationData);
     return data;
 };
 

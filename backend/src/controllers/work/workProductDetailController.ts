@@ -42,6 +42,27 @@ export const getWorkProductDetailById = async (req: Request, res: Response, _nex
     }
 };
 
+export const getWorkProductDetailsByQuotationId = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const quotationId = parseInt(req.params.quotationId);
+        if (isNaN(quotationId)) {
+            res.status(400).json({ message: "ID de cotización inválido" });
+            return;
+        }
+        const details = await workProductDetailRepository.find({
+            where: { quotation: { quotation_id: quotationId } },
+            relations: ["work_order", "work_order.vehicle", "product", "quotation", "tax"]
+        });
+        if (details.length === 0) {
+            res.status(404).json({ message: "No se encontraron detalles para la cotización" });
+            return;
+        }
+        res.json(details);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener detalles por cotización", error });
+    }
+};
+
 export const createWorkProductDetail = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const validationResult = workProductDetailSchema.safeParse(req.body);
@@ -53,11 +74,23 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
         // Extraer IDs y demás datos
         const { work_order_id, product_id, quotation_id, tax_id, ...rest } = validationResult.data as any;
 
-        // Verificar existencia de WorkOrder
-        const workOrder = await workOrderRepository.findOneBy({ work_order_id: parseInt(work_order_id) });
-        if (!workOrder) {
-            res.status(404).json({ message: "Orden de trabajo no encontrada" });
+
+        console.log("work_order_id: ", work_order_id + " quotation_id: ", quotation_id );
+
+        // Validar que al menos se proporcione work_order_id o quotation_id
+        if (!work_order_id && !quotation_id) {
+            res.status(400).json({ message: "Debe proporcionar al menos work_order_id o quotation_id" });
             return;
+        }
+
+        // Verificar existencia de WorkOrder si se proporcionó
+        let workOrder;
+        if (work_order_id) {
+            workOrder = await workOrderRepository.findOneBy({ work_order_id: parseInt(work_order_id) });
+            if (!workOrder) {
+                res.status(404).json({ message: "Orden de trabajo no encontrada" });
+                return;
+            }
         }
 
         // Verificar existencia de Product
@@ -67,26 +100,29 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
             return;
         }
 
-        // Verificar existencia de Quotation
-        const quotation = await quotationRepository.findOneBy({ quotation_id: parseInt(quotation_id) });
-        if (!quotation) {
-            res.status(404).json({ message: "Cotización no encontrada" });
-            return;
+        // Verificar existencia de Quotation si se proporcionó
+        let quotation;
+        if (quotation_id) {
+            quotation = await quotationRepository.findOneBy({ quotation_id: parseInt(quotation_id) });
+            if (!quotation) {
+                res.status(404).json({ message: "Cotización no encontrada" });
+                return;
+            }
         }
 
-        //verificar existencia de Tax
+        // Verificar existencia de Tax
         const tax = await taxRepository.findOneBy({ tax_id: parseInt(tax_id) });
         if (!tax) {
             res.status(404).json({ message: "Impuesto no encontrado" });
             return;
         }
 
-        // Crear el detalle asociando las entidades
+        // Crear el detalle asignando las entidades opcionales si fueron proporcionadas
         const newDetail = workProductDetailRepository.create({
             ...rest,
-            work_order: workOrder,
+            ...(workOrder && { work_order: workOrder }),
             product,
-            quotation,
+            ...(quotation && { quotation }),
             tax
         } as DeepPartial<WorkProductDetail>);
         

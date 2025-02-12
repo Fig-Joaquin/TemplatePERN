@@ -61,11 +61,14 @@ export interface mileage_history {
 }
 
 export interface Quotation {
-    quotation_id: number;
+    entry_date?: Date;
+    quotation?: Quotation;
+    vehicle?: Vehicle;
+    quotation_id?: number;
+    vehicle_id: number;
     description: string;
     quotation_Status: "approved" | "rejected" | "pending";
-    vehicle?: Vehicle;
-    entry_date: Date;
+    total_price: number;
     // Agrega otras propiedades relevantes si es necesario
 }
 
@@ -79,11 +82,14 @@ export interface WorkOrder {
 }
 
 export interface WorkProductDetail {
-    work_product_detail_id: number;
-    work_order: WorkOrder;
-    product: Product;
-    quotation: Quotation;
-    tax: Tax;
+    work_order_id?: number;
+    work_order?: WorkOrder;
+    product?: Product;
+    quotation?: Quotation;
+    tax?: Tax;
+    product_id: number;
+    quotation_id?: number;
+    tax_id: number;
     quantity: number;
     sale_price: number;
     discount: number;
@@ -131,8 +137,19 @@ export interface category {
 
 export interface Tax {
     tax_id: number;
-    tax_name: string;
-    tax_percentage: number;
+    tax_rate: number;
+}
+
+export interface NumberInputProps {
+    value: number
+    onChange: (value: number) => void
+    min?: number
+    max?: number
+    className?: string
+    placeholder?: string
+    hideControls?: boolean
+    id?: string
+    isPrice?: boolean
 }
 
 

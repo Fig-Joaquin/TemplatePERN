@@ -8,6 +8,11 @@ export const getAllWorkProductDetails = async () => {
     return response.data;
 };
 
+export const getWorkProductDetailsByQuotationId = async (quotationId: number) => {
+    const response = await api.get(`${API_URL}/quotation/${quotationId}`);
+    return response.data;
+};
+
 export const getWorkProductDetailById = async (id: number) => {
     const response = await api.get(`${API_URL}/${id}`);
     return response.data;

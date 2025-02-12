@@ -24,6 +24,9 @@ export class Quotation {
     })
     quotation_Status!: string;
 
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    total_price!: number;   
+
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
     entry_date!: Date;
 }
