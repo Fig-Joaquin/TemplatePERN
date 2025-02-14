@@ -2,8 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { MileageHistory } from "../../entities/vehicles/mileageHistoryEntity";
 import { DeepPartial, QueryFailedError } from "typeorm";
-import { VehicleModel, Person, Company, Vehicle } from "../../entities";
+import { VehicleModel, Person, Company, Vehicle, WorkOrder, Quotation, WorkProductDetail } from "../../entities";
 import { vehicleSchema } from "../../schema/vehicles/vehicleValidator";
+
 
 
 
@@ -101,6 +102,9 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             }   
         }
 
+
+        console.log("Datos de kilometraje:", mileageHistoryData);
+
         // Verificar si el modelo existe usando el ID directo
         const model = await modelRepository.findOneBy({ vehicle_model_id });
         if (!model) {
@@ -120,9 +124,9 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             res.status(400).json({ message: "Se requiere al menos un registro de kilometraje inicial." });
             return;
         }
-        const mileageRecords: DeepPartial<MileageHistory>[] = mileageHistoryData.map(record => ({
-            ...record
-        }));
+        const mileageRecords: DeepPartial<MileageHistory>[] = mileageHistoryData.map(record =>
+            typeof record === 'number' ? { current_mileage: record } : { ...record }
+        );
         const vehicle = vehicleRepository.create({
             ...vehicleData,
             model,
@@ -180,9 +184,9 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
 
         // Si se proporcionó un historial de kilometraje, agregar los nuevos registros
         if (mileageHistory && Array.isArray(mileageHistory) && mileageHistory.length > 0) {
-            const newMileageRecords = mileageHistory.map((record: any) => ({
-                ...record
-            }));
+            const newMileageRecords = mileageHistory.map(record =>
+                typeof record === 'number' ? { current_mileage: record } : { ...record }
+            );
             vehicle.mileage_history = [...(vehicle.mileage_history || []), ...newMileageRecords];
         }
         
@@ -192,6 +196,9 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
         res.status(500).json({ message: "Error al actualizar vehículo", error });
     }
 };
+
+// Agrega el repositorio de WorkOrder para eliminar órdenes de trabajo relacionadas
+const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 
 export const deleteVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -215,6 +222,42 @@ export const deleteVehicle = async (req: Request, res: Response, _next: NextFunc
                 .execute();
         }
 
+        // Verificar si existen órdenes de trabajo asociadas al vehículo y eliminarlas (cascade)
+        const workOrders = await workOrderRepository.find({
+            where: {
+                vehicle: { vehicle_id: vehicle.vehicle_id }
+            }
+        });
+        if (workOrders.length > 0) {
+            await workOrderRepository.createQueryBuilder()
+                .delete()
+                .from("work_orders")
+                .where("vehicle_id = :id", { id: vehicle.vehicle_id })
+                .execute();
+        }
+
+        // Verificar si existen cotizaciones asociadas al vehículo y eliminarlas
+        const quotationRepository = AppDataSource.getRepository(Quotation);
+        const quotations = await quotationRepository.find({
+            where: {
+                vehicle: { vehicle_id: vehicle.vehicle_id }
+            }
+        });
+        if (quotations.length > 0) {
+            const workProductDetailsRepository = AppDataSource.getRepository(WorkProductDetail);
+            await workProductDetailsRepository.createQueryBuilder()
+                .delete()
+                .from("work_product_details")
+                .where("quotation_id IN (:...quotationIds)", { quotationIds: quotations.map(q => q.quotation_id) })
+                .execute();
+
+            await quotationRepository.createQueryBuilder()
+                .delete()
+                .from("quotations")
+                .where("vehicle_id = :id", { id: vehicle.vehicle_id })
+                .execute();
+        }
+
         // Ahora eliminar el vehículo
         await vehicleRepository.createQueryBuilder()
             .delete()
@@ -222,7 +265,7 @@ export const deleteVehicle = async (req: Request, res: Response, _next: NextFunc
             .where("vehicle_id = :id", { id: vehicle.vehicle_id })
             .execute();
 
-        res.json({ message: "Vehículo y su historial de kilometraje eliminado exitosamente" });
+        res.json({ message: "Vehículo, su historial de kilometraje, órdenes de trabajo y cotizaciones eliminados exitosamente" });
     } catch (error) {
         console.error("Error al eliminar vehículo:", error);
         res.status(500).json({ message: "Error al eliminar vehículo", error });

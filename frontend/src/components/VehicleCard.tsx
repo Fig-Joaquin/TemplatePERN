@@ -1,6 +1,15 @@
-import { Quotation } from "../types/interfaces";
+import type { Quotation } from "../types/interfaces"
+import { Button } from "@/components/ui/button"
+import { Edit, Trash2 } from "lucide-react"
 
-export const VehicleCard = ({ vehicle }: { vehicle: Quotation["vehicle"] }) => {
+interface VehicleCardProps {
+    vehicle: Quotation["vehicle"]
+    onEdit?: () => void
+    onDelete?: () => void
+    showActions?: boolean
+}
+
+export const VehicleCard = ({ vehicle, onEdit, onDelete, showActions = false }: VehicleCardProps) => {
     return (
         <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="border-b p-4">
@@ -20,18 +29,34 @@ export const VehicleCard = ({ vehicle }: { vehicle: Quotation["vehicle"] }) => {
                     <strong>Estado:</strong> {vehicle?.vehicle_status}
                 </p>
                 <p>
-                    <strong>Propietario:</strong> 
-                    {vehicle?.owner ? (
-                        `${vehicle.owner.name} ${vehicle.owner.first_surname}`
-                    ) : (
-                        `Empresa: ${vehicle?.company?.name}`
-                    )}
+                    <strong>Propietario:</strong>
+                    {vehicle?.owner
+                        ? `${vehicle.owner.name} ${vehicle.owner.first_surname}`
+                        : `Empresa: ${vehicle?.company?.name}`}
                 </p>
                 <p>
                     <strong>Kilometraje actual:</strong>{" "}
-                    {vehicle?.mileage_history[vehicle.mileage_history.length - 1].current_mileage} km
+                    {vehicle?.mileage_history && vehicle.mileage_history.length > 0 ? 
+                        vehicle.mileage_history[vehicle.mileage_history.length - 1].current_mileage + " km" : "N/A"}
                 </p>
             </div>
+            {showActions && (
+                <div className="p-4 flex justify-end space-x-2">
+                    {onEdit && (
+                        <Button variant="outline" size="sm" onClick={onEdit}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Editar
+                        </Button>
+                    )}
+                    {onDelete && (
+                        <Button variant="destructive" size="sm" onClick={onDelete}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Eliminar
+                        </Button>
+                    )}
+                </div>
+            )}
         </div>
-    );
-};
+    )
+}
+
