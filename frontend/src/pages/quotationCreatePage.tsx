@@ -32,7 +32,7 @@ const QuotationCreatePage = () => {
     const [products, setProducts] = useState<Product[]>([])
     const [stockProducts, setStockProducts] = useState<StockProduct[]>([])
     const [selectedProducts, setSelectedProducts] = useState<
-        { productId: string; quantity: number; laborPrice: number }[]
+        { productId: number; quantity: number; laborPrice: number }[]
     >([])
     const [showProductModal, setShowProductModal] = useState(false)
     const [description, setDescription] = useState("")
@@ -87,7 +87,7 @@ const QuotationCreatePage = () => {
         return matchesQuery && matchesTab
     })
 
-    const handleProductChange = (productId: string, quantity: number, laborPrice: number) => {
+    const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
         setSelectedProducts((prevSelectedProducts) => {
             const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
             if (existingProduct) {
@@ -98,7 +98,7 @@ const QuotationCreatePage = () => {
         })
     }
 
-    const handleRemoveProduct = (productId: string) => {
+    const handleRemoveProduct = (productId: number) => {
         setSelectedProducts((prevSelectedProducts) => prevSelectedProducts.filter((p) => p.productId !== productId))
     }
 
@@ -138,13 +138,17 @@ const QuotationCreatePage = () => {
             })
             await Promise.all(newWorkProductDetails.map((detail) => createWorkProductDetail(detail)))
             toast.success("Cotización creada exitosamente")
-            navigate("/quotations")
+            navigate("/admin/cotizaciones")
         } catch (error: any) {
             console.log(error)
             toast.error(
-                error.response?.data?.message ||
-                error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
-                "Error al crear el cliente"
+                [
+                    error.response?.data?.message,
+                    error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                ]
+                    .filter(Boolean)
+                    .join(", ") || 
+                "Error al crear la cotización"
             );
         } finally {
             setLoading(false)
@@ -233,7 +237,7 @@ const QuotationCreatePage = () => {
                                         <ul className="space-y-2">
                                             {selectedProducts.map(({ productId, quantity, laborPrice }) => {
                                                 const product = products.find((p) => p.product_id === Number(productId))
-                                                const stockProduct = stockProducts.find((sp) => sp.product.product_id === Number(productId))
+                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
                                                 return (
                                                     <li key={productId} className="flex items-center justify-between">
                                                         <span className="flex-1">
@@ -295,9 +299,9 @@ const QuotationCreatePage = () => {
                                     <ScrollArea className="h-[400px] pr-4">
                                         <ul className="space-y-4">
                                             {products.map((product) => {
-                                                const stockProduct = stockProducts.find((sp) => sp.product.product_id === product.product_id)
+                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
                                                 const selectedProduct = selectedProducts.find(
-                                                    (p) => p.productId === product.product_id.toString(),
+                                                    (p) => p.productId === product.product_id,
                                                 )
                                                 return (
                                                     <li key={product.product_id} className="flex items-center space-x-4">
@@ -306,9 +310,9 @@ const QuotationCreatePage = () => {
                                                             checked={!!selectedProduct}
                                                             onCheckedChange={(checked) => {
                                                                 if (checked) {
-                                                                    handleProductChange(product.product_id.toString(), 1, 0)
+                                                                    handleProductChange(product.product_id, 1, 0)
                                                                 } else {
-                                                                    handleRemoveProduct(product.product_id.toString())
+                                                                    handleRemoveProduct(product.product_id)
                                                                 }
                                                             }}
                                                         />
@@ -327,7 +331,7 @@ const QuotationCreatePage = () => {
                                                                         value={selectedProduct.quantity}
                                                                         onChange={(newValue) =>
                                                                             handleProductChange(
-                                                                                product.product_id.toString(),
+                                                                                product.product_id,
                                                                                 newValue,
                                                                                 selectedProduct.laborPrice,
                                                                             )
@@ -346,7 +350,7 @@ const QuotationCreatePage = () => {
                                                                         value={selectedProduct.laborPrice}
                                                                         onChange={(newValue) =>
                                                                             handleProductChange(
-                                                                                product.product_id.toString(),
+                                                                                product.product_id,
                                                                                 selectedProduct.quantity,
                                                                                 newValue,
                                                                             )

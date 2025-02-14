@@ -33,7 +33,7 @@ const sidebarStructure = [
     icon: TruckIcon,
     title: "Vehículos",
     items: [
-      { name: "Lista de vehículos", path: "/admin/vehiculo" },
+      { name: "Lista de vehículos", path: "/admin/vehiculos" },
       { name: "Registrar vehículo", path: "/admin/vehiculos/nuevo" },
       { name: "Historial de kilometraje", path: "/admin/vehiculos/kilometraje" },
     ],
@@ -43,8 +43,8 @@ const sidebarStructure = [
     icon: DocumentTextIcon,
     title: "Cotizaciones",
     items: [
-      { name: "Lista de cotizaciones", path: "/admin/cotizacion" },
-      { name: "Nueva cotización", path: "/admin/cotizacion/create" },
+      { name: "Lista de cotizaciones", path: "/admin/cotizaciones" },
+      { name: "Nueva cotización", path: "/admin/cotizaciones/nuevo" },
     ],
   },
   {
@@ -62,8 +62,8 @@ const sidebarStructure = [
     icon: ArchiveBoxIcon,
     title: "Inventario",
     items: [
-      { name: "Lista de productos", path: "/admin/inventario" },
-      { name: "Registrar producto", path: "/admin/inventario/nuevo" },
+      { name: "Lista de productos", path: "/admin/productos" },
+      { name: "Registrar producto", path: "/admin/productos/nuevo" },
       { name: "Compras", path: "/admin/inventario/compras" },
       { name: "Historial de compras", path: "/admin/inventario/historial" },
     ],

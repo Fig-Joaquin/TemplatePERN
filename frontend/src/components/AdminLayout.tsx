@@ -2,6 +2,8 @@ import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -9,6 +11,7 @@ const AdminLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <ToastContainer />
 
       {/* Contenedor principal con margen dinámico */}
       <div 

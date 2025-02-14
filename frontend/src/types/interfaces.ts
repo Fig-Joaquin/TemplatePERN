@@ -99,14 +99,14 @@ export interface WorkProductDetail {
 export interface Product {
     product_id: number;
     product_name: string;
-    profit_margin: string;
-    last_purchase_price: string;
-    sale_price: string;
+    profit_margin: number;
+    last_purchase_price: number;
+    sale_price: number;
     description: string;
     product_quantity: number;
     type: type;
     supplier: Supplier;
-    StockProduct: StockProduct;
+    stock: StockProduct;
 }
 
 export interface Supplier {
@@ -119,9 +119,10 @@ export interface Supplier {
 }
 
 export interface StockProduct {
-    stock_product_id: number;
-    product: Product;
+    stock_product_id?: number;
+    product?: Product;
     quantity: number;
+    updated_at?: Date;
 }
 
 export interface type {
@@ -150,6 +151,7 @@ export interface NumberInputProps {
     hideControls?: boolean
     id?: string
     isPrice?: boolean
+    required?: boolean
 }
 
 

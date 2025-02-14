@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../utils/axiosConfig";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
 import ClientList from "../components/clientList";
 import ClientForm from "../components/clientForm";
@@ -83,8 +83,12 @@ const ClientPage = () => {
             setPersons(clients);
         } catch (error: any) {
             toast.error(
-                error.response?.data?.message ||
-                error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
+                [
+                    error.response?.data?.message,
+                    error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                ]
+                    .filter(Boolean)
+                    .join(", ") || 
                 "Error al crear el cliente"
             );
         }
@@ -104,8 +108,12 @@ const ClientPage = () => {
             }
         } catch (error: any) {
             toast.error(
-                error.response?.data?.message ||
-                error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
+                [
+                    error.response?.data?.message,
+                    error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                ]
+                    .filter(Boolean)
+                    .join(", ") || 
                 "Error al actualizar el cliente"
             );
         }
@@ -138,8 +146,12 @@ const ClientPage = () => {
                 setPersons(persons.filter(person => person.person_id !== clientToDelete));
             } catch (error: any) {
                 toast.error(
-                    error.response?.data?.message ||
-                    error.response?.data?.errors?.map((e: any) => e.message).join(", ") ||
+                    [
+                        error.response?.data?.message,
+                        error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                    ]
+                        .filter(Boolean)
+                        .join(", ") || 
                     "Error al eliminar el cliente"
                 );
             } finally {
@@ -156,7 +168,6 @@ const ClientPage = () => {
 
     return (
         <div className="p-6">
-            <ToastContainer />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Lista de Clientes</h1>
                 <Button onClick={() => setAddModalOpen(true)}>

@@ -104,10 +104,18 @@ const VehiclesPage = () => {
             }
             fetchVehicles()
             closeModal()
-        } catch (error) {
-            toast.error("Error al guardar el vehículo")
-            console.error(error)
-        }
+        } catch (error: any) {
+                    console.log(error)
+                    toast.error(
+                        [
+                            error.response?.data?.message,
+                            error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                        ]
+                            .filter(Boolean)
+                            .join(", ") || 
+                        "Error al guardar el vehículo"
+                    );
+                }
     }
 
     const handleDeleteConfirm = async () => {
@@ -116,10 +124,18 @@ const VehiclesPage = () => {
             toast.success("Vehículo eliminado correctamente")
             fetchVehicles()
             closeModal()
-        } catch (error) {
-            toast.error("Error al eliminar el vehículo")
-            console.error(error)
-        }
+        } catch (error: any) {
+                    console.log(error)
+                    toast.error(
+                        [
+                            error.response?.data?.message,
+                            error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                        ]
+                            .filter(Boolean)
+                            .join(", ") || 
+                        "Error al eliminar el vehículo"
+                    );
+                }
     }
 
     const fetchVehicles = async () => {

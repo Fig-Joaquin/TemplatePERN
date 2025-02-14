@@ -1,6 +1,7 @@
 import type { Quotation } from "../types/interfaces"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2 } from "lucide-react"
+import { formatQuantity } from "@/utils/formatQuantity"
 
 interface VehicleCardProps {
     vehicle: Quotation["vehicle"]
@@ -37,7 +38,7 @@ export const VehicleCard = ({ vehicle, onEdit, onDelete, showActions = false }: 
                 <p>
                     <strong>Kilometraje actual:</strong>{" "}
                     {vehicle?.mileage_history && vehicle.mileage_history.length > 0 ? 
-                        vehicle.mileage_history[vehicle.mileage_history.length - 1].current_mileage + " km" : "N/A"}
+                        formatQuantity(vehicle.mileage_history[vehicle.mileage_history.length - 1].current_mileage) + " km" : "N/A"}
                 </p>
             </div>
             {showActions && (

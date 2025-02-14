@@ -28,6 +28,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
                     onChange={handleInputChange}
                     required
                     className="w-full border rounded p-2 bg-white text-gray-900"
+                    pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
                 />
             </div>
             <div className="mb-4">
@@ -40,6 +41,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
                     onChange={handleInputChange}
                     required
                     className="w-full border rounded p-2 bg-white text-gray-900"
+                    pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
                 />
             </div>
             <div className="mb-4">
@@ -51,6 +53,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
                     value={formData.second_surname}
                     onChange={handleInputChange}
                     className="w-full border rounded p-2 bg-white text-gray-900"
+                    pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
                 />
             </div>
             <div className="mb-4">

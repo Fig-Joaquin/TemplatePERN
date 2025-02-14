@@ -7,6 +7,8 @@ import VehiclesPage from "./pages/vehiclesPage";
 import ClientPage from "./pages/clientPage";
 import QuotationPage from "./pages/quotationPage";
 import QuotationCreatePage from "./pages/quotationCreatePage";
+import ProductPage from "./pages/productPage";
+import ProductCreatePage from "./pages/productCreatePage";
 
 export default function App() {
   return (
@@ -21,10 +23,12 @@ export default function App() {
       >
         <Route path="dashboard" element={<Dashboard />} />
         {/* Puedes agregar más rutas dentro del layout aquí */}
-        <Route path="vehiculo" element={<VehiclesPage />} />
+        <Route path="vehiculos" element={<VehiclesPage />} />
         <Route path="clientes" element={<ClientPage />} />
-        <Route path="cotizacion" element={<QuotationPage />} />
-        <Route path="cotizacion/create" element={<QuotationCreatePage />} />
+        <Route path="cotizaciones" element={<QuotationPage />} />
+        <Route path="cotizaciones/nuevo" element={<QuotationCreatePage />} />
+        <Route path="productos" element={<ProductPage />} />
+        <Route path="productos/nuevo" element={<ProductCreatePage />} />
       </Route>
       
     </Routes>
