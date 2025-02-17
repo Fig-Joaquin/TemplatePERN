@@ -96,12 +96,5 @@
 [data-radix-popper-content-wrapper] {
   background-color: hsl(var(--background));
 }
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+
 
