@@ -1,0 +1,38 @@
+// router.tsx
+import { createBrowserRouter } from "react-router-dom";
+import Login from "@/pages/Login";
+import { Dashboard } from "@/pages/Dashboard";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminLayout from "@/components/AdminLayout";
+import VehiclesPage from "@/pages/vehiclesPage";
+import ClientPage from "@/pages/clientPage";
+import QuotationPage from "@/pages/quotationPage";
+import QuotationCreatePage from "@/pages/quotationCreatePage";
+import ProductPage from "@/pages/productPage";
+import ProductCreatePage from "@/pages/productCreatePage";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Login />,
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: "dashboard", element: <Dashboard />, handle: { title: "Dashboard" } },
+      { path: "vehiculos", element: <VehiclesPage />, handle: { title: "Vehículos" } },
+      { path: "clientes", element: <ClientPage />, handle:{ title: "Clientes" } },
+      { path: "cotizaciones", element: <QuotationPage />, handle: { title: "Cotizaciones" } },
+      { path: "cotizaciones/nuevo", element: <QuotationCreatePage />, handle: { title: "Nueva Cotización" } },
+      { path: "productos", element: <ProductPage />, handle: { title: "Productos" } },
+      { path: "productos/nuevo", element: <ProductCreatePage />, handle: { title: "Nuevo Producto" } },
+    ],
+  },
+]);
+
+export default router;

@@ -1,43 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../utils/axiosConfig";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
 
-interface User {
-  id: number;
-  username: string;
-  userRole: string;
-}
-
-export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data } = await api.get<{ user: User }>("/auth/check-session");
-        setUser(data.user);
-      } catch {
-        navigate("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkSession();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    await api.post("/auth/logout");
-    navigate("/");
-  };
-
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-screen text-gray-600">Cargando...</div>;
-  }
-
+export const Dashboard = () => {
   return (
     <div className="p-6">
       <main className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">

@@ -9,6 +9,13 @@ export interface Person {
     rut: string;
 }
 
+export interface User {
+    id: number;
+    username: string;
+    userRole: string;
+    person: Person;
+}
+
 export interface ClientFormProps {
     formData: {
         name: string;

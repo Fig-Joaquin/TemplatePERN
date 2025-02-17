@@ -61,7 +61,7 @@ export const logoutUser: RequestHandler = (_req, res) => {
   res.status(200).json({ message: "Logout exitoso" });
 };
 
-export const checkSession: RequestHandler = (req: Request, res: Response): void => {
+export const checkSession: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   console.log("Cookies recibidas:", req.cookies); // 🔍 Depuración
 
   const token = req.cookies?.token; // ← Cambia `session` por `token`
@@ -71,7 +71,17 @@ export const checkSession: RequestHandler = (req: Request, res: Response): void 
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    res.json({ user: decoded });
+    // Nuevo: obtener al usuario con la relación "person"
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({
+      where: { user_id: decoded.user_id },
+      relations: ["person"],
+    });
+    if (!user) {
+      res.status(404).json({ error: "Usuario no encontrado" });
+      return;
+    }
+    res.json({ user: decoded, person: user.person });
   } catch (error) {
     res.status(401).json({ error: "Token inválido o expirado" });
   }

@@ -1,19 +1,46 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BellIcon } from "@heroicons/react/24/solid";
+import { User } from "../types/interfaces";
+import { checkUserSession, userLogout } from "../services/userService";
+import { useNavigate, useMatches } from "react-router-dom";
 
 interface NavbarProps {
-  username?: string;
   onLogout?: () => void;
-  isSidebarOpen: boolean; // Nueva prop
+  isSidebarOpen: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ username, onLogout, isSidebarOpen }) => {
+const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+  const matches = useMatches();
+  const currentMatch = matches.find(match => (match.handle as { title?: string })?.title);
+  const title = (currentMatch?.handle as { title?: string })?.title || "Dashboard";
+
+  useEffect(() => {
+    checkUserSession()
+      .then((userData) => {
+        setUser(userData);
+        console.log(userData);
+      })
+      .catch(() => {
+        setUser(null);
+        console.log("No user session");
+      });
+  }, []);
+
+  const handleLogout = () => {
+    userLogout();
+    if (onLogout) onLogout();
+    navigate("/");
+  };
+
+
   return (
     <nav 
       className={`fixed top-0 bg-white shadow px-6 h-16 flex items-center justify-between z-50 transition-all duration-300 
       ${isSidebarOpen ? "left-64 w-[calc(100%-16rem)]" : "left-16 w-[calc(100%-4rem)]"}`}>
       
-      <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+      <h1 className="text-xl font-bold text-gray-800">{title}</h1>
 
       <div className="flex items-center space-x-6">
         <button className="relative">
@@ -22,9 +49,14 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout, isSidebarOpen }) =>
             3
           </span>
         </button>
-        {username && <span className="text-gray-800 font-medium">{username}</span>}
-        {onLogout && (
-          <button onClick={onLogout} className="text-blue-600 hover:underline">
+        <img
+          src="/OR_LOGO A&M.png"
+          alt="Logo"
+          className="h-10 w-auto center"
+        />
+        {user && <span className="text-gray-800 font-medium">{user.person.name} {user.person.first_surname}</span>}
+        {user && (
+          <button onClick={handleLogout} className="text-blue-600 hover:underline">
             Logout
           </button>
         )}
