@@ -3,6 +3,7 @@ import VehicleList from "./vehicleList";
 import { Vehicle, Person } from "../types/interfaces";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import RutFormatter from "./RutFormatter";
 
 interface ClientListProps {
     persons: Person[];
@@ -54,7 +55,7 @@ const ClientList: React.FC<ClientListProps> = ({ persons, getVehiclesByPersonId,
                 <tbody className="bg-white divide-y divide-gray-200">
                     {persons.map((person) => (
                         <tr key={person.person_id}>
-                            <td className="px-6 py-4 whitespace-nowrap">{person.rut}</td>
+                            <td className="px-6 py-4 whitespace-nowrap"><RutFormatter rut={person.rut} /></td>
                             <td className="px-6 py-4 whitespace-nowrap">{person.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{person.first_surname}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{person.email}</td>

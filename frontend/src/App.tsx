@@ -9,6 +9,7 @@ import QuotationPage from "./pages/quotationPage";
 import QuotationCreatePage from "./pages/quotationCreatePage";
 import ProductPage from "./pages/productPage";
 import ProductCreatePage from "./pages/productCreatePage";
+import EmployeePage from "./pages/employeePage";
 
 export default function App() {
   return (
@@ -29,8 +30,9 @@ export default function App() {
         <Route path="cotizaciones/nuevo" element={<QuotationCreatePage />} />
         <Route path="productos" element={<ProductPage />} />
         <Route path="productos/nuevo" element={<ProductCreatePage />} />
+        <Route path="trabajadores" element={<EmployeePage />} />
       </Route>
-      
+
     </Routes>
   );
 }

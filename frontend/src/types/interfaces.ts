@@ -155,6 +155,22 @@ export interface NumberInputProps {
 }
 
 
+export interface EmployeeFormProps {
+    formData: {
+        rut: string;
+        name: string;
+        first_surname: string;
+        second_surname?: string;
+        email: string;
+        number_phone: string;
+        person_type: string;
+    };
+    handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleSubmit: (e: React.FormEvent) => void;
+    onCancel: () => void;
+}
+
+
 
 
 

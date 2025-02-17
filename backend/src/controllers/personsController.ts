@@ -6,16 +6,21 @@ import { PersonSchema, UpdatePersonSchema } from "../schema/personsValidator";
 
 const personRepository = AppDataSource.getRepository(Person);
 
-export const getAllPersons = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const getAllPersons = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const persons = await personRepository.find();
+        const { person_type } = req.query;
+        let persons;
+        if (person_type) {
+            persons = await personRepository.find({ where: { person_type: person_type as string } });
+        } else {
+            persons = await personRepository.find();
+        }
         res.json(persons);
-        return;
     } catch (error) {
         res.status(500).json({ message: "Error al obtener personas", error });
-        return;
     }
 };
+
 
 export const getPersonById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {

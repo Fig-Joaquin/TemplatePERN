@@ -25,7 +25,7 @@ const sidebarStructure = [
     title: "Personas",
     items: [
       { name: "Clientes", path: "/admin/clientes" },
-      { name: "Trabajadores", path: "/admin/" },
+      { name: "Trabajadores", path: "/admin/trabajadores" },
     ],
   },
   {
@@ -103,43 +103,41 @@ const Sidebar = ({
   };
 
   return (
-      <div className="relative">
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md"
+    <div className="relative">
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            {isSidebarOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
-        </button>
-        <aside
-          className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 ${
-            isSidebarOpen ? "w-64" : "w-16"
+          {isSidebarOpen ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          )}
+        </svg>
+      </button>
+      <aside
+        className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-16"
           }`}
-        >
+      >
         <h2
-          className={`text-2xl font-bold mb-6 text-center text-gray-700 transition-opacity ${
-            isSidebarOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`text-2xl font-bold mb-6 text-center text-gray-700 transition-opacity ${isSidebarOpen ? "opacity-100" : "opacity-0"
+            }`}
         >
           Panel
         </h2>
@@ -159,9 +157,8 @@ const Sidebar = ({
                   </div>
                   {isSidebarOpen && (
                     <ChevronDownIcon
-                      className={`w-5 h-5 transition-transform ${
-                        openSections[section.id] ? "rotate-180" : ""
-                      }`}
+                      className={`w-5 h-5 transition-transform ${openSections[section.id] ? "rotate-180" : ""
+                        }`}
                     />
                   )}
                 </button>
