@@ -32,8 +32,8 @@ export const VehicleCard = ({ vehicle, onEdit, onDelete, showActions = false }: 
                 <p>
                     <strong>Propietario:</strong>
                     {vehicle?.owner
-                        ? `${vehicle.owner.name} ${vehicle.owner.first_surname}`
-                        : `Empresa: ${vehicle?.company?.name}`}
+                        ? ` ${vehicle.owner.name} ${vehicle.owner.first_surname}`
+                        : ` Empresa: ${vehicle?.company?.name}`}
                 </p>
                 <p>
                     <strong>Kilometraje actual:</strong>{" "}
