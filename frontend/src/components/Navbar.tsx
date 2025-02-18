@@ -3,6 +3,7 @@ import { BellIcon } from "@heroicons/react/24/solid";
 import { User } from "../types/interfaces";
 import { checkUserSession, userLogout } from "../services/userService";
 import { useNavigate, useMatches } from "react-router-dom";
+import DarkModeToggle from "@/components/darModeToggle";
 
 interface NavbarProps {
   onLogout?: () => void;
@@ -49,6 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
             3
           </span>
         </button>
+        <DarkModeToggle />
         <img
           src="/OR_LOGO A&M.png"
           alt="Logo"
