@@ -54,6 +54,7 @@ export interface model {
     vehicle_model_id: number;
     model_name: string;
     brand: brand;
+    vehicle_brand_id?: number;
 }
 
 export interface brand {
@@ -135,7 +136,8 @@ export interface StockProduct {
 export interface type {
     product_type_id: number;
     type_name: string;
-    category: category;
+    category?: category;
+    product_category_id: number;
 }
 
 export interface category {

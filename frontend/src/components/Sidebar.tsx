@@ -8,9 +8,9 @@ import {
   BanknotesIcon,
   Cog6ToothIcon,
   ChevronDownIcon,
-} from "@heroicons/react/24/solid";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+} from "@heroicons/react/24/solid"
+import { useState } from "react"
+import { Link } from "react-router-dom"
 
 const sidebarStructure = [
   {
@@ -36,6 +36,8 @@ const sidebarStructure = [
       { name: "Lista de vehículos", path: "/admin/vehiculos" },
       { name: "Registrar vehículo", path: "/admin/vehiculos/nuevo" },
       { name: "Historial de kilometraje", path: "/admin/vehiculos/kilometraje" },
+      { name: "Marcas de Vehículos", path: "/admin/marcas-vehiculos" },
+      { name: "Modelos de Vehículos", path: "/admin/modelos-vehiculos" },
     ],
   },
   {
@@ -66,6 +68,8 @@ const sidebarStructure = [
       { name: "Registrar producto", path: "/admin/productos/nuevo" },
       { name: "Compras", path: "/admin/inventario/compras" },
       { name: "Historial de compras", path: "/admin/inventario/historial" },
+      { name: "Categorias de productos", path: "/admin/categorias-productos" },
+      { name: "Tipos de productos", path: "/admin/tipo-productos" },
     ],
   },
   {
@@ -87,20 +91,20 @@ const sidebarStructure = [
       { name: "Categorías de productos", path: "/admin/configuracion/categorias" },
     ],
   },
-];
+]
 
 const Sidebar = ({
   isSidebarOpen,
   setIsSidebarOpen,
 }: {
-  isSidebarOpen: boolean;
-  setIsSidebarOpen: (open: boolean) => void;
+  isSidebarOpen: boolean
+  setIsSidebarOpen: (open: boolean) => void
 }) => {
-  const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({});
+  const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({})
 
   const toggleSection = (section: string) => {
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
+  }
 
   return (
     <div className="relative">
@@ -108,36 +112,23 @@ const Sidebar = ({
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md"
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {isSidebarOpen ? (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           ) : (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           )}
         </svg>
       </button>
       <aside
-        className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-16"
-          }`}
+        className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 ${
+          isSidebarOpen ? "w-64" : "w-16"
+        }`}
       >
         <h2
-          className={`text-2xl font-bold mb-6 text-center text-gray-700 transition-opacity ${isSidebarOpen ? "opacity-100" : "opacity-0"
-            }`}
+          className={`text-2xl font-bold mb-6 text-center text-gray-700 transition-opacity ${
+            isSidebarOpen ? "opacity-100" : "opacity-0"
+          }`}
         >
           Panel
         </h2>
@@ -151,14 +142,11 @@ const Sidebar = ({
                 >
                   <div className="flex items-center gap-2">
                     <section.icon className="w-6 h-6 text-gray-600" />
-                    <span className={isSidebarOpen ? "block" : "hidden"}>
-                      {section.title}
-                    </span>
+                    <span className={isSidebarOpen ? "block" : "hidden"}>{section.title}</span>
                   </div>
                   {isSidebarOpen && (
                     <ChevronDownIcon
-                      className={`w-5 h-5 transition-transform ${openSections[section.id] ? "rotate-180" : ""
-                        }`}
+                      className={`w-5 h-5 transition-transform ${openSections[section.id] ? "rotate-180" : ""}`}
                     />
                   )}
                 </button>
@@ -179,7 +167,8 @@ const Sidebar = ({
         </nav>
       </aside>
     </div>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar
+

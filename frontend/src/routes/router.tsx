@@ -10,7 +10,10 @@ import QuotationPage from "@/pages/quotationPage";
 import QuotationCreatePage from "@/pages/quotationCreatePage";
 import ProductPage from "@/pages/productPage";
 import ProductCreatePage from "@/pages/productCreatePage";
-import EmployeeForm from "@/components/employee/employeeForm";
+import ProductCategoryPage from "@/pages/ProductCategoryPage";
+import ProductTypePage from "@/pages/ProductTypePage";
+import VehicleBrandPage from "@/pages/VehicleBrandPage";
+import VehicleModelPage from "@/pages/VehicleModelPage";
 import EmployeePage from "@/pages/employeePage";
 
 const router = createBrowserRouter([
@@ -33,10 +36,15 @@ const router = createBrowserRouter([
       { path: "cotizaciones/nuevo", element: <QuotationCreatePage />, handle: { title: "Nueva Cotización" } },
       { path: "productos", element: <ProductPage />, handle: { title: "Productos" } },
       { path: "productos/nuevo", element: <ProductCreatePage />, handle: { title: "Nuevo Producto" } },
+      { path: "categorias-productos", element: <ProductCategoryPage />, handle: { title: "Categorías de Productos" } },
+      { path: "tipo-productos", element: <ProductTypePage />, handle: { title: "Tipos de Productos" } },
+      { path: "marcas-vehiculos", element: <VehicleBrandPage />, handle: { title: "Marcas de Vehículos" } },
+      { path: "modelos-vehiculos", element: <VehicleModelPage />, handle: { title: "Modelos de Vehículos" } },
       { path: "trabajadores", element: <EmployeePage />, handle: { title: "Trabajador" } },
 
     ],
   },
-]);
+])
 
-export default router;
+export default router
+
