@@ -1,18 +1,18 @@
 // EmployeeForm.tsx
 import React from "react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Otros inputs los mantienes si lo deseas
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { EmployeeFormProps } from "../../types/interfaces";
+import RutInput from "../RutInput";
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange, handleSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-4">
         <Label htmlFor="rut" className="block text-sm mb-1">RUT</Label>
-        <Input
+        <RutInput
           id="rut"
-          type="text"
           name="rut"
           value={formData.rut}
           onChange={handleInputChange}
@@ -71,7 +71,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         />
       </div>
       <div className="mb-4">
-        <Label htmlFor="number_phone" className="block text-sm mb-1">Número de telefono</Label>
+        <Label htmlFor="number_phone" className="block text-sm mb-1">Número de teléfono</Label>
         <Input
           id="number_phone"
           type="text"

@@ -16,6 +16,6 @@ export const fetchPersonsClient = async () => {
 };
 
 export const fetchPersonsEmployee = async () => {
-    const { data } = await api.get<Person[]>("/persons?person_type=employee");
+    const { data } = await api.get<Person[]>("/persons?person_type=trabajador");
     return data;
 };

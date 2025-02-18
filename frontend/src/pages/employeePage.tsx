@@ -31,7 +31,7 @@ const EmployeePage = () => {
     second_surname: "",
     email: "",
     number_phone: "",
-    person_type: "employee",
+    person_type: "trabajador",
   };
 
   const [createFormData, setCreateFormData] = useState(initialFormData);
@@ -68,7 +68,7 @@ const EmployeePage = () => {
 
   const handleCreateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setCreateFormData({ ...createFormData, [name]: value, person_type: "employee" });
+    setCreateFormData({ ...createFormData, [name]: value, person_type: "trabajador" });
   };
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
