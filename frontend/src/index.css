@@ -2,14 +2,14 @@
 
 @layer base {
   :root {
-    /* Modo claro */
+    /* Light mode */
     --background: #F2F2F2;
     --foreground: #143D73;
     
-    --card: #F2F2F2;
+    --card: #FFFFFF;
     --card-foreground: #143D73;
     
-    --popover: #F2F2F2;
+    --popover: #FFFFFF;
     --popover-foreground: #143D73;
     
     --primary: #163573;
@@ -24,8 +24,7 @@
     --muted: #8AA1BF;
     --muted-foreground: #143D73;
     
-    /* Para usos varios */
-    --destructive: #11468C;
+    --destructive: #DC2626;
     --destructive-foreground: #F2F2F2;
     
     --border: #8AA1BF;
@@ -51,51 +50,51 @@
   }
   
   .dark {
-    /* Modo oscuro: se invierten algunos colores para mantener contraste */
-    --background: #143D73;
+    /* Dark mode - improved contrast and visual hierarchy */
+    --background: #0A1929;      /* Darker blue background for better contrast */
     --foreground: #F2F2F2;
     
-    --card: #143D73;
+    --card: #0F2544;           /* Slightly lighter than background for depth */
     --card-foreground: #F2F2F2;
     
-    --popover: #143D73;
+    --popover: #0F2544;
     --popover-foreground: #F2F2F2;
     
-    /* Para elementos destacados, se invierte el uso del color primario */
-    --primary: #F2F2F2;
-    --primary-foreground: #163573;
+    --primary: #4B83DB;        /* Lighter blue for better visibility */
+    --primary-foreground: #FFFFFF;
     
-    /* Se pueden mantener o ajustar los demás valores según convenga */
-    --secondary: #11468C;
-    --secondary-foreground: #F2F2F2;
+    --secondary: #2563EB;      /* Brighter secondary for dark mode */
+    --secondary-foreground: #FFFFFF;
     
-    --accent: #8AA1BF;
-    --accent-foreground: #143D73;
+    --accent: #60A5FA;         /* Lighter accent for visibility */
+    --accent-foreground: #0A1929;
     
-    --muted: #163573;
-    --muted-foreground: #F2F2F2;
+    --muted: #334155;          /* Darker muted tone */
+    --muted-foreground: #94A3B8;
     
-    --destructive: #11468C;
-    --destructive-foreground: #F2F2F2;
+    --destructive: #EF4444;    /* Brighter red for dark mode */
+    --destructive-foreground: #FFFFFF;
     
-    --border: #8AA1BF;
-    --input: #8AA1BF;
-    --ring: #F2F2F2;
+    --border: #1E3A5F;         /* Subtle border color */
+    --input: #1E3A5F;
+    --ring: #4B83DB;
     
-    --chart-1: #F2F2F2;
-    --chart-2: #11468C;
-    --chart-3: #163573;
-    --chart-4: #8AA1BF;
-    --chart-5: #11468C;
+    /* Adjusted chart colors for dark mode visibility */
+    --chart-1: #60A5FA;
+    --chart-2: #3B82F6;
+    --chart-3: #2563EB;
+    --chart-4: #1D4ED8;
+    --chart-5: #1E40AF;
     
-    --sidebar-background: #143D73;
+    /* Sidebar specific colors for dark mode */
+    --sidebar-background: #0F2544;
     --sidebar-foreground: #F2F2F2;
-    --sidebar-primary: #F2F2F2;
-    --sidebar-primary-foreground: #163573;
-    --sidebar-accent: #11468C;
-    --sidebar-accent-foreground: #F2F2F2;
-    --sidebar-border: #8AA1BF;
-    --sidebar-ring: #F2F2F2;
+    --sidebar-primary: #4B83DB;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #2563EB;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: #1E3A5F;
+    --sidebar-ring: #4B83DB;
   }
 }
 
@@ -109,18 +108,21 @@
   }
 }
 
-/* Agrega desenfoque y fondo semitransparente al overlay de diálogo */
+/* Dialog overlay with blur and semi-transparent background */
 .fixed.inset-0[aria-hidden="true"] {
   backdrop-filter: blur(4px);
-  background-color: var(--background);
+  background-color: color-mix(in srgb, var(--background) 50%, transparent);
 }
 
-/* Fondo correcto para el contenido del diálogo en ambos modos */
+/* Dialog content background */
 .dialog-content {
-  background-color: var(--background);
+  background-color: var(--card);
+  border: 1px solid var(--border);
 }
 
-/* Fondo para el contenido de popover */
+/* Popover content background */
 [data-radix-popper-content-wrapper] {
-  background-color: var(--background);
+  background-color: var(--popover);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }

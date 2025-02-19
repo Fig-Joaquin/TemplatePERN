@@ -1,16 +1,18 @@
 // EmployeeForm.tsx
-import React from "react";
-import { Input } from "@/components/ui/input"; // Otros inputs los mantienes si lo deseas
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { EmployeeFormProps } from "../../types/interfaces";
-import RutInput from "../RutInput";
+import type React from "react"
+import { Input } from "@/components/ui/input" // Otros inputs los mantienes si lo deseas
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import type { EmployeeFormProps } from "../../types/interfaces"
+import RutInput from "../RutInput"
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange, handleSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-4">
-        <Label htmlFor="rut" className="block text-sm mb-1">RUT</Label>
+        <Label htmlFor="rut" className="block text-sm mb-1">
+          RUT
+        </Label>
         <RutInput
           id="rut"
           name="rut"
@@ -21,7 +23,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         />
       </div>
       <div className="mb-4">
-        <Label htmlFor="name" className="block text-sm mb-1">Nombre</Label>
+        <Label htmlFor="name" className="block text-sm mb-1">
+          Nombre
+        </Label>
         <Input
           id="name"
           type="text"
@@ -34,7 +38,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         />
       </div>
       <div className="mb-4">
-        <Label htmlFor="first_surname" className="block text-sm mb-1">Apellido</Label>
+        <Label htmlFor="first_surname" className="block text-sm mb-1">
+          Apellido
+        </Label>
         <Input
           id="first_surname"
           type="text"
@@ -47,7 +53,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         />
       </div>
       <div className="mb-4">
-        <Label htmlFor="second_surname" className="block text-sm mb-1">Segundo Apellido</Label>
+        <Label htmlFor="second_surname" className="block text-sm mb-1">
+          Segundo Apellido
+        </Label>
         <Input
           id="second_surname"
           type="text"
@@ -59,7 +67,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         />
       </div>
       <div className="mb-4">
-        <Label htmlFor="email" className="block text-sm mb-1">Email</Label>
+        <Label htmlFor="email" className="block text-sm mb-1">
+          Email
+        </Label>
         <Input
           id="email"
           type="email"
@@ -71,7 +81,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         />
       </div>
       <div className="mb-4">
-        <Label htmlFor="number_phone" className="block text-sm mb-1">Número de teléfono</Label>
+        <Label htmlFor="number_phone" className="block text-sm mb-1">
+          Número de teléfono
+        </Label>
         <Input
           id="number_phone"
           type="text"
@@ -88,12 +100,17 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
         <Button type="button" variant="secondary" onClick={onCancel} className="px-4 py-2 border rounded">
           Cancelar
         </Button>
-        <Button type="submit" variant="default" className="px-4 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700 transition">
+        <Button
+          type="submit"
+          variant="default"
+          className="px-4 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700 transition"
+        >
           {formData.person_type === "employee" ? "Registrar" : "Actualizar"}
         </Button>
       </div>
     </form>
-  );
-};
+  )
+}
 
-export default EmployeeForm;
+export default EmployeeForm
+

@@ -15,7 +15,6 @@ import ProductTypePage from "@/pages/ProductTypePage";
 import VehicleBrandPage from "@/pages/VehicleBrandPage";
 import VehicleModelPage from "@/pages/VehicleModelPage";
 import EmployeePage from "@/pages/employeePage";
-import WorkOrdersPage from "@/pages/WorkOrderPage";
 
 const router = createBrowserRouter([
   {
@@ -42,8 +41,6 @@ const router = createBrowserRouter([
       { path: "marcas-vehiculos", element: <VehicleBrandPage />, handle: { title: "Marcas de Vehículos" } },
       { path: "modelos-vehiculos", element: <VehicleModelPage />, handle: { title: "Modelos de Vehículos" } },
       { path: "trabajadores", element: <EmployeePage />, handle: { title: "Trabajador" } },
-      { path: "ordenes-trabajo", element: <WorkOrdersPage />, handle: { title: "Órdenes de Trabajo" } }
-
 
     ],
   },
