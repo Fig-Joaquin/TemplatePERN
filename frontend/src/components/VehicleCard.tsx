@@ -27,17 +27,17 @@ export const VehicleCard = ({ vehicle, onEdit, onDelete, showActions = false }: 
                     <strong>Color:</strong> {vehicle?.color}
                 </p>
                 <p>
-                    <strong>Estado:</strong> {vehicle?.vehicle_status}
+                    <strong>Estado:</strong> {vehicle?.vehicle_status === "running" ? "Funcionando" : "Averiado"}
                 </p>
                 <p>
-                    <strong>Propietario:</strong>
+                    <strong>Propietario: </strong>
                     {vehicle?.owner
                         ? `${vehicle.owner.name} ${vehicle.owner.first_surname}`
                         : `Empresa: ${vehicle?.company?.name}`}
                 </p>
                 <p>
                     <strong>Kilometraje actual:</strong>{" "}
-                    {vehicle?.mileage_history && vehicle.mileage_history.length > 0 ? 
+                    {vehicle?.mileage_history && vehicle.mileage_history.length > 0 ?
                         formatQuantity(vehicle.mileage_history[vehicle.mileage_history.length - 1].current_mileage) + " km" : "N/A"}
                 </p>
             </div>

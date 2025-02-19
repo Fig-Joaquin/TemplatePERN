@@ -113,16 +113,16 @@ const ProductPage = () => {
             setProducts(updatedProducts)
             closeModal()
         } catch (error: any) {
-                    console.log(error)
-                    toast.error(
-                        [
-                            error.response?.data?.message,
-                            error.response?.data?.errors?.map((e: any) => e.message).join(", ")
-                        ]
-                            .filter(Boolean)
-                            .join(", ") || 
-                        "Error al actualizar el producto"
-                    );
+            console.log(error)
+            toast.error(
+                [
+                    error.response?.data?.message,
+                    error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                ]
+                    .filter(Boolean)
+                    .join(", ") ||
+                "Error al actualizar el producto"
+            );
         } finally {
             setLoading(false)
         }
@@ -135,16 +135,16 @@ const ProductPage = () => {
             toast.success("Producto eliminado correctamente")
             setProducts(products.filter((p) => p.product_id !== selectedProduct.product_id))
         } catch (error: any) {
-                    console.log(error)
-                    toast.error(
-                        [
-                            error.response?.data?.message,
-                            error.response?.data?.errors?.map((e: any) => e.message).join(", ")
-                        ]
-                            .filter(Boolean)
-                            .join(", ") || 
-                        "Error al eliminar el producto"
-                    );
+            console.log(error)
+            toast.error(
+                [
+                    error.response?.data?.message,
+                    error.response?.data?.errors?.map((e: any) => e.message).join(", ")
+                ]
+                    .filter(Boolean)
+                    .join(", ") ||
+                "Error al eliminar el producto"
+            );
         }
         closeModal()
     }

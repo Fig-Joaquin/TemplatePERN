@@ -179,7 +179,47 @@ export interface EmployeeFormProps {
     onCancel: () => void;
 }
 
+export interface WorkOrder {
+    work_order_id: number;
+    total_amount: number;
+    order_status: "finished" | "in_progress" | "not_started";
+    order_date: Date;
+    vehicle: Vehicle;
+    quotation?: Quotation;
+  }
+  
+  export interface WorkOrderInput {
+    vehicle_id: number;
+    quotation_id?: number;
+    total_amount: number;
+    order_status: "finished" | "in_progress" | "not_started";
+    order_date?: Date;
+  }
 
+  export interface WorkOrderFormProps {
+    initialData?: WorkOrder | null;
+    onSuccess: () => void;
+    onClose: () => void;
+  }
 
+  export interface WorkOrderListProps {
+    workOrders: WorkOrder[];
+    onEdit: (workOrder: WorkOrder) => void;
+    onDelete: (workOrderId: number) => void;
+    loading: boolean;
+  }
 
+  export interface WorkOrderCardProps {
+    workOrder: WorkOrder;
+    onEdit: (workOrder: WorkOrder) => void;
+    onDelete: (workOrderId: number) => void;
+  }
+
+  export interface QuotationInput {
+    vehicle_id: number;
+    description: string;
+    quotation_Status: "approved" | "rejected" | "pending";
+    total_price: number;
+  }
+  
 

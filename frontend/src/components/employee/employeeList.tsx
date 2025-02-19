@@ -46,9 +46,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ persons, getVehiclesByPerso
               Email
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Vehículos
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
             </th>
           </tr>
@@ -60,9 +57,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ persons, getVehiclesByPerso
               <td className="px-6 py-4 whitespace-nowrap">{person.name}</td>
               <td className="px-6 py-4 whitespace-nowrap">{person.first_surname}</td>
               <td className="px-6 py-4 whitespace-nowrap">{person.email}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <VehicleList vehicles={vehicles[person.person_id] || []} />
-              </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex gap-2">
                   <Button variant="ghost" className="text-blue-600 hover:text-blue-800" onClick={() => handleEdit(person)}>
