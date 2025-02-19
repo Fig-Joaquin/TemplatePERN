@@ -14,11 +14,10 @@ const AdminLayout = () => {
     <div className="flex min-h-screen">
       <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <ToastContainer />
-
       {/* Contenedor principal con margen dinámico */}
       <div className={`flex flex-col transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-16"} w-full`}>
         <Navbar isSidebarOpen={isSidebarOpen} />
-        <main className="p-6 mt-16">
+        <main className="p-6 mt-16 bg-background">
           <Outlet />
         </main>
       </div>

@@ -2,7 +2,7 @@
 export const darkMode = ["class"];
 export const content = [
 	"./index.html",
-	"./src/**/*.{js,ts,jsx,tsx}",
+	"./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}",
 ];
 export const theme = {
 	extend: {

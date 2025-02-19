@@ -98,7 +98,7 @@
   }
 }
 
-@layer base {
+/* @layer base {
   * {
     border-color: var(--border);
   }
@@ -106,7 +106,7 @@
     background-color: var(--background);
     color: var(--foreground);
   }
-}
+} */
 
 /* Dialog overlay with blur and semi-transparent background */
 .fixed.inset-0[aria-hidden="true"] {

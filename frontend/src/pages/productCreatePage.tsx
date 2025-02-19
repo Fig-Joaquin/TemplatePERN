@@ -80,7 +80,7 @@ const ProductCreatePage = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <Card className="bg-white">
+      <Card className="">
         <CardHeader>
           <h2 className="text-2xl font-bold">Crear Nuevo Producto</h2>
         </CardHeader>

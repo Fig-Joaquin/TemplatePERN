@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
 import { fetchVehicles } from "../services/vehicleService"
 import { createQuotation } from "../services/quotationService"
+import { getTaxById } from "@/services/taxService"
 import { createWorkProductDetail } from "@/services/workProductDetail"
 import type { Quotation, Vehicle, Product, StockProduct, WorkProductDetail } from "../types/interfaces"
 import { fetchProducts } from "../services/productService"
@@ -25,22 +26,30 @@ import type React from "react"
 import { NumberInput } from "@/components/numberInput"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 
+
+const TAX = await getTaxById(1) // 19% tax rate
+const TAX_RATE = TAX.tax_rate / 100
+
+interface SelectedProduct {
+  productId: number
+  quantity: number
+  laborPrice: number
+  profitMargin: number
+}
+
 const QuotationCreatePage = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [vehicleQuery] = useState("")
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<
-    { productId: number; quantity: number; laborPrice: number }[]
-  >([])
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
   const [showProductModal, setShowProductModal] = useState(false)
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
-  // Nuevo estado para los tabs: 0 = Personas, 1 = Empresas
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
 
   useEffect(() => {
@@ -61,6 +70,7 @@ const QuotationCreatePage = () => {
         toast.error("Error al cargar productos")
       }
     }
+    
 
     const fetchStockProductsData = async () => {
       try {
@@ -76,7 +86,6 @@ const QuotationCreatePage = () => {
     fetchStockProductsData()
   }, [])
 
-  // Filtrar según consulta de búsqueda y tab seleccionado
   const filteredVehicles = vehicles.filter((v) => {
     const matchesQuery =
       vehicleQuery === "" ||
@@ -87,13 +96,15 @@ const QuotationCreatePage = () => {
     return matchesQuery && matchesTab
   })
 
-  const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
+  const handleProductChange = (productId: number, quantity: number, laborPrice: number, profitMargin: number) => {
     setSelectedProducts((prevSelectedProducts) => {
       const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
       if (existingProduct) {
-        return prevSelectedProducts.map((p) => (p.productId === productId ? { ...p, quantity, laborPrice } : p))
+        return prevSelectedProducts.map((p) =>
+          p.productId === productId ? { ...p, quantity, laborPrice, profitMargin } : p,
+        )
       } else {
-        return [...prevSelectedProducts, { productId, quantity, laborPrice }]
+        return [...prevSelectedProducts, { productId, quantity, laborPrice, profitMargin }]
       }
     })
   }
@@ -110,30 +121,29 @@ const QuotationCreatePage = () => {
     }
     setLoading(true)
     try {
+      console.log(Math.trunc(totalPrice))
       const newQuotation: Quotation = {
         vehicle_id: selectedVehicle.vehicle_id,
         description,
         quotation_Status: "pending",
-        total_price: totalPrice,
+        total_price: Math.trunc(totalPrice),
       }
 
-      console.log(newQuotation)
-
       const createdQuotation = await createQuotation(newQuotation)
-      console.log(createdQuotation)
-      console.log(createdQuotation.quotation?.quotation_id)
-      const newWorkProductDetails: WorkProductDetail[] = selectedProducts.map(({ productId, quantity, laborPrice }) => {
-        const product = products.find((p) => p.product_id === Number(productId))
-        return {
-          quotation_id: createdQuotation.quotation?.quotation_id,
-          product_id: product?.product_id as number,
-          quantity,
-          labor_price: laborPrice,
-          tax_id: 1, // default value, update if needed
-          sale_price: product ? Number(product.sale_price) * quantity : 0, // default value, update if needed
-          discount: 0, // default value, update if needed
-        }
-      })
+      const newWorkProductDetails: WorkProductDetail[] = selectedProducts.map(
+        ({ productId, quantity, laborPrice, profitMargin }) => {
+          const product = products.find((p) => p.product_id === Number(productId))
+          return {
+            quotation_id: createdQuotation.quotation?.quotation_id,
+            product_id: product?.product_id as number,
+            quantity,
+            labor_price: laborPrice,
+            tax_id: 1, // default value for 19% tax
+            sale_price: product ? calculateTotalWithMargin(Number(product.sale_price), quantity, profitMargin) : 0,
+            discount: 0, // default value, update if needed
+          }
+        },
+      )
       await Promise.all(newWorkProductDetails.map((detail) => createWorkProductDetail(detail)))
       toast.success("Cotización creada exitosamente")
       navigate("/admin/cotizaciones")
@@ -149,25 +159,31 @@ const QuotationCreatePage = () => {
     }
   }
 
-  const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
+  const calculateTotalWithMargin = (price: number, quantity: number, profitMargin: number) => {
+    return price * quantity * (1 + profitMargin / 100)
+  }
+
+  const totalProductPrice = selectedProducts.reduce((total, { productId, quantity, profitMargin }) => {
     const product = products.find((p) => p.product_id === Number(productId))
-    return total + (product ? Number(product.sale_price) * quantity : 0)
+    return total + (product ? calculateTotalWithMargin(Number(product.sale_price), quantity, profitMargin) : 0)
   }, 0)
 
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0)
 
-  const totalPrice = totalProductPrice + totalLaborPrice
+  const subtotalWithoutTax = totalProductPrice + totalLaborPrice
+  const taxAmount = subtotalWithoutTax * TAX_RATE
+  const totalPrice = subtotalWithoutTax + taxAmount
 
   return (
     <div className="container mx-auto p-6">
-      <Card className="bg-white">
+      <Card className="bg-card shadow-lg">
         <CardHeader>
-          <CardTitle>Crear Nueva Cotización</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">Crear Nueva Cotización</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label>Vehículo</Label>
+              <Label className="text-lg font-semibold">Vehículo</Label>
               <Tabs
                 value={selectedTabIndex.toString()}
                 onValueChange={(value) => setSelectedTabIndex(Number.parseInt(value))}
@@ -222,21 +238,29 @@ const QuotationCreatePage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Repuestos Seleccionados</Label>
-              <Card>
+              <Label className="text-lg font-semibold">Repuestos Seleccionados</Label>
+              <Card className="bg-card shadow-sm">
                 <CardContent className="p-4">
                   <ScrollArea className="h-[200px] pr-4">
                     <ul className="space-y-2">
-                      {selectedProducts.map(({ productId, quantity, laborPrice }) => {
+                      {selectedProducts.map(({ productId, quantity, laborPrice, profitMargin }) => {
                         const product = products.find((p) => p.product_id === Number(productId))
                         const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
+                        const totalWithMargin = product
+                          ? calculateTotalWithMargin(Number(product.sale_price), quantity, profitMargin)
+                          : 0
                         return (
-                          <li key={productId} className="flex items-center justify-between">
-                            <span className="flex-1">
-                              {product?.product_name} - {formatPriceCLP(Number(product?.sale_price))} - Stock:{" "}
-                              {stockProduct?.quantity}
-                            </span>
-                            <div className="flex items-center space-x-2">
+                          <li
+                            key={productId}
+                            className="flex items-center justify-between py-2 border-b last:border-b-0"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium">{product?.product_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Precio: {formatPriceCLP(Number(product?.sale_price))} - Stock: {stockProduct?.quantity}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-4">
                               <div className="flex flex-col items-end">
                                 <Label htmlFor={`quantity-${productId}`} className="text-xs">
                                   Cantidad
@@ -244,7 +268,9 @@ const QuotationCreatePage = () => {
                                 <NumberInput
                                   id={`quantity-${productId}`}
                                   value={quantity}
-                                  onChange={(newValue) => handleProductChange(productId, newValue, laborPrice)}
+                                  onChange={(newValue) =>
+                                    handleProductChange(productId, newValue, laborPrice, profitMargin)
+                                  }
                                   min={1}
                                   max={stockProduct?.quantity}
                                   className="w-20"
@@ -257,13 +283,34 @@ const QuotationCreatePage = () => {
                                 <NumberInput
                                   id={`labor-${productId}`}
                                   value={laborPrice}
-                                  onChange={(newValue) => handleProductChange(productId, quantity, newValue)}
+                                  onChange={(newValue) =>
+                                    handleProductChange(productId, quantity, newValue, profitMargin)
+                                  }
                                   min={0}
                                   className="w-24"
                                   placeholder="Mano de obra"
                                   hideControls
                                   isPrice
                                 />
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <Label htmlFor={`margin-${productId}`} className="text-xs">
+                                  Margen (%)
+                                </Label>
+                                <NumberInput
+                                  id={`margin-${productId}`}
+                                  value={profitMargin}
+                                  onChange={(newValue) =>
+                                    handleProductChange(productId, quantity, laborPrice, newValue)
+                                  }
+                                  min={0}
+                                  max={100}
+                                  className="w-20"
+                                />
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="text-xs">Total</span>
+                                <span className="font-medium">{formatPriceCLP(totalWithMargin + laborPrice)}</span>
                               </div>
                               <Button variant="destructive" size="sm" onClick={() => handleRemoveProduct(productId)}>
                                 Eliminar
@@ -275,18 +322,37 @@ const QuotationCreatePage = () => {
                     </ul>
                   </ScrollArea>
                   <div className="mt-4 space-y-2">
-                    <div className="text-right">Subtotal Productos: {formatPriceCLP(totalProductPrice)}</div>
-                    <div className="text-right">Total Mano de Obra: {formatPriceCLP(totalLaborPrice)}</div>
-                    <div className="text-right font-bold">Total: {formatPriceCLP(totalPrice)}</div>
+                    <div className="flex justify-between">
+                      <span>Subtotal Productos (con margen):</span>
+                      <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Mano de Obra:</span>
+                      <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total sin IVA:</span>
+                      <span className="font-medium">{formatPriceCLP(subtotalWithoutTax)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>IVA (19%):</span>
+                      <span className="font-medium">{formatPriceCLP(taxAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total con IVA:</span>
+                      <span>{formatPriceCLP(totalPrice)}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
-                <Button onClick={() => setShowProductModal(true)}>Añadir Repuesto</Button>
-                <DialogContent className="sm:max-w-[500px] bg-white">
+                <Button onClick={() => setShowProductModal(true)} className="w-full">
+                  Añadir Repuesto
+                </Button>
+                <DialogContent className="sm:max-w-[700px] bg-card">
                   <DialogHeader>
-                    <DialogTitle>Seleccionar los repuestos a utilizar</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-primary">Seleccionar Repuestos</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="h-[400px] pr-4">
                     <ul className="space-y-4">
@@ -294,57 +360,45 @@ const QuotationCreatePage = () => {
                         const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
                         const selectedProduct = selectedProducts.find((p) => p.productId === product.product_id)
                         return (
-                          <li key={product.product_id} className="flex items-center space-x-4">
+                          <li
+                            key={product.product_id}
+                            className="flex items-center space-x-4 p-2 rounded-lg hover:bg-accent/10"
+                          >
                             <Checkbox
                               id={`product-${product.product_id}`}
                               checked={!!selectedProduct}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  handleProductChange(product.product_id, 1, 0)
+                                  handleProductChange(product.product_id, 1, 0, product.profit_margin)
                                 } else {
                                   handleRemoveProduct(product.product_id)
                                 }
                               }}
                             />
-                            <Label htmlFor={`product-${product.product_id}`} className="flex-grow">
-                              {product.product_name} - {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
-                              {stockProduct?.quantity}
+                            <Label htmlFor={`product-${product.product_id}`} className="flex-grow cursor-pointer">
+                              <span className="font-medium">{product.product_name}</span>
+                              <span className="text-sm text-muted-foreground block">
+                                Precio: {formatPriceCLP(Number(product.sale_price))} - Stock: {stockProduct?.quantity}
+                              </span>
                             </Label>
                             {selectedProduct && (
-                              <>
-                                <div className="flex flex-col items-end">
-                                  <Label htmlFor={`modal-quantity-${product.product_id}`} className="text-xs">
-                                    Cantidad
-                                  </Label>
-                                  <NumberInput
-                                    id={`modal-quantity-${product.product_id}`}
-                                    value={selectedProduct.quantity}
-                                    onChange={(newValue) =>
-                                      handleProductChange(product.product_id, newValue, selectedProduct.laborPrice)
-                                    }
-                                    min={1}
-                                    max={stockProduct?.quantity}
-                                    className="w-20"
-                                  />
-                                </div>
-                                <div className="flex flex-col items-end">
-                                  <Label htmlFor={`modal-labor-${product.product_id}`} className="text-xs">
-                                    Mano de obra
-                                  </Label>
-                                  <NumberInput
-                                    id={`modal-labor-${product.product_id}`}
-                                    value={selectedProduct.laborPrice}
-                                    onChange={(newValue) =>
-                                      handleProductChange(product.product_id, selectedProduct.quantity, newValue)
-                                    }
-                                    min={0}
-                                    className="w-24"
-                                    placeholder="Mano de obra"
-                                    hideControls
-                                    isPrice
-                                  />
-                                </div>
-                              </>
+                              <div className="flex items-center space-x-2">
+                                <NumberInput
+                                  id={`modal-quantity-${product.product_id}`}
+                                  value={selectedProduct.quantity}
+                                  onChange={(newValue) =>
+                                    handleProductChange(
+                                      product.product_id,
+                                      newValue,
+                                      selectedProduct.laborPrice,
+                                      selectedProduct.profitMargin,
+                                    )
+                                  }
+                                  min={1}
+                                  max={stockProduct?.quantity}
+                                  className="w-20"
+                                />
+                              </div>
                             )}
                           </li>
                         )
@@ -356,17 +410,20 @@ const QuotationCreatePage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
+              <Label htmlFor="description" className="text-lg font-semibold">
+                Descripción
+              </Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="Ingrese la descripción de la cotización"
+                className="w-full p-2 border rounded-md"
               />
             </div>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground">
               {loading ? "Creando..." : "Crear Cotización"}
             </Button>
           </form>
