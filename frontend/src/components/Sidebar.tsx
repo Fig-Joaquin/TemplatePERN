@@ -110,7 +110,7 @@ const Sidebar = ({
     <div className="relative">
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {isSidebarOpen ? (
@@ -121,14 +121,16 @@ const Sidebar = ({
         </svg>
       </button>
       <aside
-        className={`bg-white border-r border-gray-200 min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 ${
-          isSidebarOpen ? "w-64" : "w-16"
-        }`}
+        className={
+          "bg-sidebar border-r border-sidebar-border min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 " +
+          (isSidebarOpen ? "w-64" : "w-16")
+        }
       >
         <h2
-          className={`text-2xl font-bold mb-6 text-center text-gray-700 transition-opacity ${
-            isSidebarOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={
+        "text-2xl font-bold mb-6 text-center text-sidebar-foreground transition-opacity " +
+        (isSidebarOpen ? "opacity-100" : "opacity-0")
+          }
         >
           Panel
         </h2>
@@ -138,10 +140,10 @@ const Sidebar = ({
               <li key={section.id}>
                 <button
                   onClick={() => toggleSection(section.id)}
-                  className="flex items-center justify-between w-full text-left text-lg font-semibold text-gray-700 hover:bg-gray-100 p-2 rounded-lg"
+                  className="flex items-center justify-between w-full text-left text-lg font-semibold text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground p-2 rounded-lg"
                 >
                   <div className="flex items-center gap-2">
-                    <section.icon className="w-6 h-6 text-gray-600" />
+                    <section.icon className="w-6 h-6 text-sidebar-foreground" />
                     <span className={isSidebarOpen ? "block" : "hidden"}>{section.title}</span>
                   </div>
                   {isSidebarOpen && (
@@ -151,10 +153,10 @@ const Sidebar = ({
                   )}
                 </button>
                 {openSections[section.id] && isSidebarOpen && (
-                  <ul className="ml-4 space-y-2 mt-2 text-sm text-gray-600">
+                  <ul className="ml-4 space-y-2 mt-2 text-sm text-sidebar-foreground">
                     {section.items.map((item) => (
                       <li key={item.path}>
-                        <Link to={item.path} className="hover:text-blue-500">
+                        <Link to={item.path} className="hover:text-sidebar-accent">
                           {item.name}
                         </Link>
                       </li>
