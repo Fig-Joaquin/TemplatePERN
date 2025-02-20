@@ -110,7 +110,7 @@ const Sidebar = ({
     <div className="relative">
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-sidebar-primary-foreground shadow-md"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {isSidebarOpen ? (

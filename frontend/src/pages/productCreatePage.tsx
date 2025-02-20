@@ -146,7 +146,7 @@ const ProductCreatePage = () => {
                 id="lastPurchasePrice"
                 value={Number(lastPurchasePrice)}
                 onChange={(value) => setLastPurchasePrice(value)}
-                min={1}
+                min={0}
                 required
                 isPrice
               />
@@ -157,7 +157,7 @@ const ProductCreatePage = () => {
                 id="salePrice"
                 value={Number(salePrice)}
                 onChange={(value) => setSalePrice(value)}
-                min={1}
+                min={0}
                 required
                 isPrice
               />

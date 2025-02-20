@@ -6,7 +6,6 @@ import { useEffect, useState } from "react"
 import { Edit, Trash2 } from "lucide-react"
 import type { Person, Vehicle } from "../../types/interfaces"
 import { Button } from "@/components/ui/button"
-import VehicleList from "../vehicleList"
 import RutFormatter from "../RutFormatter"
 
 interface EmployeeListProps {
@@ -17,7 +16,7 @@ interface EmployeeListProps {
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({ persons, getVehiclesByPersonId, handleEdit, handleDelete }) => {
-  const [vehicles, setVehicles] = useState<{ [key: number]: Vehicle[] }>({})
+  const [, setVehicles] = useState<{ [key: number]: Vehicle[] }>({})
 
   useEffect(() => {
     const fetchAllVehicles = async () => {

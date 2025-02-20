@@ -27,8 +27,16 @@ import { NumberInput } from "@/components/numberInput"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 
 
-const TAX = await getTaxById(1) // 19% tax rate
-const TAX_RATE = TAX.tax_rate / 100
+const fetchTax = async () => {
+  try {
+    const res = await getTaxById(1)
+    const TAX_RATE = res.tax_rate / 100
+    return TAX_RATE
+  } catch (error) {
+    toast.error("Error al cargar stock de productos")
+  }
+}
+
 
 interface SelectedProduct {
   productId: number
@@ -48,6 +56,7 @@ const QuotationCreatePage = () => {
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const [taxRate, setTaxRate] = useState<number>(0)
   const navigate = useNavigate()
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
@@ -84,6 +93,11 @@ const QuotationCreatePage = () => {
     fetchVehiclesData()
     fetchProductsData()
     fetchStockProductsData()
+    fetchTax().then((rate) => {
+      if (rate !== undefined) {
+        setTaxRate(rate)
+      }
+    })
   }, [])
 
   const filteredVehicles = vehicles.filter((v) => {
@@ -171,7 +185,7 @@ const QuotationCreatePage = () => {
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0)
 
   const subtotalWithoutTax = totalProductPrice + totalLaborPrice
-  const taxAmount = subtotalWithoutTax * TAX_RATE
+  const taxAmount = subtotalWithoutTax * taxRate
   const totalPrice = subtotalWithoutTax + taxAmount
 
   return (

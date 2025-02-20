@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { createWorkOrder, updateWorkOrder } from "@/services/workOrderService";
@@ -12,7 +11,7 @@ interface WorkOrderFormProps {
 }
 
 const WorkOrderForm = ({ initialData, onSuccess, onClose }: WorkOrderFormProps) => {
-  const [orderStatus, setOrderStatus] = useState(initialData?.work_order_status || "not_started");
+  const [orderStatus, setOrderStatus] = useState<"approved" | "rejected" | "pending">(initialData?.work_order_status || "pending");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,9 +44,9 @@ const WorkOrderForm = ({ initialData, onSuccess, onClose }: WorkOrderFormProps) 
           value={orderStatus}
           onChange={(e) => setOrderStatus(e.target.value)}
         >
-          <option value="not_started">No Iniciada</option>
-          <option value="in_progress">En Progreso</option>
-          <option value="finished">Finalizada</option>
+          <option value="pending">Pendiente</option>
+          <option value="approved">Aprobada</option>
+          <option value="rejected">Rechazada</option>
         </select>
       </label>
       <Button type="submit" disabled={loading}>

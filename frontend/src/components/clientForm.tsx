@@ -99,7 +99,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
         <Button
           type="submit"
           variant="default"
-          className="px-4 py-2 text-card-foreground border rounded shadow-md transition"
+          className="px-4 py-2  border rounded shadow-md transition"
         >
           {formData.person_type === "cliente" ? "Añadir" : "Actualizar"}
         </Button>

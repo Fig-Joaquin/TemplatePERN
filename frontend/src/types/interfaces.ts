@@ -183,8 +183,7 @@ export interface WorkOrder {
     work_order_id: number;
     total_amount: number;
     order_status: "finished" | "in_progress" | "not_started";
-    order_date: Date;
-    vehicle: Vehicle;
+    entry_date: Date;
     quotation?: Quotation;
   }
   
