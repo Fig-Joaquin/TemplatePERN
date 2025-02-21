@@ -11,7 +11,9 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/solid"
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
+import { cn } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 
 const sidebarStructure = [
   {
@@ -102,6 +104,7 @@ const Sidebar = ({
   setIsSidebarOpen: (open: boolean) => void
 }) => {
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({})
+  const location = useLocation()
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
@@ -109,57 +112,148 @@ const Sidebar = ({
 
   return (
     <aside
-      className={`bg-sidebar border-r border-sidebar-border min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 overflow-y-auto ${
-        isSidebarOpen ? "w-64" : "w-16"
-      }`}
+      className={cn(
+        "bg-sidebar",
+        "border-r border-sidebar",
+        "h-screen",
+        "transition-all duration-300 ease-in-out",
+        "overflow-y-auto scrollbar-thin scrollbar-track-muted",
+        isSidebarOpen ? "w-72" : "w-28",
+        "shadow-lg"
+      )}
     >
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-md transition-all duration-300 hover:bg-sidebar-accent"
-      >
-        {isSidebarOpen ? <ChevronRightIcon className="w-6 h-6" /> : <ChevronDownIcon className="w-6 h-6" />}
-      </button>
-      <h2
-        className={`text-2xl font-bold mb-6 text-center text-sidebar-foreground transition-opacity ${
-          isSidebarOpen ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        Panel
-      </h2>
-      <nav>
-        <ul className="space-y-4">
+      <div className="sticky top-0 z-20 flex items-center p-4 bg-sidebar border-b border-sidebar relative">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className={cn(
+            "flex items-center",
+            isSidebarOpen ? "gap-3 pr-10" : "w-full justify-center"
+          )}
+        >
+          <div
+            className={cn(
+              "rounded-xl flex items-center justify-center",
+              "bg-white/10 backdrop-blur-sm",
+              "w-12 h-12",
+              // Agregamos cursor pointer y hover effect cuando está contraído
+              !isSidebarOpen && "cursor-pointer hover:bg-sidebar-accent transition-colors"
+            )}
+            onClick={() => !isSidebarOpen && setIsSidebarOpen(true)}
+          >
+            <img 
+              src="/OR_LOGO A&M-2.png" 
+              alt="Logo A&M" 
+              className="w-10 h-10 object-contain"
+            />
+          </div>
+          {isSidebarOpen && (
+            <h2 className="text-xl font-bold text-sidebar">
+              Mecánica Automotriz A&M
+            </h2>
+          )}
+        </motion.div>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className={cn(
+            "p-2 rounded-lg",
+            "hover:bg-sidebar-accent",
+            "transition-all duration-200",
+            "text-sidebar hover:text-sidebar-accent",
+            "active:scale-95",
+            "flex items-center justify-center",
+            "w-8 h-8",
+            "absolute",
+            "right-2", // Ya no necesitamos la posición -right-4
+            "bg-sidebar",
+            "top-1/2",
+            "-translate-y-1/2",
+            "shadow-md",
+            "z-10",
+            // Ocultamos el botón cuando está contraído
+            !isSidebarOpen && "hidden"
+          )}
+        >
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <nav className={cn("p-3", !isSidebarOpen && "flex flex-col items-center")}>
+        <ul className={cn("space-y-1", !isSidebarOpen && "flex flex-col items-center w-full")}>
           {sidebarStructure.map((section) => (
             <li key={section.id}>
               <button
                 onClick={() => toggleSection(section.id)}
-                className="flex items-center justify-between w-full text-left text-lg font-semibold text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground p-2 rounded-lg transition-colors duration-200"
+                className={cn(
+                  "w-full flex items-center justify-between",
+                  "px-3 py-2.5 rounded-lg gap-3",
+                  "transition-all duration-200",
+                  "hover:bg-sidebar-accent",
+                  "text-sidebar",
+                  "active:scale-[0.98]",
+                  openSections[section.id] && "bg-sidebar-accent text-sidebar-accent"
+                )}
               >
-                <div className="flex items-center gap-2">
-                  <section.icon className="w-6 h-6 text-sidebar-foreground" />
-                  <span className={isSidebarOpen ? "block" : "hidden"}>{section.title}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <section.icon 
+                    className={cn(
+                      "w-5 h-5 shrink-0",
+                      "transition-colors duration-200",
+                      openSections[section.id] 
+                        ? "text-sidebar-accent" 
+                        : "text-sidebar"
+                    )} 
+                  />
+                  {isSidebarOpen && (
+                    <span className="text-sm font-medium truncate">
+                      {section.title}
+                    </span>
+                  )}
                 </div>
                 {isSidebarOpen && (
                   <ChevronDownIcon
-                    className={`w-5 h-5 transition-transform duration-200 ${
-                      openSections[section.id] ? "rotate-180" : ""
-                    }`}
+                    className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      openSections[section.id] && "rotate-180"
+                    )}
                   />
                 )}
               </button>
-              {openSections[section.id] && isSidebarOpen && (
-                <ul className="ml-4 space-y-2 mt-2 text-sm text-sidebar-foreground">
-                  {section.items.map((item) => (
-                    <li key={item.path}>
-                      <Link
-                        to={item.path}
-                        className="block py-1 px-2 rounded hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+
+              <AnimatePresence initial={false}>
+                {openSections[section.id] && isSidebarOpen && (
+                  <motion.ul
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden mt-1 ml-2"
+                  >
+                    {section.items.map((item) => {
+                      const isActive = location.pathname === item.path
+                      return (
+                        <li key={item.path}>
+                          <Link
+                            to={item.path}
+                            className={cn(
+                              "flex items-center gap-2 w-full",
+                              "px-6 py-2 rounded-lg",
+                              "text-sm transition-all duration-200",
+                              "text-sidebar",
+                              "hover:bg-sidebar-accent",
+                              "hover:text-sidebar-accent",
+                              "active:scale-[0.98]",
+                              isActive && "bg-sidebar-accent text-sidebar-accent font-medium"
+                            )}
+                          >
+                            <span className="truncate">{item.name}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
             </li>
           ))}
         </ul>

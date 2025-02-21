@@ -8,6 +8,7 @@ import type { User } from "../types/interfaces"
 import { checkUserSession, userLogout } from "../services/userService"
 import { useNavigate, useMatches } from "react-router-dom"
 import DarkModeToggle from "@/components/darkModeToggle"
+import { cn } from "@/lib/utils"
 
 interface NavbarProps {
   onLogout?: () => void
@@ -39,14 +40,22 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
 
   return (
     <nav
-      className={`fixed top-0 bg-sidebar shadow px-6 h-16 flex items-center justify-between z-50 transition-all duration-300 
-      ${isSidebarOpen ? "left-64 w-[calc(100%-16rem)]" : "left-16 w-[calc(100%-4rem)]"}`}
+      className={cn(
+        "bg-sidebar",
+        "border-r border-sidebar",
+        "fixed top-0 bg-sidebar border-b border-border",
+        "px-6 h-16 flex items-center justify-between z-30", // Cambiado z-50 a z-30
+        "transition-all duration-300 shadow-sm",
+        isSidebarOpen 
+          ? "left-72 w-[calc(100%-18rem)]" // Ajustado left-72 en lugar de left-64
+          : "left-25 w-[calc(100%-6rem)]"  // Ajustado left-20 en lugar de left-16
+      )}
     >
       <h1 className="text-xl font-bold text-foreground">{title}</h1>
 
       <div className="flex items-center space-x-6">
-        <button className="relative">
-          <BellIcon className="w-6 h-6 text-muted-foreground" />
+        <button className="relative hover:text-primary transition-colors">
+          <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
           <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
             3
           </span>
@@ -59,7 +68,10 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
           </span>
         )}
         {user && (
-          <button onClick={handleLogout} className="text-primary hover:underline">
+          <button 
+            onClick={handleLogout} 
+            className="text-primary hover:text-hover-primary transition-colors hover:underline"
+          >
             Logout
           </button>
         )}
