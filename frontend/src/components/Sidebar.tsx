@@ -55,8 +55,8 @@ const sidebarStructure = [
     icon: WrenchIcon,
     title: "Órdenes de Trabajo",
     items: [
-      { name: "Lista de órdenes", path: "/admin/ordenes" },
-      { name: "Crear orden", path: "/admin/ordenes/nueva" },
+      { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
+      { name: "Crear orden", path: "/admin/nueva-orden-trabajo" },
       { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
     ],
   },

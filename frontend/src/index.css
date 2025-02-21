@@ -4,14 +4,14 @@
   --foreground: #1f2937;
   --card: #ffffff;
   --card-foreground: #1f2937;
-  --primary: #3b82f6;
-  --hover-primary: #1e6ff1;
+  --primary: #133270; /* Color primario */
+  --hover-primary: #0e2453; /* Variante más oscura para hover */
   --primary-foreground: #ffffff;
-  --secondary: #587AA6;
-  --hover-secondary: #445e80;
+  --secondary: #2a4d9c; /* Tono complementario al primario */
+  --hover-secondary: #1f387d; /* Variante más oscura para hover */
   --secondary-foreground: #ffffff;
-  --accent: #ec4899;
-  --hover-accent: #336cd665;
+  --accent: #4c6ec5; /* Acento relacionado con el primario */
+  --hover-accent: #3a59a8; /* Variante más oscura para hover */
   --accent-foreground: #ffffff;
   --muted: #eaedf3ad;
   --hover-muted: #adb1b43a;
@@ -22,68 +22,67 @@
   --border: #e5e7eb;
   --input: #e5e7eb;
   --hover-input: #d1d5db;
-  --ring: #3b82f6;
+  --ring: #133270; /* Anillo resaltado con el color primario */
   --radius: 0.5rem;
   --popover: #ffffff;
   --hover-popover: #e5e7eb;
   --popover-foreground: #1f2937;
-  --chart-1: #3b82f6;
-  --chart-2: #60a5fa;
-  --chart-3: #ec4899;
+  --chart-1: #133270; /* Gráficos usando el primario */
+  --chart-2: #2a4d9c; /* Segundo tono para gráficos */
+  --chart-3: #4c6ec5; /* Tercer tono para gráficos */
   --chart-4: #16a34a;
   --chart-5: #fbbf24;
   --sidebar-background: #f9fafb;
   --sidebar-foreground: #1f2937;
-  --sidebar-primary: #3b82f6;
+  --sidebar-primary: #133270; /* Sidebar usa el primario */
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ec4899;
+  --sidebar-accent: #4c6ec5; /* Acento en el sidebar */
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #3b82f6;
+  --sidebar-ring: #133270; /* Anillo en el sidebar */
 }
-
 /* Variables para modo oscuro */
 .dark {
   --background: #1f2937;
   --foreground: #f9fafb;
   --card: #111827;
   --card-foreground: #f9fafb;
-  --primary: #60a5fa;
-  --hover-primary: #a5d8ff;
-  --primary-foreground: #1f2937;
-  --secondary: #93c5fd;
-  --hover-secondary: #60a5fa;
-  --secondary-foreground: #1f2937;
-  --accent: #bea8f9;
-  --hover-accent: #f472b6;
-  --accent-foreground: #1f2937;
+  --primary: #3a59a8; /* Versión más clara del primario para modo oscuro */
+  --hover-primary: #4c6ec5; /* Hover más claro */
+  --primary-foreground: #f9fafb;
+  --secondary: #4c6ec5; /* Tono complementario */
+  --hover-secondary: #3a59a8; /* Hover más claro */
+  --secondary-foreground: #f9fafb;
+  --accent: #6083d6; /* Acento relacionado con el primario */
+  --hover-accent: #4c6ec5; /* Hover más claro */
+  --accent-foreground: #f9fafb;
   --muted: #6b7280;
   --hover-muted: #4b55632d;
   --muted-foreground: #e5e7eb;
   --destructive: #f87171;
-  --destructive-foreground: #1f2937;
+  --destructive-foreground: #f9fafb;
   --hover-destructive: #dc2626;
   --border: #374151;
   --input: #374151;
   --hover-input: #2d3748;
-  --ring: #60a5fa;
+  --ring: #3a59a8; /* Anillo resaltado con el primario */
   --radius: 0.5rem;
   --popover: #111827;
   --hover-popover: #1f2937;
   --popover-foreground: #f9fafb;
-  --chart-1: #60a5fa;
-  --chart-2: #93c5fd;
-  --chart-3: #f9a8d4;
+  --chart-1: #3a59a8; /* Gráficos usando el primario */
+  --chart-2: #4c6ec5; /* Segundo tono para gráficos */
+  --chart-3: #6083d6; /* Tercer tono para gráficos */
   --chart-4: #4ade80;
   --chart-5: #facc15;
   --sidebar-background: #1f2937;
   --sidebar-foreground: #f9fafb;
-  --sidebar-primary: #60a5fa;
-  --sidebar-primary-foreground: #1f2937;
-  --sidebar-accent: #f9a8d4;
-  --sidebar-accent-foreground: #1f2937;
+  --sidebar-primary: #3a59a8; /* Sidebar usa el primario */
+  --sidebar-primary-foreground: #f9fafb;
+  --sidebar-accent: #6083d6; /* Acento en el sidebar */
+  --sidebar-accent-foreground: #f9fafb;
   --sidebar-border: #374151;
-  --sidebar-ring: #60a5fa;
+  --sidebar-ring: #3a59a8; /* Anillo en el sidebar */
 }
 
 /* Importa TailwindCSS */
