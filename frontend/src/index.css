@@ -1,128 +1,359 @@
+/* Variables globales (Modo claro) */
+:root {
+  --background: #f9fafb;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --primary: #3b82f6;
+  --hover-primary: #1e6ff1;
+  --primary-foreground: #ffffff;
+  --secondary: #60a5fa;
+  --hover-secondary: #3b82f6;
+  --secondary-foreground: #ffffff;
+  --accent: #ec4899;
+  --hover-accent: #336cd665;
+  --accent-foreground: #ffffff;
+  --muted: #eaedf3ad;
+  --hover-muted: #adb1b43a;
+  --muted-foreground: #1f2937;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --hover-destructive: #dc2626;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --hover-input: #d1d5db;
+  --ring: #3b82f6;
+  --radius: 0.5rem;
+  --popover: #ffffff;
+  --hover-popover: #e5e7eb;
+  --popover-foreground: #1f2937;
+  --chart-1: #3b82f6;
+  --chart-2: #60a5fa;
+  --chart-3: #ec4899;
+  --chart-4: #16a34a;
+  --chart-5: #fbbf24;
+  --sidebar-background: #f9fafb;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ec4899;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #3b82f6;
+}
+
+/* Variables para modo oscuro */
+.dark {
+  --background: #1f2937;
+  --foreground: #f9fafb;
+  --card: #111827;
+  --card-foreground: #f9fafb;
+  --primary: #60a5fa;
+  --hover-primary: #a5d8ff;
+  --primary-foreground: #1f2937;
+  --secondary: #93c5fd;
+  --hover-secondary: #60a5fa;
+  --secondary-foreground: #1f2937;
+  --accent: #bea8f9;
+  --hover-accent: #f472b6;
+  --accent-foreground: #1f2937;
+  --muted: #6b7280;
+  --hover-muted: #4b55632d;
+  --muted-foreground: #e5e7eb;
+  --destructive: #f87171;
+  --destructive-foreground: #1f2937;
+  --hover-destructive: #dc2626;
+  --border: #374151;
+  --input: #374151;
+  --hover-input: #2d3748;
+  --ring: #60a5fa;
+  --radius: 0.5rem;
+  --popover: #111827;
+  --hover-popover: #1f2937;
+  --popover-foreground: #f9fafb;
+  --chart-1: #60a5fa;
+  --chart-2: #93c5fd;
+  --chart-3: #f9a8d4;
+  --chart-4: #4ade80;
+  --chart-5: #facc15;
+  --sidebar-background: #1f2937;
+  --sidebar-foreground: #f9fafb;
+  --sidebar-primary: #60a5fa;
+  --sidebar-primary-foreground: #1f2937;
+  --sidebar-accent: #f9a8d4;
+  --sidebar-accent-foreground: #1f2937;
+  --sidebar-border: #374151;
+  --sidebar-ring: #60a5fa;
+}
+
+/* Importa TailwindCSS */
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    /* Light mode */
-    --background: #F2F2F2;
-    --foreground: #143D73;
-    
-    --card: #FFFFFF;
-    --card-foreground: #143D73;
-    
-    --popover: #FFFFFF;
-    --popover-foreground: #143D73;
-    
-    --primary: #060d19;
-    --primary-foreground: #F2F2F2;
-    
-    --secondary: #11468C;
-    --secondary-foreground: #F2F2F2;
-    
-    --accent: #143D73;
-    --accent-foreground: #F2F2F2;
-    
-    --muted: #8AA1BF;
-    --muted-foreground: #143D73;
-    
-    --destructive: #DC2626;
-    --destructive-foreground: #F2F2F2;
-    
-    --border: #8AA1BF;
-    --input: #8AA1BF;
-    --ring: #163573;
-    
-    --chart-1: #163573;
-    --chart-2: #11468C;
-    --chart-3: #143D73;
-    --chart-4: #8AA1BF;
-    --chart-5: #11468C;
-    
-    --radius: 0.5rem;
-    
-    --sidebar-background: #F2F2F2;
-    --sidebar-foreground: #143D73;
-    --sidebar-primary: #163573;
-    --sidebar-primary-foreground: #F2F2F2;
-    --sidebar-accent: #11468C;
-    --sidebar-accent-foreground: #F2F2F2;
-    --sidebar-border: #8AA1BF;
-    --sidebar-ring: #163573;
-  }
-  
-  .dark {
-    /* Dark mode - improved contrast and visual hierarchy */
-    --background: #0A1929;      /* Darker blue background for better contrast */
-    --foreground: #F2F2F2;
-    
-    --card: #0F2544;           /* Slightly lighter than background for depth */
-    --card-foreground: #F2F2F2;
-    
-    --popover: #0F2544;
-    --popover-foreground: #F2F2F2;
-    
-    --primary: #4B83DB;        /* Lighter blue for better visibility */
-    --primary-foreground: #FFFFFF;
-    
-    --secondary: #2563EB;      /* Brighter secondary for dark mode */
-    --secondary-foreground: #FFFFFF;
-    
-    --accent: #60A5FA;         /* Lighter accent for visibility */
-    --accent-foreground: #0A1929;
-    
-    --muted: #334155;          /* Darker muted tone */
-    --muted-foreground: #94A3B8;
-    
-    --destructive: #EF4444;    /* Brighter red for dark mode */
-    --destructive-foreground: #FFFFFF;
-    
-    --border: #1E3A5F;         /* Subtle border color */
-    --input: #1E3A5F;
-    --ring: #4B83DB;
-    
-    /* Adjusted chart colors for dark mode visibility */
-    --chart-1: #60A5FA;
-    --chart-2: #3B82F6;
-    --chart-3: #2563EB;
-    --chart-4: #1D4ED8;
-    --chart-5: #1E40AF;
-    
-    /* Sidebar specific colors for dark mode */
-    --sidebar-background: #0F2544;
-    --sidebar-foreground: #F2F2F2;
-    --sidebar-primary: #4B83DB;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #2563EB;
-    --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #1E3A5F;
-    --sidebar-ring: #4B83DB;
-  }
+/* Estilos base */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-@layer base {
-  * {
-    border-color: var(--border);
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-  }
+/* Clases para fondos */
+.bg-background {
+  background-color: var(--background);
+}
+.bg-card {
+  background-color: var(--card);
+}
+.bg-primary {
+  background-color: var(--primary);
+}
+.bg-secondary {
+  background-color: var(--secondary);
+}
+.bg-accent {
+  background-color: var(--accent);
+}
+.bg-muted {
+  background-color: var(--muted);
+}
+.bg-destructive {
+  background-color: var(--destructive);
+}
+.bg-popover {
+  background-color: var(--popover);
+}
+.bg-input {
+  background-color: var(--input);
 }
 
-/* Dialog overlay with blur and semi-transparent background */
+/* Clases para textos sin foreground */
+.text-background {
+  color: var(--background);
+}
+.text-card {
+  color: var(--card);
+}
+.text-primary {
+  color: var(--primary);
+}
+.text-secondary {
+  color: var(--secondary);
+}
+.text-accent {
+  color: var(--accent);
+}
+.text-muted {
+  color: var(--muted);
+}
+.text-destructive {
+  color: var(--destructive);
+}
+.text-popover {
+  color: var(--popover);
+}
+
+/* Clases para textos con foreground */
+.text-foreground {
+  color: var(--foreground);
+}
+.text-card-foreground {
+  color: var(--card-foreground);
+}
+.text-primary-foreground {
+  color: var(--primary-foreground);
+}
+.text-secondary-foreground {
+  color: var(--secondary-foreground);
+}
+.text-accent-foreground {
+  color: var(--accent-foreground);
+}
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.text-destructive-foreground {
+  color: var(--destructive-foreground);
+}
+.text-popover-foreground {
+  color: var(--popover-foreground);
+}
+
+/* Clases extra para fondos basados en variables de foreground */
+.bg-foreground {
+  background-color: var(--foreground);
+}
+.bg-card-foreground {
+  background-color: var(--card-foreground);
+}
+.bg-primary-foreground {
+  background-color: var(--primary-foreground);
+}
+.bg-secondary-foreground {
+  background-color: var(--secondary-foreground);
+}
+.bg-accent-foreground {
+  background-color: var(--accent-foreground);
+}
+.bg-muted-foreground {
+  background-color: var(--muted-foreground);
+}
+.bg-destructive-foreground {
+  background-color: var(--destructive-foreground);
+}
+.bg-popover-foreground {
+  background-color: var(--popover-foreground);
+}
+
+/* Clases para chart (colores de gráfico) */
+.chart-1 {
+  color: var(--chart-1);
+}
+.chart-2 {
+  color: var(--chart-2);
+}
+.chart-3 {
+  color: var(--chart-3);
+}
+.chart-4 {
+  color: var(--chart-4);
+}
+.chart-5 {
+  color: var(--chart-5);
+}
+
+/* Clases para sidebar */
+.bg-sidebar {
+  background-color: var(--sidebar-background);
+}
+
+.bg-sidebar-foreground {
+  color: var(--sidebar-foreground);
+}
+.text-sidebar {
+  color: var(--sidebar-foreground);
+}
+.bg-sidebar-primary {
+  background-color: var(--sidebar-primary);
+}
+.text-sidebar-primary {
+  color: var(--sidebar-primary-foreground);
+}
+.bg-sidebar-accent {
+  background-color: var(--sidebar-accent);
+}
+.text-sidebar-accent {
+  color: var(--sidebar-accent-foreground);
+}
+.border-sidebar {
+  border-color: var(--sidebar-border);
+}
+
+/* Bordes */
+.border {
+  border: 1px solid var(--border);
+}
+.border-primary {
+  border-color: var(--primary);
+}
+.border-secondary {
+  border-color: var(--secondary);
+}
+.border-accent {
+  border-color: var(--accent);
+}
+.border-muted {
+  border-color: var (--muted);
+}
+.border-destructive {
+  border-color: var(--destructive);
+}
+
+/* Radio de borde */
+.rounded {
+  border-radius: var(--radius);
+}
+
+/* Espaciado */
+.p-4 {
+  padding: 1rem;
+}
+.m-4 {
+  margin: 1rem;
+}
+
+/* Clases adicionales */
+/* Dialog overlay con blur y fondo semi-transparente */
 .fixed.inset-0[aria-hidden="true"] {
   backdrop-filter: blur(4px);
   background-color: color-mix(in srgb, var(--background) 50%, transparent);
 }
 
-/* Dialog content background */
+/* Dialog content */
 .dialog-content {
   background-color: var(--card);
   border: 1px solid var(--border);
 }
 
-/* Popover content background */
+/* Popover content */
 [data-radix-popper-content-wrapper] {
   background-color: var(--popover);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+              0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Clases para hover al estilo Tailwind */
+.hover\:bg-background:hover {
+  background-color: var(--background);
+}
+.hover\:bg-card:hover {
+  background-color: var(--card);
+}
+.hover\:bg-primary:hover {
+  background-color: var(--hover-primary);
+}
+.hover\:bg-secondary:hover {
+  background-color: var(--hover-secondary);
+}
+.hover\:bg-accent:hover {
+  background-color: var(--hover-accent);
+}
+.hover\:bg-muted:hover {
+  background-color: var(--hover-muted);
+}
+.hover\:bg-destructive:hover {
+  background-color: var(--hover-destructive);
+}
+.hover\:bg-popover:hover {
+  background-color: var(--hover-popover);
+}
+.hover\:bg-input:hover {
+  background-color: var(--hover-input);
+}
+
+/* Ejemplo para textos */
+.hover\:text-background:hover {
+  color: var(--background);
+}
+.hover\:text-card:hover {
+  color: var(--card);
+}
+.hover\:text-primary:hover {
+  color: var(--primary);
+}
+.hover\:text-secondary:hover {
+  color: var(--secondary);
+}
+.hover\:text-accent:hover {
+  color: var(--accent);
+}
+.hover\:text-muted:hover {
+  color: var(--muted);
+}
+.hover\:text-destructive:hover {
+  color: var(--destructive);
+}
+.hover\:text-popover:hover {
+  color: var(--popover);
 }

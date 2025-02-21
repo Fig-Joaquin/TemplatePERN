@@ -1,34 +1,36 @@
-import { useState, useEffect } from 'react'
+"use client"
+
+import { useState, useEffect } from "react"
+import { Moon, Sun } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const DarkModeToggle = () => {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
-    // Verifica si hay una preferencia guardada
-    const darkMode = localStorage.getItem('darkMode') === 'true'
+    const darkMode = document.documentElement.classList.contains("dark")
     setIsDark(darkMode)
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    }
   }, [])
 
   const toggleDarkMode = () => {
     const newDarkMode = !isDark
     setIsDark(newDarkMode)
-    localStorage.setItem('darkMode', newDarkMode.toString())
-    
-    // Toggle de la clase 'dark' en el elemento HTML
-    document.documentElement.classList.toggle('dark')
+    if (newDarkMode) {
+      document.documentElement.classList.add("dark")
+      localStorage.theme = "dark"
+    } else {
+      document.documentElement.classList.remove("dark")
+      localStorage.theme = "light"
+    }
   }
 
   return (
-    <button
-      onClick={toggleDarkMode}
-      className="text-blue-600 hover:underline"
-    >
-      {isDark ? '🌞 Modo Claro' : '🌙 Modo Oscuro'}
-    </button>
+    <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+      {isDark ? <Sun className="h-[1.2rem] w-[1.2rem]" /> : <Moon className="h-[1.2rem] w-[1.2rem]" />}
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   )
 }
 
 export default DarkModeToggle
+

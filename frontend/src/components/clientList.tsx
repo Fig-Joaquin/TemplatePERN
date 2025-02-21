@@ -32,7 +32,7 @@ const ClientList: React.FC<ClientListProps> = ({ persons, getVehiclesByPersonId,
   }, [persons, getVehiclesByPersonId])
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto bg-chart-4">
       <table className="min-w-full">
         <thead className="bg-muted">
           <tr>
@@ -56,7 +56,7 @@ const ClientList: React.FC<ClientListProps> = ({ persons, getVehiclesByPersonId,
             </th>
           </tr>
         </thead>
-        <tbody className="bg-card divide-y divide-gray-200">
+        <tbody className=" divide-y divide-gray-200">
           {persons.map((person) => (
             <tr key={person.person_id}>
               <td className="px-6 py-4 whitespace-nowrap">

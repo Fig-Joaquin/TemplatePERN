@@ -17,7 +17,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
           value={formData.rut}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2  text-gray-900"
+          className="w-full border rounded p-2 "
         />
       </div>
       <div className="mb-4">
@@ -31,7 +31,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
           value={formData.name}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2  text-gray-900"
+          className="w-full border rounded p-2 "
           pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
         />
       </div>
@@ -46,7 +46,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
           value={formData.first_surname}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2  text-gray-900"
+          className="w-full border rounded p-2 "
           pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
         />
       </div>
@@ -60,7 +60,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
           name="second_surname"
           value={formData.second_surname}
           onChange={handleInputChange}
-          className="w-full border rounded p-2  text-gray-900"
+          className="w-full border rounded p-2  "
           pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
         />
       </div>
@@ -75,7 +75,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
           value={formData.email}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2  text-gray-900"
+          className="w-full border rounded p-2  "
         />
       </div>
       <div className="mb-4">
@@ -89,7 +89,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
           value={formData.number_phone}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2  text-gray-900"
+          className="w-full border rounded p-2  "
         />
       </div>
       <div className="flex justify-end gap-2">
@@ -99,7 +99,7 @@ const ClientForm = ({ formData, handleInputChange, handleSubmit, onCancel }: Cli
         <Button
           type="submit"
           variant="default"
-          className="px-4 py-2 text-card-foreground border rounded shadow-md transition"
+          className="px-4 py-2  border rounded shadow-md transition"
         >
           {formData.person_type === "cliente" ? "Añadir" : "Actualizar"}
         </Button>

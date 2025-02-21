@@ -80,7 +80,7 @@ const ProductCreatePage = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <Card className="bg-white">
+      <Card className="">
         <CardHeader>
           <h2 className="text-2xl font-bold">Crear Nuevo Producto</h2>
         </CardHeader>
@@ -146,7 +146,7 @@ const ProductCreatePage = () => {
                 id="lastPurchasePrice"
                 value={Number(lastPurchasePrice)}
                 onChange={(value) => setLastPurchasePrice(value)}
-                min={1}
+                min={0}
                 required
                 isPrice
               />
@@ -157,7 +157,7 @@ const ProductCreatePage = () => {
                 id="salePrice"
                 value={Number(salePrice)}
                 onChange={(value) => setSalePrice(value)}
-                min={1}
+                min={0}
                 required
                 isPrice
               />
