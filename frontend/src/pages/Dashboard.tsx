@@ -1,19 +1,50 @@
 import type React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/solid"
+import { motion, AnimatePresence } from "framer-motion"
 
 export const Dashboard = () => {
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <DashboardCard title="Ventas Diarias" amount="$249.95" percentage={67} trend="up" />
-        <DashboardCard title="Ventas Mensuales" amount="$2,942.32" percentage={36} trend="down" />
-        <DashboardCard title="Ventas Anuales" amount="$8,638.32" percentage={80} trend="up" />
-      </div>
-    </div>
-  )
-}
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <DashboardCard title="Ventas Diarias" amount="$249.95" percentage={67} trend="up" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+          >
+            <DashboardCard title="Ventas Mensuales" amount="$2,942.32" percentage={36} trend="down" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+          >
+            <DashboardCard title="Ventas Anuales" amount="$8,638.32" percentage={80} trend="up" />
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 interface DashboardCardProps {
   title: string

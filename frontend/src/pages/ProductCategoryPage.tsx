@@ -14,8 +14,11 @@ import {
   deleteProductCategory,
 } from "../services/ProductCategoryService"
 import type { category } from "../types/interfaces"
-import { Plus, Edit, Trash2, Folder, Search, ChevronRight } from "lucide-react"
+import { Plus, Edit, Trash2, Folder, Search, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 
 const ProductCategoryPage = () => {
@@ -27,7 +30,8 @@ const ProductCategoryPage = () => {
   const [categoryName, setCategoryName] = useState("")
   const [editingCategory, setEditingCategory] = useState<category | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<category | null>(null)
 
   const loadCategories = useCallback(async () => {
     setIsLoading(true)
@@ -84,15 +88,22 @@ const ProductCategoryPage = () => {
     }
   }
 
-  const handleDelete = async (category: category) => {
-    if (window.confirm(`¿Está seguro de eliminar la categoría "${category.category_name}"?`)) {
-      try {
-        await deleteProductCategory(category.product_category_id)
-        toast.success("Categoría eliminada correctamente")
-        loadCategories()
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Error al eliminar la categoría")
-      }
+  const handleDelete = (category: category) => {
+    setCategoryToDelete(category)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return
+    try {
+      await deleteProductCategory(categoryToDelete.product_category_id)
+      toast.success("Categoría eliminada correctamente")
+      loadCategories()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error al eliminar la categoría")
+    } finally {
+      setDeleteDialogOpen(false)
+      setCategoryToDelete(null)
     }
   }
 
@@ -106,102 +117,114 @@ const ProductCategoryPage = () => {
     setIsEditModalOpen(true)
   }
 
-  const toggleExpand = (categoryId: number) => {
-    setExpandedCategories((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId)
-      } else {
-        newSet.add(categoryId)
-      }
-      return newSet
-    })
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
-          <Folder className="w-8 h-8" />
-          Categorías de Productos
-        </h1>
+    <motion.div 
+      className="container mx-auto p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header Section with Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-primary/10">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Total Categorías</p>
+              <h3 className="text-2xl font-bold">{categories.length}</h3>
+            </div>
+            <Folder className="h-8 w-8 text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="chart-4">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Última Actualización</p>
+              <p className="text-sm">{new Date().toLocaleDateString()}</p>
+            </div>
+            <Calendar className="h-8 w-8 text-green-500" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Header with Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Categorías de Productos</h1>
+          <p className="text-muted-foreground">Gestiona las categorías de productos disponibles</p>
+        </div>
         <Button
           onClick={() => {
             resetForm()
             setIsCreateModalOpen(true)
           }}
+          className="w-full md:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nueva Categoría
         </Button>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Search className="w-5 h-5 text-gray-500" />
+      {/* Search Section */}
+      <div className="relative max-w-md mb-6">
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
         <Input
           type="text"
-          placeholder="Buscar categorías..."
+          placeholder="Buscar categoría..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="pl-8"
         />
       </div>
 
+      {/* Categories Grid */}
       {isLoading ? (
-        <div className="text-center py-10">
+        <div className="text-center p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-muted-foreground">Cargando categorías...</p>
+          <p className="mt-4">Cargando categorías...</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <AnimatePresence>
             {filteredCategories.map((category) => (
               <motion.div
                 key={category.product_category_id}
-                layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
-                className="bg-card rounded-lg shadow-md overflow-hidden"
               >
-                <div
-                  className="p-4 cursor-pointer flex justify-between items-center"
-                  onClick={() => toggleExpand(category.product_category_id)}
-                >
-                  <h3 className="text-lg font-semibold">{category.category_name}</h3>
-                  <ChevronRight
-                    className={`transform transition-transform duration-200 ${
-                      expandedCategories.has(category.product_category_id) ? "rotate-90" : ""
-                    }`}
-                  />
-                </div>
-                <AnimatePresence>
-                  {expandedCategories.has(category.product_category_id) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="px-4 pb-4"
-                    >
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => openEditModal(category)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(category)}>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Eliminar
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Folder className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-lg">{category.category_name}</h3>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <Badge variant="secondary" className="mb-2">
+                      ID: {category.product_category_id}
+                    </Badge>
+                  </CardContent>
+                  <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
+                    <Button variant="outline" size="sm" onClick={() => openEditModal(category)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(category)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  </CardFooter>
+                </Card>
               </motion.div>
             ))}
           </AnimatePresence>
-        </div>
+        </motion.div>
       )}
 
       {/* Modal de Creación */}
@@ -259,7 +282,25 @@ const ProductCategoryPage = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Dialog de confirmación para eliminar */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+          </DialogHeader>
+          <p>¿Está seguro que desea eliminar la categoría "{categoryToDelete?.category_name}"?</p>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   )
 }
 

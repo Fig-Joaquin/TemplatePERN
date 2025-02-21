@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 import { Check, ChevronsUpDown } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 const VehicleModelPage = () => {
   const [models, setModels] = useState<model[]>([])
@@ -123,9 +124,19 @@ const VehicleModelPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <motion.div 
+      className="container mx-auto p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Header Section with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
         <Card className="bg-primary/10">
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -144,7 +155,7 @@ const VehicleModelPage = () => {
             <Calendar className="h-8 w-8 text-green-500" />
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Header with Actions */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
@@ -223,42 +234,57 @@ const VehicleModelPage = () => {
           <p className="mt-4">Cargando modelos de vehículos...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {models
-            .filter(
-              (model) =>
-                model.model_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId)
-            )
-            .map((model) => (
-              <Card key={model.vehicle_model_id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Car className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">{model.model_name}</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <Badge variant="secondary" className="mb-2">
-                    Marca: {model.brand.brand_name}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    ID: {model.vehicle_model_id}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
-                  <Button variant="outline" size="sm" onClick={() => openEditModal(model)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(model)}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-        </div>
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatePresence>
+            {models
+              .filter(
+                (model) =>
+                  model.model_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                  (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId)
+              )
+              .map((model) => (
+                <motion.div
+                  key={model.vehicle_model_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card key={model.vehicle_model_id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <Car className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold text-lg">{model.model_name}</h3>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      <Badge variant="secondary" className="mb-2">
+                        Marca: {model.brand.brand_name}
+                      </Badge>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        ID: {model.vehicle_model_id}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
+                      <Button variant="outline" size="sm" onClick={() => openEditModal(model)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(model)}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* Modal de Creación */}
@@ -406,7 +432,7 @@ const VehicleModelPage = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 

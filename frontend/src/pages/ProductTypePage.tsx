@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Tag, Search, ChevronRight } from "lucide-react"
+import { Plus, Edit, Trash2, Tag, Search } from "lucide-react"
 import {
   fetchProductTypes,
   createProductType,
@@ -21,6 +21,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Calendar } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const ProductTypePage = () => {
@@ -34,7 +37,9 @@ const ProductTypePage = () => {
   const [categories, setCategories] = useState<category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [expandedTypes, setExpandedTypes] = useState<Set<number>>(new Set())
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [typeToDelete, setTypeToDelete] = useState<ProductType | null>(null)
+
 
   const loadTypes = useCallback(async () => {
     setIsLoading(true)
@@ -112,15 +117,22 @@ const ProductTypePage = () => {
     }
   }
 
-  const handleDelete = async (type: ProductType) => {
-    if (window.confirm(`¿Está seguro de eliminar el tipo "${type.type_name}"?`)) {
-      try {
-        await deleteProductType(type.product_type_id)
-        toast.success("Tipo de producto eliminado correctamente")
-        loadTypes()
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Error al eliminar el tipo")
-      }
+  const handleDelete = (type: ProductType) => {
+    setTypeToDelete(type)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!typeToDelete) return
+    try {
+      await deleteProductType(typeToDelete.product_type_id)
+      toast.success("Tipo de producto eliminado correctamente")
+      loadTypes()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error al eliminar el tipo")
+    } finally {
+      setDeleteDialogOpen(false)
+      setTypeToDelete(null)
     }
   }
 
@@ -136,105 +148,118 @@ const ProductTypePage = () => {
     setSelectedCategory(null)
   }
 
-  const toggleExpand = (typeId: number) => {
-    setExpandedTypes((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(typeId)) {
-        newSet.delete(typeId)
-      } else {
-        newSet.add(typeId)
-      }
-      return newSet
-    })
-  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
-          <Tag className="w-8 h-8" />
-          Tipos de Producto
-        </h1>
+    <motion.div 
+      className="container mx-auto p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header Section with Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-primary/10">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Total Tipos</p>
+              <h3 className="text-2xl font-bold">{productTypes.length}</h3>
+            </div>
+            <Tag className="h-8 w-8 text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="chart-4">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Última Actualización</p>
+              <p className="text-sm">{new Date().toLocaleDateString()}</p>
+            </div>
+            <Calendar className="h-8 w-8 text-green-500" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Header with Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Tipos de Productos</h1>
+          <p className="text-muted-foreground">Gestiona los tipos de productos disponibles</p>
+        </div>
         <Button
           onClick={() => {
             resetForm()
             setCreateModalOpen(true)
           }}
+          className="w-full md:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Tipo
         </Button>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Search className="w-5 h-5 text-gray-500" />
+      {/* Search Section */}
+      <div className="relative max-w-md mb-6">
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
         <Input
           type="text"
-          placeholder="Buscar tipos de producto..."
+          placeholder="Buscar tipo..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="pl-8"
         />
       </div>
 
+      {/* Types Grid */}
       {isLoading ? (
-        <div className="text-center py-10">
+        <div className="text-center p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-muted-foreground">Cargando tipos de producto...</p>
+          <p className="mt-4">Cargando tipos de productos...</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <AnimatePresence>
             {filteredProductTypes.map((type) => (
               <motion.div
                 key={type.product_type_id}
-                layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
-                className="bg-card rounded-lg shadow-md overflow-hidden"
               >
-                <div
-                  className="p-4 cursor-pointer flex justify-between items-center"
-                  onClick={() => toggleExpand(type.product_type_id)}
-                >
-                  <h3 className="text-lg font-semibold">{type.type_name}</h3>
-                  <ChevronRight
-                    className={`transform transition-transform duration-200 ${
-                      expandedTypes.has(type.product_type_id) ? "rotate-90" : ""
-                    }`}
-                  />
-                </div>
-                <AnimatePresence>
-                  {expandedTypes.has(type.product_type_id) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="px-4 pb-4"
-                    >
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Categoría: {type.category?.category_name || "Sin categoría"}
-                      </p>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => openEditModal(type)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(type)}>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Eliminar
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-lg">{type.type_name}</h3>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <Badge variant="secondary" className="mb-2">
+                      Categoría: {type.category?.category_name || "Sin categoría"}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      ID: {type.product_type_id}
+                    </p>
+                  </CardContent>
+                  <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
+                    <Button variant="outline" size="sm" onClick={() => openEditModal(type)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(type)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  </CardFooter>
+                </Card>
               </motion.div>
             ))}
           </AnimatePresence>
-        </div>
+        </motion.div>
       )}
 
       {/* Modal de Creación */}
@@ -382,7 +407,25 @@ const ProductTypePage = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Dialog de confirmación para eliminar */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+          </DialogHeader>
+          <p>¿Está seguro que desea eliminar el tipo "{typeToDelete?.type_name}"?</p>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   )
 }
 

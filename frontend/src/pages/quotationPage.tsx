@@ -17,6 +17,7 @@ import { VehicleCard } from "@/components/VehicleCard"
 import { FileText, Plus } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import { motion } from "framer-motion"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
@@ -189,7 +190,12 @@ export default function QuotationPage() {
   })
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <FileText className="w-8 h-8" />
@@ -206,7 +212,13 @@ export default function QuotationPage() {
           <p className="mt-4 text-lg text-muted-foreground">Cargando cotizaciones...</p>
         </div>
       ) : (
-        <DataTable columns={updatedColumns} data={data} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <DataTable columns={updatedColumns} data={data} />
+        </motion.div>
       )}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
@@ -224,7 +236,7 @@ export default function QuotationPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 

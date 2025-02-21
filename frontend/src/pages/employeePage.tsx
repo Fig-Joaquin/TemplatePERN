@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
 // EmployeePage.tsx
 import { useEffect, useState } from "react"
@@ -164,7 +165,12 @@ const EmployeePage = () => {
   )
 
   return (
-    <div className="p-6">
+    <motion.div 
+      className="p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-foreground">Lista de trabajadores</h1>
         <Button onClick={() => setAddModalOpen(true)}>
@@ -175,18 +181,28 @@ const EmployeePage = () => {
 
       <SearchBar searchTerm={searchTerm} handleSearch={handleSearch} />
 
-      <div className="bg-card/30 backdrop-blur-md rounded-lg shadow p-6">
-        {loading ? (
-          <div className="text-center py-4">Loading employees...</div>
-        ) : (
-          <EmployeeList
-            persons={filteredPersons}
-            getVehiclesByPersonId={fetchVehiclesByPersonId}
-            handleEdit={handleEdit}
-            handleDelete={handleDelete}
-          />
-        )}
-      </div>
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando empleados...</p>
+        </div>
+      ) : (
+        <motion.div 
+          className="bg-card/30 backdrop-blur-md rounded-lg shadow p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <AnimatePresence>
+            <EmployeeList
+              persons={filteredPersons}
+              getVehiclesByPersonId={fetchVehiclesByPersonId}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+            />
+          </AnimatePresence>
+        </motion.div>
+      )}
 
       {/* Add Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
@@ -247,7 +263,7 @@ const EmployeePage = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 

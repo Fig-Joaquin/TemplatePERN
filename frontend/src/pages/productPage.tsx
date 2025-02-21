@@ -20,6 +20,7 @@ import { toast } from "react-toastify"
 import { NumberInput } from "@/components/numberInput"
 import api from "../utils/axiosConfig"
 import { useNavigate } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
 
 const ProductPage = () => {
   const [products, setProducts] = useState<Product[]>([])
@@ -144,7 +145,12 @@ const ProductPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <Package className="w-8 h-8" />
@@ -168,67 +174,72 @@ const ProductPage = () => {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-1/3" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando productos...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <Card key={product.product_id} className="overflow-hidden transition-all hover:shadow-md">
-              <CardHeader>
-                <CardTitle className="text-xl text-foreground">{product.product_name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-lg font-semibold text-primary">
-                  Precio: {formatPriceCLP(Number(product.sale_price))}
-                </p>
-                {product.stock ? (
-                  <div className="space-y-1">
-                    <p className="font-medium text-foreground">
-                      Stock: {formatQuantity(Number(product.stock.quantity))}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatePresence>
+            {filteredProducts.map((product) => (
+              <motion.div
+                key={product.product_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl text-foreground">{product.product_name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-lg font-semibold text-primary">
+                      Precio: {formatPriceCLP(Number(product.sale_price))}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      Actualizado: {product.stock.updated_at ? formatDate(product.stock.updated_at) : "N/A"}
+                    {product.stock ? (
+                      <div className="space-y-1">
+                        <p className="font-medium text-foreground">
+                          Stock: {formatQuantity(Number(product.stock.quantity))}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Actualizado: {product.stock.updated_at ? formatDate(product.stock.updated_at) : "N/A"}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">Información de stock no disponible</p>
+                    )}
+                    <p className="text-foreground">
+                      <span className="font-medium text-foreground">Proveedor:</span> {product.supplier.name}
                     </p>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">Información de stock no disponible</p>
-                )}
-                <p className="text-foreground">
-                  <span className="font-medium text-foreground">Proveedor:</span> {product.supplier.name}
-                </p>
-                <div className="flex gap-2 pt-2">
-                  <Badge variant="secondary">{product.type.type_name}</Badge>
-                  <Badge variant="outline">{product.type.category?.category_name || "N/A"}</Badge>
-                </div>
-                {product.description && (
-                  <p className="text-sm text-muted-foreground border-t pt-3">{product.description}</p>
-                )}
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" size="sm" onClick={() => openModal("edit", product)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => openModal("delete", product)}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <div className="flex gap-2 pt-2">
+                      <Badge variant="secondary">{product.type.type_name}</Badge>
+                      <Badge variant="outline">{product.type.category?.category_name || "N/A"}</Badge>
+                    </div>
+                    {product.description && (
+                      <p className="text-sm text-muted-foreground border-t pt-3">{product.description}</p>
+                    )}
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button variant="outline" size="sm" onClick={() => openModal("edit", product)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => openModal("delete", product)}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       <Dialog open={modalOpen} onOpenChange={(open) => !open && closeModal()}>
@@ -364,7 +375,7 @@ const ProductPage = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { getAllWorkOrders } from "@/services/workOrderService";
 import WorkOrderCard from "@/components/workOrders/WorkOrderCard";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 
 const WorkOrdersPage = () => {
   const [workOrders, setWorkOrders] = useState<any[]>([]);
@@ -88,8 +89,12 @@ const WorkOrdersPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Encabezado */}
+    <motion.div 
+      className="container mx-auto p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-2xl font-bold">Órdenes de Trabajo</h1>
         <div className="flex items-center gap-4">
@@ -118,16 +123,33 @@ const WorkOrdersPage = () => {
         </div>
       </div>
 
-      {/* Lista de órdenes */}
       {loading ? (
-        <p>Cargando...</p>
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando...</p>
+        </div>
       ) : visibleWorkOrders.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 gap-4">
-            {visibleWorkOrders.map((wo) => (
-              <WorkOrderCard key={wo.work_order_id} workOrder={wo} />
-            ))}
-          </div>
+          <motion.div 
+            className="grid grid-cols-1 gap-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <AnimatePresence>
+              {visibleWorkOrders.map((wo) => (
+                <motion.div
+                  key={wo.work_order_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <WorkOrderCard workOrder={wo} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
           {/* Botón para cargar más, si existen más órdenes */}
           {visibleWorkOrders.length < sortedWorkOrders.length && (
             <div className="flex justify-center mt-4">
@@ -138,7 +160,7 @@ const WorkOrdersPage = () => {
       ) : (
         <p>No se encontraron órdenes de trabajo.</p>
       )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -20,6 +20,7 @@ import type { brand, model } from "../types/interfaces"
 import { Plus, Edit, Trash2, Search, Car, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { motion, AnimatePresence } from "framer-motion"
 
 const VehicleBrandPage = () => {
   const [brands, setBrands] = useState<brand[]>([])
@@ -115,9 +116,19 @@ const VehicleBrandPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <motion.div 
+      className="container mx-auto p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Header Section with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
         <Card className="bg-primary/10">
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -136,10 +147,15 @@ const VehicleBrandPage = () => {
             <Calendar className="h-8 w-8 text-green-500" />
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Header with Actions */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+      <motion.div 
+        className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
+      >
         <div>
           <h1 className="text-3xl font-bold">Marcas de Vehículos</h1>
           <p className="text-muted-foreground">Gestiona las marcas de vehículos disponibles</p>
@@ -154,7 +170,7 @@ const VehicleBrandPage = () => {
           <Plus className="w-4 h-4 mr-2" />
           Nueva Marca
         </Button>
-      </div>
+      </motion.div>
 
       {/* Search Bar */}
       <div className="relative max-w-md mb-6">
@@ -175,46 +191,61 @@ const VehicleBrandPage = () => {
           <p className="mt-4">Cargando marcas de vehículos...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {brands
-            .filter((brand) => brand.brand_name.toLowerCase().includes(searchTerm.toLowerCase()))
-            .map((brand) => (
-              <Card key={brand.vehicle_brand_id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Car className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">{brand.brand_name}</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <Badge variant="secondary" className="mb-2">
-                    ID: {brand.vehicle_brand_id}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">
-                    {models.filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id).length > 0 
-                      ? models
-                          .filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id)
-                          .map((m, i, arr) => (
-                            <span key={m.vehicle_model_id}>
-                              {m.model_name}{i < arr.length - 1 ? ', ' : ''}
-                            </span>
-                          ))
-                      : "Sin modelos registrados"}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
-                  <Button variant="outline" size="sm" onClick={() => openEditModal(brand)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(brand)}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-        </div>
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatePresence>
+            {brands
+              .filter((brand) => brand.brand_name.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map((brand) => (
+                <motion.div
+                  key={brand.vehicle_brand_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <Car className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold text-lg">{brand.brand_name}</h3>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      <Badge variant="secondary" className="mb-2">
+                        ID: {brand.vehicle_brand_id}
+                      </Badge>
+                      <p className="text-sm text-muted-foreground">
+                        {models.filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id).length > 0 
+                          ? models
+                              .filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id)
+                              .map((m, i, arr) => (
+                                <span key={m.vehicle_model_id}>
+                                  {m.model_name}{i < arr.length - 1 ? ', ' : ''}
+                                </span>
+                              ))
+                          : "Sin modelos registrados"}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
+                      <Button variant="outline" size="sm" onClick={() => openEditModal(brand)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(brand)}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* Modal de Creación */}
@@ -272,7 +303,7 @@ const VehicleBrandPage = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 

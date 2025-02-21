@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, FileText, Car, Package, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -190,21 +190,29 @@ const QuotationCreatePage = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <Card className="bg-card shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-primary">Crear Nueva Cotización</CardTitle>
+      <Card className="bg-card shadow-lg border-t-4 border-t-primary">
+        <CardHeader className="border-b bg-muted/50 pb-4">
+          <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+            <FileText className="w-6 h-6" /> {/* Add icon */}
+            Crear Nueva Cotización
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-lg font-semibold">Vehículo</Label>
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-8"> {/* Increased spacing */}
+            {/* Vehicle Selection Section */}
+            <div className="space-y-4 bg-accent/5 p-4 rounded-lg border"> {/* Added container styling */}
+              <Label className="text-lg font-semibold flex items-center gap-2">
+                <Car className="w-5 h-5 text-primary" /> {/* Add icon */}
+                Vehículo
+              </Label>
               <Tabs
                 value={selectedTabIndex.toString()}
                 onValueChange={(value) => setSelectedTabIndex(Number.parseInt(value))}
+                className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="0">Personas</TabsTrigger>
-                  <TabsTrigger value="1">Empresas</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="0" className="data-[state=active]:bg-primary">Personas</TabsTrigger>
+                  <TabsTrigger value="1" className="data-[state=active]:bg-primary">Empresas</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -251,12 +259,28 @@ const QuotationCreatePage = () => {
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-lg font-semibold">Repuestos Seleccionados</Label>
+            {/* Products Section */}
+            <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
+              <div className="flex justify-between items-center">
+                <Label className="text-lg font-semibold flex items-center gap-2">
+                  <Package className="w-5 h-5 text-primary" /> {/* Add icon */}
+                  Repuestos Seleccionados
+                </Label>
+                <Button 
+                  onClick={() => setShowProductModal(true)}
+                  variant="outline"
+                  className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Añadir Repuesto
+                </Button>
+              </div>
+              
+              {/* Products Card with enhanced styling */}
               <Card className="bg-card shadow-sm">
                 <CardContent className="p-4">
-                  <ScrollArea className="h-[200px] pr-4">
-                    <ul className="space-y-2">
+                  <ScrollArea className="h-[300px] pr-4"> {/* Increased height */}
+                    <ul className="space-y-3">
                       {selectedProducts.map(({ productId, quantity, laborPrice, profitMargin }) => {
                         const product = products.find((p) => p.product_id === Number(productId))
                         const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
@@ -266,7 +290,7 @@ const QuotationCreatePage = () => {
                         return (
                           <li
                             key={productId}
-                            className="flex items-center justify-between py-2 border-b last:border-b-0"
+                            className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors"
                           >
                             <div className="flex-1">
                               <p className="font-medium">{product?.product_name}</p>
@@ -335,96 +359,40 @@ const QuotationCreatePage = () => {
                       })}
                     </ul>
                   </ScrollArea>
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal Productos (con margen):</span>
-                      <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total Mano de Obra:</span>
-                      <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total sin IVA:</span>
-                      <span className="font-medium">{formatPriceCLP(subtotalWithoutTax)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>IVA (19%):</span>
-                      <span className="font-medium">{formatPriceCLP(taxAmount)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total con IVA:</span>
-                      <span>{formatPriceCLP(totalPrice)}</span>
+
+                  {/* Totals section with enhanced styling */}
+                  <div className="mt-6 space-y-2 border-t pt-4">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex justify-between p-2 rounded bg-accent/5">
+                          <span>Subtotal Productos:</span>
+                          <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
+                        </div>
+                        <div className="flex justify-between p-2 rounded bg-accent/5">
+                          <span>Total Mano de Obra:</span>
+                          <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between p-2 rounded bg-accent/5">
+                          <span>IVA (19%):</span>
+                          <span className="font-medium">{formatPriceCLP(taxAmount)}</span>
+                        </div>
+                        <div className="flex justify-between p-2 rounded bg-primary/10 font-bold">
+                          <span>Total Final:</span>
+                          <span>{formatPriceCLP(totalPrice)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-
-              <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
-                <Button onClick={() => setShowProductModal(true)} className="w-full">
-                  Añadir Repuesto
-                </Button>
-                <DialogContent className="sm:max-w-[700px] bg-card">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-primary">Seleccionar Repuestos</DialogTitle>
-                  </DialogHeader>
-                  <ScrollArea className="h-[400px] pr-4">
-                    <ul className="space-y-4">
-                      {products.map((product) => {
-                        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
-                        const selectedProduct = selectedProducts.find((p) => p.productId === product.product_id)
-                        return (
-                          <li
-                            key={product.product_id}
-                            className="flex items-center space-x-4 p-2 rounded-lg hover:bg-accent/10"
-                          >
-                            <Checkbox
-                              id={`product-${product.product_id}`}
-                              checked={!!selectedProduct}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  handleProductChange(product.product_id, 1, 0, product.profit_margin)
-                                } else {
-                                  handleRemoveProduct(product.product_id)
-                                }
-                              }}
-                            />
-                            <Label htmlFor={`product-${product.product_id}`} className="flex-grow cursor-pointer">
-                              <span className="font-medium">{product.product_name}</span>
-                              <span className="text-sm text-muted-foreground block">
-                                Precio: {formatPriceCLP(Number(product.sale_price))} - Stock: {stockProduct?.quantity}
-                              </span>
-                            </Label>
-                            {selectedProduct && (
-                              <div className="flex items-center space-x-2">
-                                <NumberInput
-                                  id={`modal-quantity-${product.product_id}`}
-                                  value={selectedProduct.quantity}
-                                  onChange={(newValue) =>
-                                    handleProductChange(
-                                      product.product_id,
-                                      newValue,
-                                      selectedProduct.laborPrice,
-                                      selectedProduct.profitMargin,
-                                    )
-                                  }
-                                  min={1}
-                                  max={stockProduct?.quantity}
-                                  className="w-20"
-                                />
-                              </div>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-lg font-semibold">
+            {/* Description Section */}
+            <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
+              <Label htmlFor="description" className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" /> {/* Add icon */}
                 Descripción
               </Label>
               <Textarea
@@ -433,14 +401,121 @@ const QuotationCreatePage = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="Ingrese la descripción de la cotización"
-                className="w-full p-2 border rounded-md"
+                className="w-full resize-none border rounded-md focus:ring-primary"
               />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground">
-              {loading ? "Creando..." : "Crear Cotización"}
+            {/* Submit Button */}
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full h-12 text-lg transition-all hover:scale-[1.02]"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⏳</span> Creando...
+                </span>
+              ) : (
+                "Crear Cotización"
+              )}
             </Button>
           </form>
+          {/* Product Selection Dialog */}
+          <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Seleccionar Repuestos
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Command>
+                  <CommandInput placeholder="Buscar repuestos..." className="h-9" />
+                  <CommandList>
+                    <CommandEmpty>No se encontraron repuestos.</CommandEmpty>
+                    <CommandGroup>
+                      <ScrollArea className="h-[400px]">
+                        {products.map((product) => {
+                          const stockProduct = stockProducts.find(
+                            (sp) => sp.product?.product_id === product.product_id
+                          )
+                          const selectedProduct = selectedProducts.find(
+                            (sp) => sp.productId === product.product_id
+                          )
+                          const isSelected = !!selectedProduct
+
+                          return (
+                            <CommandItem
+                              key={product.product_id}
+                              className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent/5"
+                              onSelect={() => {
+                                if (!isSelected) {
+                                  handleProductChange(product.product_id, 1, 0, 0)
+                                }
+                              }}
+                            >
+                              <div className="flex items-center space-x-4 flex-1">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      handleProductChange(product.product_id, 1, 0, 0)
+                                    } else {
+                                      handleRemoveProduct(product.product_id)
+                                    }
+                                  }}
+                                />
+                                <div className="flex-1">
+                                  <p className="font-medium">{product.product_name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
+                                    {stockProduct?.quantity || 0}
+                                  </p>
+                                </div>
+                                {isSelected && (
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`modal-quantity-${product.product_id}`} className="text-xs">
+                                      Cantidad:
+                                    </Label>
+                                    <NumberInput
+                                      id={`modal-quantity-${product.product_id}`}
+                                      value={selectedProduct.quantity}
+                                      onChange={(newValue) =>
+                                        handleProductChange(
+                                          product.product_id,
+                                          newValue,
+                                          selectedProduct.laborPrice,
+                                          selectedProduct.profitMargin
+                                        )
+                                      }
+                                      min={1}
+                                      max={stockProduct?.quantity}
+                                      className="w-20"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </CommandItem>
+                          )
+                        })}
+                      </ScrollArea>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowProductModal(false)}
+                    className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    Cerrar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
