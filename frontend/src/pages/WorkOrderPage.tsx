@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
-import WorkOrderList from "@/components/workOrders/WorkOrderList";
-import WorkOrderForm from "@/components/workOrders/WorkOrderForm";
-import { getAllWorkOrders, deleteWorkOrder } from "@/services/workOrderService";
-import { WorkOrder } from "@/types/interfaces";
+import { Search } from "lucide-react";
 import { toast } from "react-toastify";
+import { getAllWorkOrders } from "@/services/workOrderService";
+import WorkOrderCard from "@/components/workOrders/WorkOrderCard";
+import { Button } from "@/components/ui/button";
 
 const WorkOrdersPage = () => {
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  // Estado para ordenación: "recent" para más recientes, "oldest" para más antiguas.
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  // Cantidad de órdenes a mostrar
+  const [visibleCount, setVisibleCount] = useState<number>(6);
 
   useEffect(() => {
     loadWorkOrders();
@@ -25,71 +24,120 @@ const WorkOrdersPage = () => {
     try {
       const data = await getAllWorkOrders();
       setWorkOrders(data);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error("Error al cargar órdenes de trabajo");
     } finally {
       setLoading(false);
     }
   };
 
-  const openEditModal = (workOrder: WorkOrder) => {
-    setSelectedWorkOrder(workOrder);
-    setModalOpen(true);
-  };
+  // Mapeo de datos: si la orden tiene cotización, se toman los detalles de ésta; de lo contrario, los detalles directos.
+  const data = workOrders.map((wo) => ({
+    ...wo,
+    details: wo.quotation ? wo.quotation.productDetails : wo.productDetails || [],
+  }));
 
-  const openCreateModal = () => {
-    setSelectedWorkOrder(null);
-    setModalOpen(true);
-  };
+  // Filtrado por búsqueda: se busca en la matrícula, teléfono y nombre completo del dueño y de la empresa
+  const searchLower = searchTerm.toLowerCase();
+  const filteredWorkOrders = data.filter((wo) => {
+    const vehicle = wo.vehicle;
+    const plate = vehicle?.license_plate?.toLowerCase() || "";
 
-  const handleDelete = async (workOrderId: number) => {
-    try {
-      await deleteWorkOrder(workOrderId);
-      setWorkOrders(workOrders.filter((wo) => wo.work_order_id !== workOrderId));
-      toast.success("Orden eliminada correctamente");
-    } catch (error: any) {
-      toast.error(error.message);
+    // Información del dueño
+    const owner = vehicle?.owner;
+    let ownerFullName = "";
+    let ownerPhone = "";
+    if (owner) {
+      ownerFullName = `${owner.name || ""} ${owner.first_surname || ""} ${owner.second_surname || ""}`.toLowerCase();
+      ownerPhone = owner.number_phone?.toLowerCase() || "";
     }
-  };
 
-  const filteredWorkOrders = workOrders.filter((wo) =>
-    wo.vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    // Información de la empresa
+    const company = vehicle?.company;
+    let companyName = "";
+    let companyPhone = "";
+    if (company) {
+      companyName = company.name?.toLowerCase() || "";
+      // Si la empresa posee un teléfono (por ejemplo, company.phone), se filtra también por él.
+      companyPhone = company.phone?.toLowerCase() || "";
+    }
+
+    return (
+      plate.includes(searchLower) ||
+      ownerFullName.includes(searchLower) ||
+      ownerPhone.includes(searchLower) ||
+      companyName.includes(searchLower) ||
+      companyPhone.includes(searchLower)
+    );
+  });
+
+  // Ordenar por fecha según el criterio seleccionado
+  const sortedWorkOrders = filteredWorkOrders.sort((a, b) => {
+    if (sortOrder === "recent") {
+      return new Date(b.order_date).getTime() - new Date(a.order_date).getTime();
+    } else {
+      return new Date(a.order_date).getTime() - new Date(b.order_date).getTime();
+    }
+  });
+
+  // Mostrar solo las órdenes visibles según la paginación
+  const visibleWorkOrders = sortedWorkOrders.slice(0, visibleCount);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 6);
+  };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Encabezado */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-2xl font-bold">Órdenes de Trabajo</h1>
-        <div className="relative w-72">
-          <Input
-            type="text"
-            placeholder="Buscar por matrícula..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          <Search className="absolute left-3 top-2.5 w-5 h-5 text-muted-foreground" />
+        <div className="flex items-center gap-4">
+          {/* Buscador */}
+          <div className="relative w-72">
+            <Input
+              type="text"
+              placeholder="Buscar por matrícula, teléfono o nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+            <Search className="absolute left-3 top-2.5 w-5 h-5 text-muted-foreground" />
+          </div>
+          {/* Selector de ordenación */}
+          <select
+            value={sortOrder}
+            onChange={(e) =>
+              setSortOrder(e.target.value as "recent" | "oldest")
+            }
+            className="border rounded p-2"
+          >
+            <option value="recent">Más recientes</option>
+            <option value="oldest">Más antiguas</option>
+          </select>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="mr-2 w-4 h-4" />
-          Nueva Orden
-        </Button>
       </div>
 
-      <WorkOrderList workOrders={filteredWorkOrders} onEdit={openEditModal} onDelete={handleDelete} loading={loading} />
-
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedWorkOrder ? "Editar Orden" : "Nueva Orden"}</DialogTitle>
-          </DialogHeader>
-          <WorkOrderForm
-            initialData={selectedWorkOrder}
-            onSuccess={loadWorkOrders}
-            onClose={() => setModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Lista de órdenes */}
+      {loading ? (
+        <p>Cargando...</p>
+      ) : visibleWorkOrders.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 gap-4">
+            {visibleWorkOrders.map((wo) => (
+              <WorkOrderCard key={wo.work_order_id} workOrder={wo} />
+            ))}
+          </div>
+          {/* Botón para cargar más, si existen más órdenes */}
+          {visibleWorkOrders.length < sortedWorkOrders.length && (
+            <div className="flex justify-center mt-4">
+              <Button onClick={handleLoadMore}>Cargar más</Button>
+            </div>
+          )}
+        </>
+      ) : (
+        <p>No se encontraron órdenes de trabajo.</p>
+      )}
     </div>
   );
 };

@@ -178,23 +178,36 @@ export interface EmployeeFormProps {
   handleSubmit: (e: React.FormEvent) => void
   onCancel: () => void
 }
+export type WorkOrderStatus = "approved" | "rejected" | "pending";
 
 export interface WorkOrder {
-    work_order_id: number;
-    total_amount: number;
-    order_status: "finished" | "in_progress" | "not_started";
-    order_date: Date;
-    vehicle: Vehicle;
-    quotation?: Quotation;
+  work_order_id: number;
+  description: string;
+  work_order_status: WorkOrderStatus;
+  vehicle: Vehicle;
+  quotation?: Quotation;
+  entry_date: Date;
+}
+
+export interface WorkOrderInput {
+  description: string;
+  work_order_status: WorkOrderStatus;
+  vehicle_id: number;
+  quotation_id?: number;
+  entry_date?: string;
+  total_amount: number;
+}
+
+export interface WorkOrderUpdateInput {
+  work_order_status?: WorkOrderStatus;
+  total_amount?: number;
+}
+
+  
+  export interface WorkOrderUpdateInput {
+    work_order_status?: "approved" | "rejected" | "pending";
   }
   
-  export interface WorkOrderInput {
-    vehicle_id: number;
-    quotation_id?: number;
-    total_amount: number;
-    order_status: "finished" | "in_progress" | "not_started";
-    order_date?: Date;
-  }
 
   export interface WorkOrderFormProps {
     initialData?: WorkOrder | null;

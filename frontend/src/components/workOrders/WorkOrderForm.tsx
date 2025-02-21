@@ -1,36 +1,74 @@
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { createWorkOrder, updateWorkOrder } from "@/services/workOrderService";
-import type { WorkOrder } from "@/types/interfaces";
+import type { WorkOrder, WorkOrderInput, WorkProductDetail, Quotation } from "@/types/interfaces";
+import { fetchQuotationById } from "@/services/quotationService";
+import { fetchProducts } from "@/services/productService";
+import { createWorkProductDetail } from "@/services/workProductDetail";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NumberInput } from "@/components/numberInput";
 
 interface WorkOrderFormProps {
   initialData?: WorkOrder | null;
+  quotationId?: number;
   onSuccess: () => void;
   onClose: () => void;
 }
 
-const WorkOrderForm = ({ initialData, onSuccess, onClose }: WorkOrderFormProps) => {
-  const [orderStatus, setOrderStatus] = useState(initialData?.work_order_status || "not_started");
+const WorkOrderForm = ({ initialData, quotationId, onSuccess, onClose }: WorkOrderFormProps) => {
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [products, setProducts] = useState<WorkProductDetail[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (quotationId) {
+      loadQuotationDetails(quotationId);
+    }
+  }, [quotationId]);
+
+  const loadQuotationDetails = async (quotationId: number) => {
+    try {
+      const quotation: Quotation = await fetchQuotationById(quotationId);
+      setDescription(quotation.description);
+      setProducts(quotation.details || []);
+    } catch (error) {
+      toast.error("Error al cargar detalles de la cotización");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      if (initialData) {
-        await updateWorkOrder(initialData.work_order_id, { work_order_status: orderStatus });
-        toast.success("Orden actualizada");
-      } else {
-        await createWorkOrder({ work_order_status: orderStatus });
-        toast.success("Orden creada");
+      const newWorkOrder: WorkOrderInput = {
+        description,
+        work_order_status: "pending",
+        vehicle_id: initialData?.vehicle.vehicle_id || 1, // Se debe obtener dinámicamente
+        quotation_id: quotationId,
+        total_amount: products.reduce((total, p) => total + p.sale_price * p.quantity + p.labor_price, 0),
+      };
+
+      const createdOrder = await createWorkOrder(newWorkOrder);
+
+      if (!quotationId) {
+        await Promise.all(products.map((detail) => createWorkProductDetail({
+          work_order_id: createdOrder.work_order_id,
+          product_id: detail.product_id,
+          quantity: detail.quantity,
+          sale_price: detail.sale_price,
+          labor_price: detail.labor_price,
+          tax_id: detail.tax_id,
+          discount: detail.discount,
+        })));
       }
+
+      toast.success("Orden de trabajo creada exitosamente");
       onSuccess();
       onClose();
-    } catch {
-      toast.error("Error al guardar la orden");
+    } catch (error: any) {
+      toast.error(error.message || "Error al guardar la orden de trabajo");
     } finally {
       setLoading(false);
     }
@@ -38,20 +76,12 @@ const WorkOrderForm = ({ initialData, onSuccess, onClose }: WorkOrderFormProps) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <label className="block">
-        Estado de la Orden:
-        <select
-          className="border rounded p-2 w-full"
-          value={orderStatus}
-          onChange={(e) => setOrderStatus(e.target.value)}
-        >
-          <option value="not_started">No Iniciada</option>
-          <option value="in_progress">En Progreso</option>
-          <option value="finished">Finalizada</option>
-        </select>
-      </label>
+      <div className="space-y-2">
+        <Label htmlFor="description">Descripción</Label>
+        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+      </div>
       <Button type="submit" disabled={loading}>
-        {loading ? "Guardando..." : "Guardar"}
+        {loading ? "Guardando..." : "Guardar Orden"}
       </Button>
     </form>
   );

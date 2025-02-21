@@ -49,9 +49,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ persons, getVehiclesByPerso
               Email
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Vehículos
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Acciones
             </th>
           </tr>

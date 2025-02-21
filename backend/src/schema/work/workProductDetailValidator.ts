@@ -6,7 +6,7 @@ import { TaxSchema } from "./taxValidator";
 
 
 export const workProductDetailSchema = z.object({
-    word_order_id: z.number().int().positive().optional(),
+    work_order_id: z.number().int().positive().optional(),
     product_id: z.number().int().positive().optional(),
     quotation_id: z.number().int().positive().optional(),
     work_order: WorkOrderSchema.optional(),

@@ -2,28 +2,37 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { WorkOrderSchema } from "../../schema/work/workOrderValidator";
 import { DeepPartial } from "typeorm";
-import { WorkOrder, Vehicle, Person, Quotation} from "../../entities";
-
+import { WorkOrder, Vehicle, Quotation } from "../../entities";
 
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
-const vehicleRepository = AppDataSource.getRepository(Vehicle);  // nuevo repository
-const personRepository = AppDataSource.getRepository(Person);    // nuevo repository
-const quotationRepository = AppDataSource.getRepository(Quotation); // nuevo repository
+const vehicleRepository = AppDataSource.getRepository(Vehicle);
+const quotationRepository = AppDataSource.getRepository(Quotation);
 
 export const getAllWorkOrders = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const workOrders = await workOrderRepository.find({
-            relations: ["vehicle", "quotation", "person"]
-        });
-        res.json(workOrders);
+      const workOrders = await workOrderRepository.find({
+        relations: [
+          "vehicle",
+          "vehicle.model",
+          "vehicle.model.brand",
+          "vehicle.owner",
+          "vehicle.company",
+          "quotation",
+          "debtors",
+          "productDetails",              // Detalles de productos asociados a la orden
+          "productDetails.product",      // Producto de cada detalle
+          "productDetails.quotation",    // Cotización asociada al detalle (si existe)
+          "productDetails.tax"           // Impuesto asociado al detalle
+        ]
+      });
+      res.json(workOrders);
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener las órdenes de trabajo", error });
+      res.status(500).json({ message: "Error al obtener las órdenes de trabajo", error });
     }
-};
-
+  };
 export const getWorkOrderById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number(req.params.id);
         if (isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });
             return;
@@ -31,13 +40,14 @@ export const getWorkOrderById = async (req: Request, res: Response, _next: NextF
 
         const workOrder = await workOrderRepository.findOne({
             where: { work_order_id: id },
-            relations: ["vehicle", "quotation", "person"]
+            relations: ["vehicle", "quotation"]
         });
 
         if (!workOrder) {
             res.status(404).json({ message: "Orden de trabajo no encontrada" });
             return;
         }
+
         res.json(workOrder);
     } catch (error) {
         res.status(500).json({ message: "Error al obtener la orden de trabajo", error });
@@ -58,37 +68,33 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        // Extraer IDs y datos restantes
-        const { vehicle_id, person_id, quotation_id, ...rest } = validationResult.data as any;
-        
-        // Verificar existencia de vehicle
-        const vehicle = await vehicleRepository.findOneBy({ vehicle_id: parseInt(vehicle_id) });
+        const { vehicle_id, quotation_id, ...rest } = validationResult.data;
+
+        // Verificar la existencia del vehículo
+        const vehicle = await vehicleRepository.findOneBy({ vehicle_id });
         if (!vehicle) {
             res.status(400).json({ message: "El vehículo no existe" });
             return;
         }
 
-        // Verificar existencia de person
-        const person = await personRepository.findOneBy({ person_id: parseInt(person_id) });
-        if (!person) {
-            res.status(400).json({ message: "La persona no existe" });
-            return;
+        // Verificar la existencia de la cotización si se proporciona
+        let quotation: Quotation | null = null;
+        if (quotation_id) {
+            quotation = await quotationRepository.findOneBy({ quotation_id });
+            if (!quotation) {
+                res.status(400).json({ message: "La cotización no existe" });
+                return;
+            }
         }
 
-        // Verificar existencia de quotation
-        const quotation = await quotationRepository.findOneBy({ quotation_id: parseInt(quotation_id) });
-        if (!quotation) {
-            res.status(400).json({ message: "La cotización no existe" });
-            return;
-        }
-      
-        const newWorkOrder = workOrderRepository.create({ 
+        // Crear la orden de trabajo con estado predeterminado "pending"
+        const newWorkOrder = workOrderRepository.create({
             ...rest,
             vehicle,
-            person,
-            quotation
+            quotation,
+            order_status: "not_started" // Se establece automáticamente
         } as DeepPartial<WorkOrder>);
-      
+
         await workOrderRepository.save(newWorkOrder);
         res.status(201).json({ message: "Orden de trabajo creada exitosamente", workOrder: newWorkOrder });
     } catch (error) {
@@ -98,7 +104,7 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
 
 export const updateWorkOrder = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number(req.params.id);
         if (isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });
             return;
@@ -133,7 +139,7 @@ export const updateWorkOrder = async (req: Request, res: Response, _next: NextFu
 
 export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number(req.params.id);
         if (isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });
             return;
@@ -144,8 +150,10 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
             res.status(404).json({ message: "Orden de trabajo no encontrada" });
             return;
         }
+
         res.json({ message: "Orden de trabajo eliminada exitosamente" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar la orden de trabajo", error });
     }
 };
+

@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from "typeorm";
 import { IsString, IsNumber, Min } from "class-validator";
-import { Vehicle, Quotation, Debtor } from "..";
+import { Vehicle, Quotation, Debtor, WorkProductDetail } from "..";
+
 @Entity("work_orders")
 export class WorkOrder {
     @PrimaryGeneratedColumn()
@@ -12,6 +13,9 @@ export class WorkOrder {
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })
     vehicle!: Vehicle;
+    
+    @OneToMany(() => WorkProductDetail, (detail) => detail.work_order)
+    productDetails!: WorkProductDetail[];
 
     @ManyToOne(() => Quotation, { nullable: true })
     @JoinColumn({ name: "quotation_id" })
@@ -30,6 +34,9 @@ export class WorkOrder {
     @IsString()
     order_status!: string;
 
+    @Column({ type: "text", nullable: true })
+    @IsString()
+    description!: string;
 
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
         order_date!: Date;

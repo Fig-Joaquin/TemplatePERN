@@ -54,8 +54,8 @@ const sidebarStructure = [
     icon: WrenchIcon,
     title: "Órdenes de Trabajo",
     items: [
-      { name: "Lista de órdenes", path: "/admin/ordenes" },
-      { name: "Crear orden", path: "/admin/ordenes/nueva" },
+      { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
+      { name: "Crear orden", path: "/admin/nueva-orden-trabajo" },
       { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
     ],
   },
@@ -128,8 +128,8 @@ const Sidebar = ({
       >
         <h2
           className={
-        "text-2xl font-bold mb-6 text-center text-sidebar-foreground transition-opacity " +
-        (isSidebarOpen ? "opacity-100" : "opacity-0")
+            "text-2xl font-bold mb-6 text-center text-sidebar-foreground transition-opacity " +
+            (isSidebarOpen ? "opacity-100" : "opacity-0")
           }
         >
           Panel
