@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { Quotation, WorkProductDetail } from "@/types/interfaces"
-import { fetchQuotations } from "@/services/quotationService"
+import { fetchQuotations, deleteQuotation } from "@/services/quotationService"
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/columns"
@@ -16,12 +16,17 @@ import { formatDate } from "@/utils/formDate"
 import { VehicleCard } from "@/components/VehicleCard"
 import { FileText, Plus } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [workProductDetails, setWorkProductDetails] = useState<WorkProductDetail[]>([])
   const navigate = useNavigate()
+
+  // First, add a state for controlling the delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [quotationToDelete, setQuotationToDelete] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,6 +51,30 @@ export default function QuotationPage() {
     }
     fetchData()
   }, [])
+
+  // Then modify the deleteQuotation handling
+  const handleDeleteClick = (quotationId: number) => {
+    setQuotationToDelete(quotationId)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (quotationToDelete) {
+      try {
+        await deleteQuotation(quotationToDelete);
+        // Refresh the quotations list
+        const response = await fetchQuotations();
+        setQuotations(response);
+        toast.success("Cotización eliminada exitosamente");
+      } catch (error) {
+        console.error("Error al eliminar la cotización:", error);
+        toast.error("Error al eliminar la cotización");
+      } finally {
+        setDeleteDialogOpen(false)
+        setQuotationToDelete(null)
+      }
+    }
+  }
 
   const data = quotations.map((quotation) => ({
     ...quotation,
@@ -95,23 +124,60 @@ export default function QuotationPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {quotation.details.map((detail, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{detail.product?.product_name ?? "N/A"}</TableCell>
-                              <TableCell>{detail.quantity}</TableCell>
-                              <TableCell>{formatPriceCLP(Number(detail.sale_price))}</TableCell>
-                              <TableCell>{formatPriceCLP(Number(detail.labor_price))}</TableCell>
-                              <TableCell>
-                                {formatPriceCLP(
-                                  Number(detail.sale_price) * detail.quantity + Number(detail.labor_price),
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {quotation.details.map((detail, index) => {
+                            // Get tax rate from detail
+                            const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+                            // Get profit margin from product
+                            const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
+                            
+                            // Calculate base price with profit margin
+                            const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
+                            
+                            // Calculate subtotal before tax (including quantity and labor)
+                            const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
+                            
+                            // Calculate final price with tax
+                            const finalPrice = subtotalBeforeTax * (1 + taxRate);
+
+                            return (
+                              <TableRow key={index}>
+                                <TableCell>{detail.product?.product_name ?? "N/A"}</TableCell>
+                                <TableCell>{detail.quantity}</TableCell>
+                                <TableCell>{formatPriceCLP(priceWithMargin)}</TableCell>
+                                <TableCell>{formatPriceCLP(Number(detail.labor_price))}</TableCell>
+                                <TableCell>
+                                  {formatPriceCLP(finalPrice)}
+                                  <span className="text-xs text-gray-500 block">(IVA incluido)</span>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          <TableRow className="font-bold bg-muted/50">
+                            <TableCell colSpan={4} className="text-right">Total con IVA:</TableCell>
+                            <TableCell>
+                              {formatPriceCLP(
+                                quotation.details.reduce((total, detail) => {
+                                  const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
+                                  const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+                                  const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
+                                  const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
+                                  return total + (subtotalBeforeTax * (1 + taxRate));
+                                }, 0)
+                              )}
+                            </TableCell>
+                          </TableRow>
                         </TableBody>
                       </Table>
                     </ScrollArea>
                   </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteClick(quotation.quotation_id!)}
+                  >
+                    Eliminar Cotización
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -142,6 +208,22 @@ export default function QuotationPage() {
       ) : (
         <DataTable columns={updatedColumns} data={data} />
       )}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+          </DialogHeader>
+          <p>¿Estás seguro de eliminar esta cotización?</p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

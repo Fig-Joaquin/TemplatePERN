@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { toast } from "react-toastify"
-import { Card, CardHeader, CardFooter } from "@/components/ui/card"
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -13,9 +13,13 @@ import {
   updateVehicleBrand,
   deleteVehicleBrand,
 } from "../services/VehicleBrandService"
-import type { brand } from "../types/interfaces"
-import { Plus, Edit, Trash2, Search } from "lucide-react"
+import{
+  fetchVehicleModels,
+} from "../services/VehicleModelService"
+import type { brand, model } from "../types/interfaces"
+import { Plus, Edit, Trash2, Search, Car, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 
 const VehicleBrandPage = () => {
   const [brands, setBrands] = useState<brand[]>([])
@@ -24,10 +28,12 @@ const VehicleBrandPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [brandName, setBrandName] = useState("")
   const [editingBrand, setEditingBrand] = useState<brand | null>(null)
+  const [models, setModels] = useState<model[]>([])
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     loadBrands()
+    loadModels()
   }, [])
 
   const loadBrands = async () => {
@@ -37,6 +43,18 @@ const VehicleBrandPage = () => {
       setBrands(data)
     } catch (error) {
       toast.error("Error al cargar las marcas de vehículos")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
+  const loadModels = async () => {
+    try {
+      const data = await fetchVehicleModels()
+      setModels(data)
+    } catch (error) {
+      toast.error("Error al cargar los modelos de vehículos")
     } finally {
       setIsLoading(false)
     }
@@ -98,20 +116,48 @@ const VehicleBrandPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Marcas de Vehículos</h1>
+      {/* Header Section with Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-primary/10">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Total Marcas</p>
+              <h3 className="text-2xl font-bold">{brands.length}</h3>
+            </div>
+            <Car className="h-8 w-8 text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="chart-4">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Última Actualización</p>
+              <p className="text-sm">{new Date().toLocaleDateString()}</p>
+            </div>
+            <Calendar className="h-8 w-8 text-green-500" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Header with Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Marcas de Vehículos</h1>
+          <p className="text-muted-foreground">Gestiona las marcas de vehículos disponibles</p>
+        </div>
         <Button
           onClick={() => {
             resetForm()
             setIsCreateModalOpen(true)
           }}
+          className="w-full md:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nueva Marca
         </Button>
       </div>
 
-      <div className="relative">
+      {/* Search Bar */}
+      <div className="relative max-w-md mb-6">
         <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
         <Input
           type="text"
@@ -122,16 +168,41 @@ const VehicleBrandPage = () => {
         />
       </div>
 
+      {/* Brands Grid */}
       {isLoading ? (
-        <div className="text-center">Cargando marcas de vehículos...</div>
+        <div className="text-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4">Cargando marcas de vehículos...</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {brands
             .filter((brand) => brand.brand_name.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((brand) => (
-              <Card key={brand.vehicle_brand_id} className="shadow-md">
-                <CardHeader className="font-semibold">{brand.brand_name}</CardHeader>
-                <CardFooter className="flex justify-end space-x-2">
+              <Card key={brand.vehicle_brand_id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <Car className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-lg">{brand.brand_name}</h3>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <Badge variant="secondary" className="mb-2">
+                    ID: {brand.vehicle_brand_id}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    {models.filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id).length > 0 
+                      ? models
+                          .filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id)
+                          .map((m, i, arr) => (
+                            <span key={m.vehicle_model_id}>
+                              {m.model_name}{i < arr.length - 1 ? ', ' : ''}
+                            </span>
+                          ))
+                      : "Sin modelos registrados"}
+                  </p>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
                   <Button variant="outline" size="sm" onClick={() => openEditModal(brand)}>
                     <Edit className="w-4 h-4 mr-2" />
                     Editar

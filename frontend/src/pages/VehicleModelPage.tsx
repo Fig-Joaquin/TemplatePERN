@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { toast } from "react-toastify"
-import { Card, CardHeader, CardFooter } from "@/components/ui/card"
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -15,12 +15,13 @@ import {
 } from "../services/VehicleModelService"
 import { fetchVehicleBrands } from "../services/VehicleBrandService"
 import type { model, brand } from "../types/interfaces"
-import { Plus, Edit, Trash2, Search, Check, ChevronsUpDown } from "lucide-react"
+import { Plus, Edit, Trash2, Search, Car, Calendar, Settings } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
+import { Check, ChevronsUpDown } from "lucide-react"
 
 const VehicleModelPage = () => {
   const [models, setModels] = useState<model[]>([])
@@ -123,20 +124,48 @@ const VehicleModelPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Modelos de Vehículos</h1>
+      {/* Header Section with Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-primary/10">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Total Modelos</p>
+              <h3 className="text-2xl font-bold">{models.length}</h3>
+            </div>
+            <Settings className="h-8 w-8 text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="chart-4">
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <p className="text-sm font-medium">Última Actualización</p>
+              <p className="text-sm">{new Date().toLocaleDateString()}</p>
+            </div>
+            <Calendar className="h-8 w-8 text-green-500" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Header with Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Modelos de Vehículos</h1>
+          <p className="text-muted-foreground">Gestiona los modelos de vehículos disponibles</p>
+        </div>
         <Button
           onClick={() => {
             resetForm()
             setIsCreateModalOpen(true)
           }}
+          className="w-full md:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Modelo
         </Button>
       </div>
 
-      <div className="flex space-x-4">
+      {/* Search and Filter Section */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-grow">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
@@ -147,41 +176,77 @@ const VehicleModelPage = () => {
             className="pl-8"
           />
         </div>
-        <Select
-          value={filterBrandId?.toString() || "0"}
-          onValueChange={(value) => setFilterBrandId(value ? Number(value) : null)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrar por marca" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="0">Todas las marcas</SelectItem>
-            {brands.map((brand) => (
-              <SelectItem key={brand.vehicle_brand_id} value={brand.vehicle_brand_id.toString()}>
-                {brand.brand_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full md:w-[200px] justify-between">
+              {filterBrandId
+                ? brands.find(b => b.vehicle_brand_id === filterBrandId)?.brand_name
+                : "Filtrar por marca"}
+              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0">
+            <Command>
+              <CommandInput placeholder="Buscar marca..." />
+              <CommandList>
+                <CommandEmpty>No se encontraron marcas.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem onSelect={() => setFilterBrandId(null)}>
+                    <Check className={cn("mr-2 h-4 w-4", !filterBrandId ? "opacity-100" : "opacity-0")} />
+                    Todas las marcas
+                  </CommandItem>
+                  {brands.map((brand) => (
+                    <CommandItem
+                      key={brand.vehicle_brand_id}
+                      onSelect={() => setFilterBrandId(brand.vehicle_brand_id)}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          filterBrandId === brand.vehicle_brand_id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {brand.brand_name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
+      {/* Models Grid */}
       {isLoading ? (
-        <div className="text-center">Cargando modelos de vehículos...</div>
+        <div className="text-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4">Cargando modelos de vehículos...</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {models
             .filter(
               (model) =>
                 model.model_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId),
+                (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId)
             )
             .map((model) => (
-              <Card key={model.vehicle_model_id} className="shadow-md">
-                <CardHeader className="font-semibold">
-                  <div>{model.model_name}</div>
-                  <div className="text-sm text-muted-foreground">{model.brand.brand_name}</div>
+              <Card key={model.vehicle_model_id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <Car className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-lg">{model.model_name}</h3>
+                  </div>
                 </CardHeader>
-                <CardFooter className="flex justify-end space-x-2">
+                <CardContent className="pb-3">
+                  <Badge variant="secondary" className="mb-2">
+                    Marca: {model.brand.brand_name}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    ID: {model.vehicle_model_id}
+                  </p>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2 pt-3 border-t">
                   <Button variant="outline" size="sm" onClick={() => openEditModal(model)}>
                     <Edit className="w-4 h-4 mr-2" />
                     Editar
