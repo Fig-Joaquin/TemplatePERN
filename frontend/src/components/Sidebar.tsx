@@ -8,6 +8,7 @@ import {
   BanknotesIcon,
   Cog6ToothIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/solid"
 import { useState } from "react"
 import { Link } from "react-router-dom"
@@ -54,8 +55,8 @@ const sidebarStructure = [
     icon: WrenchIcon,
     title: "Órdenes de Trabajo",
     items: [
-      { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
-      { name: "Crear orden", path: "/admin/nueva-orden-trabajo" },
+      { name: "Lista de órdenes", path: "/admin/ordenes" },
+      { name: "Crear orden", path: "/admin/ordenes/nueva" },
       { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
     ],
   },
@@ -107,68 +108,63 @@ const Sidebar = ({
   }
 
   return (
-    <div className="relative">
+    <aside
+      className={`bg-sidebar border-r border-sidebar-border min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 overflow-y-auto ${
+        isSidebarOpen ? "w-64" : "w-16"
+      }`}
+    >
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-sidebar-primary-foreground shadow-md"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-md transition-all duration-300 hover:bg-sidebar-accent"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {isSidebarOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
+        {isSidebarOpen ? <ChevronRightIcon className="w-6 h-6" /> : <ChevronDownIcon className="w-6 h-6" />}
       </button>
-      <aside
-        className={
-          "bg-sidebar border-r border-sidebar-border min-h-screen p-5 shadow-md fixed top-0 left-0 transition-all duration-300 " +
-          (isSidebarOpen ? "w-64" : "w-16")
-        }
+      <h2
+        className={`text-2xl font-bold mb-6 text-center text-sidebar-foreground transition-opacity ${
+          isSidebarOpen ? "opacity-100" : "opacity-0"
+        }`}
       >
-        <h2
-          className={
-            "text-2xl font-bold mb-6 text-center text-sidebar-foreground transition-opacity " +
-            (isSidebarOpen ? "opacity-100" : "opacity-0")
-          }
-        >
-          Panel
-        </h2>
-        <nav>
-          <ul className="space-y-4">
-            {sidebarStructure.map((section) => (
-              <li key={section.id}>
-                <button
-                  onClick={() => toggleSection(section.id)}
-                  className="flex items-center justify-between w-full text-left text-lg font-semibold text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground p-2 rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <section.icon className="w-6 h-6 text-sidebar-foreground" />
-                    <span className={isSidebarOpen ? "block" : "hidden"}>{section.title}</span>
-                  </div>
-                  {isSidebarOpen && (
-                    <ChevronDownIcon
-                      className={`w-5 h-5 transition-transform ${openSections[section.id] ? "rotate-180" : ""}`}
-                    />
-                  )}
-                </button>
-                {openSections[section.id] && isSidebarOpen && (
-                  <ul className="ml-4 space-y-2 mt-2 text-sm text-sidebar-foreground">
-                    {section.items.map((item) => (
-                      <li key={item.path}>
-                        <Link to={item.path} className="hover:text-sidebar-accent">
-                          {item.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+        Panel
+      </h2>
+      <nav>
+        <ul className="space-y-4">
+          {sidebarStructure.map((section) => (
+            <li key={section.id}>
+              <button
+                onClick={() => toggleSection(section.id)}
+                className="flex items-center justify-between w-full text-left text-lg font-semibold text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground p-2 rounded-lg transition-colors duration-200"
+              >
+                <div className="flex items-center gap-2">
+                  <section.icon className="w-6 h-6 text-sidebar-foreground" />
+                  <span className={isSidebarOpen ? "block" : "hidden"}>{section.title}</span>
+                </div>
+                {isSidebarOpen && (
+                  <ChevronDownIcon
+                    className={`w-5 h-5 transition-transform duration-200 ${
+                      openSections[section.id] ? "rotate-180" : ""
+                    }`}
+                  />
                 )}
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
-    </div>
+              </button>
+              {openSections[section.id] && isSidebarOpen && (
+                <ul className="ml-4 space-y-2 mt-2 text-sm text-sidebar-foreground">
+                  {section.items.map((item) => (
+                    <li key={item.path}>
+                      <Link
+                        to={item.path}
+                        className="block py-1 px-2 rounded hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200"
+                      >
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </aside>
   )
 }
 

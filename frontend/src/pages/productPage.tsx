@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, Edit, Trash2 } from "lucide-react"
+import { Search, Edit, Trash2, Package, Plus } from "lucide-react"
 import { fetchProducts, updateProduct, deleteProduct } from "../services/productService"
 import type { Product } from "../types/interfaces"
 import { formatDate } from "@/utils/formDate"
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "react-toastify"
 import { NumberInput } from "@/components/numberInput"
 import api from "../utils/axiosConfig"
+import { useNavigate } from "react-router-dom"
 
 const ProductPage = () => {
   const [products, setProducts] = useState<Product[]>([])
@@ -29,6 +30,7 @@ const ProductPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [productTypes, setProductTypes] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
+  const navigate = useNavigate()
 
   // Edit form state
   const [editProductName, setEditProductName] = useState("")
@@ -142,22 +144,29 @@ const ProductPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 bg-card">
-      {" "}
-      {/* Update 1 */}
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-foreground"> {/* Update 1 */}Productos</h1>
-        <div className="relative w-72">
-          <Input
-            type="text"
-            placeholder="Buscar producto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          <Search className="w-5 h-5 text-muted-foreground absolute left-3 top-2.5" />
-        </div>
+        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+          <Package className="w-8 h-8" />
+          Productos
+        </h1>
+        <Button onClick={() => navigate("/admin/productos/nuevo")} className="bg-primary text-primary-foreground">
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Producto
+        </Button>
       </div>
+
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Buscar producto..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
@@ -178,9 +187,7 @@ const ProductPage = () => {
           {filteredProducts.map((product) => (
             <Card key={product.product_id} className="overflow-hidden transition-all hover:shadow-md">
               <CardHeader>
-                <CardTitle className="text-xl text-foreground">
-                  {/* Update 1 */} {product.product_name}
-                </CardTitle>
+                <CardTitle className="text-xl text-foreground">{product.product_name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-lg font-semibold text-primary">
@@ -189,21 +196,17 @@ const ProductPage = () => {
                 {product.stock ? (
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">
-                      {" "}
-                      {/* Update 1 */}Stock: {formatQuantity(Number(product.stock.quantity))}
+                      Stock: {formatQuantity(Number(product.stock.quantity))}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Actualizado: {product.stock.updated_at ? formatDate(product.stock.updated_at) : "N/A"}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground"> {/* Update 1 */}Información de stock no disponible</p>
+                  <p className="text-muted-foreground">Información de stock no disponible</p>
                 )}
                 <p className="text-foreground">
-                  {" "}
-                  {/* Update 1 */}
-                  <span className="font-medium text-foreground"> {/* Update 1 */}Proveedor:</span>{" "}
-                  {product.supplier.name}
+                  <span className="font-medium text-foreground">Proveedor:</span> {product.supplier.name}
                 </p>
                 <div className="flex gap-2 pt-2">
                   <Badge variant="secondary">{product.type.type_name}</Badge>
@@ -227,18 +230,16 @@ const ProductPage = () => {
           ))}
         </div>
       )}
+
       <Dialog open={modalOpen} onOpenChange={(open) => !open && closeModal()}>
         <DialogContent className="bg-card text-card-foreground">
-          {" "}
-          {/* Update 3 */}
           <DialogHeader>
             <DialogTitle>{modalType === "edit" ? "Editar Producto" : "Confirmar eliminación"}</DialogTitle>
           </DialogHeader>
           {modalType === "delete" ? (
             <>
               <p className="text-foreground">
-                {" "}
-                {/* Update 1 */}¿Está seguro que desea eliminar el producto {selectedProduct?.product_name}?
+                ¿Está seguro que desea eliminar el producto {selectedProduct?.product_name}?
               </p>
               <DialogFooter>
                 <Button variant="outline" onClick={closeModal}>
@@ -249,8 +250,6 @@ const ProductPage = () => {
                   onClick={handleDelete}
                   className="bg-destructive text-destructive-foreground"
                 >
-                  {" "}
-                  {/* Update 2 */}
                   Eliminar
                 </Button>
               </DialogFooter>
@@ -273,7 +272,7 @@ const ProductPage = () => {
                   id="editProductType"
                   value={editSelectedProductType}
                   onChange={(e) => setEditSelectedProductType(e.target.value)}
-                  className="border rounded p-2 w-full"
+                  className="w-full p-2 border border-input bg-background text-sm rounded-md"
                   required
                 >
                   <option value="">Seleccione un tipo</option>
@@ -290,7 +289,7 @@ const ProductPage = () => {
                   id="editSupplier"
                   value={editSelectedSupplier}
                   onChange={(e) => setEditSelectedSupplier(e.target.value)}
-                  className="border rounded p-2 w-full"
+                  className="w-full p-2 border border-input bg-background text-sm rounded-md"
                   required
                 >
                   <option value="">Seleccione un proveedor</option>
@@ -358,8 +357,7 @@ const ProductPage = () => {
                   Cancelar
                 </Button>
                 <Button type="submit" className="bg-primary text-primary-foreground">
-                  {" "}
-                  {/* Update 2 */}Guardar cambios
+                  Guardar cambios
                 </Button>
               </DialogFooter>
             </form>

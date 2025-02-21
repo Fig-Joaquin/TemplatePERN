@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+
 import { useEffect, useState } from "react"
 import { BellIcon } from "@heroicons/react/24/solid"
 import type { User } from "../types/interfaces"
@@ -24,11 +25,9 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
     checkUserSession()
       .then((userData) => {
         setUser(userData)
-        console.log(userData)
       })
       .catch(() => {
         setUser(null)
-        console.log("No user session")
       })
   }, [])
 

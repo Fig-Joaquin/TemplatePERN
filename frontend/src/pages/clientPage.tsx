@@ -2,22 +2,21 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
-import api from "../utils/axiosConfig"
+import { useEffect, useState, useCallback } from "react"
 import { toast } from "react-toastify"
-import { Plus } from "lucide-react"
+import { Plus, Search, Users } from "lucide-react"
 import ClientList from "../components/clientList"
 import ClientForm from "../components/clientForm"
-import SearchBar from "../components/searchBar"
-import type { Person, Vehicle } from "../types/interfaces"
+import type { Person } from "../types/interfaces"
 import { createPerson, updatePerson, fetchPersonsClient } from "../services/personService"
-import { fetchVehicles, fetchVehiclesByPersonId } from "../services/vehicleService"
+import { fetchVehiclesByPersonId } from "../services/vehicleService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { motion, AnimatePresence } from "framer-motion"
 
 const ClientPage = () => {
   const [persons, setPersons] = useState<Person[]>([])
-  const [, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -37,30 +36,21 @@ const ClientPage = () => {
   const [createFormData, setCreateFormData] = useState(initialFormData)
   const [editFormData, setEditFormData] = useState(initialFormData)
 
-  useEffect(() => {
-    const fetchPersons = async () => {
-      try {
-        const clients = await fetchPersonsClient()
-        setPersons(clients)
-      } catch {
-        toast.error("Error al cargar las personas")
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const clients = await fetchPersonsClient()
+      setPersons(clients)
+    } catch (error) {
+      toast.error("Error al cargar los datos")
+    } finally {
+      setLoading(false)
     }
-
-    const fetchVehiclesData = async () => {
-      try {
-        const vehicles = await fetchVehicles()
-        setVehicles(vehicles)
-      } catch {
-        toast.error("Error al cargar los vehículos")
-      }
-    }
-
-    fetchPersons()
-    fetchVehiclesData()
   }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
@@ -83,8 +73,7 @@ const ClientPage = () => {
       toast.success("Cliente creado exitosamente")
       setAddModalOpen(false)
       setCreateFormData(initialFormData)
-      const clients = await fetchPersonsClient()
-      setPersons(clients)
+      fetchData()
     } catch (error: any) {
       toast.error(
         [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
@@ -103,8 +92,7 @@ const ClientPage = () => {
         setEditModalOpen(false)
         setSelectedPerson(null)
         setEditFormData(initialFormData)
-        const clients = await fetchPersonsClient()
-        setPersons(clients)
+        fetchData()
       }
     } catch (error: any) {
       toast.error(
@@ -137,9 +125,9 @@ const ClientPage = () => {
   const handleConfirmDelete = async () => {
     if (clientToDelete !== null) {
       try {
-        await api.delete(`/persons/${clientToDelete}`)
+        await updatePerson(clientToDelete, { person_type: "inactive" })
         toast.success("Cliente eliminado exitosamente")
-        setPersons(persons.filter((person) => person.person_id !== clientToDelete))
+        fetchData()
       } catch (error: any) {
         toast.error(
           [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
@@ -160,34 +148,54 @@ const ClientPage = () => {
   )
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Lista de Clientes</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+          <Users className="w-8 h-8" />
+          Lista de Clientes
+        </h1>
         <Button onClick={() => setAddModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Cliente
         </Button>
       </div>
 
-      <SearchBar searchTerm={searchTerm} handleSearch={handleSearch} />
-
-      <div className="bg-card/30 backdrop-blur-md rounded-lg shadow p-6">
-        {loading ? (
-          <div className="text-center py-4">Cargando clientes...</div>
-        ) : (
-          <ClientList
-            persons={filteredPersons}
-            getVehiclesByPersonId={fetchVehiclesByPersonId}
-            handleEdit={handleEdit}
-            handleDelete={handleDelete}
-          />
-        )}
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Buscar cliente por nombre o RUT..."
+          value={searchTerm}
+          onChange={handleSearch}
+          className="pl-10"
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
       </div>
 
-      {/* Add Modal */}
+      <motion.div
+        className="bg-card shadow-lg rounded-lg overflow-hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {loading ? (
+          <div className="text-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-lg text-muted-foreground">Cargando clientes...</p>
+          </div>
+        ) : (
+          <AnimatePresence>
+            <ClientList
+              persons={filteredPersons}
+              getVehiclesByPersonId={fetchVehiclesByPersonId}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+            />
+          </AnimatePresence>
+        )}
+      </motion.div>
+
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        {addModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
-        <DialogContent className="w-96 bg-card text-card-foreground shadow-lg rounded-lg p-6">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Nuevo Cliente</DialogTitle>
           </DialogHeader>
@@ -200,7 +208,6 @@ const ClientPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Modal */}
       <Dialog
         open={editModalOpen}
         onOpenChange={() => {
@@ -208,8 +215,7 @@ const ClientPage = () => {
           setSelectedPerson(null)
         }}
       >
-        {editModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
-        <DialogContent className="w-96 bg-card text-card-foreground shadow-lg rounded-lg p-6">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
@@ -225,16 +231,14 @@ const ClientPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        {deleteModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
-        <DialogContent className="w-96 bg-card text-card-foreground shadow-lg rounded-lg p-6">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirmar Eliminación</DialogTitle>
           </DialogHeader>
           <p>¿Estás seguro de eliminar este cliente?</p>
           <div className="flex justify-end mt-4 gap-2">
-            <Button variant="secondary" onClick={() => setDeleteModalOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>

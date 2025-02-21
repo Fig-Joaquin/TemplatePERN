@@ -12,17 +12,21 @@ import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { formatDate } from "@/utils/formDate" // Import formatDate
-import { VehicleCard } from "@/components/VehicleCard" //Import VehicleCard
+import { formatDate } from "@/utils/formDate"
+import { VehicleCard } from "@/components/VehicleCard"
+import { FileText, Plus } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [workProductDetails, setWorkProductDetails] = useState<WorkProductDetail[]>([])
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true)
         const response = await fetchQuotations()
         setQuotations(response)
 
@@ -119,11 +123,25 @@ export default function QuotationPage() {
   })
 
   return (
-    <div className="container mx-auto py-10 bg-card">
-      {" "}
-      {/* Update 1 */}
-      <h2 className="text-3xl font-bold tracking-tight mb-5 text-muted-foreground"> {/* Update 1 */}Cotizaciones</h2>
-      {loading ? <p>Cargando...</p> : <DataTable columns={updatedColumns} data={data} />}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+          <FileText className="w-8 h-8" />
+          Cotizaciones
+        </h1>
+        <Button onClick={() => navigate("/admin/cotizaciones/nuevo")} className="bg-primary text-primary-foreground">
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Cotización
+        </Button>
+      </div>
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando cotizaciones...</p>
+        </div>
+      ) : (
+        <DataTable columns={updatedColumns} data={data} />
+      )}
     </div>
   )
 }

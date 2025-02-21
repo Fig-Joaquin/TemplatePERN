@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -12,16 +12,18 @@ import { toast } from "react-toastify"
 import { createProduct } from "../services/productService"
 import api from "../utils/axiosConfig"
 import { NumberInput } from "@/components/numberInput"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Package } from "lucide-react"
 
 const ProductCreatePage = () => {
   const [productName, setProductName] = useState("")
-  const [salePrice, setSalePrice] = useState(Number)
-  const [stockQuantity, setStockQuantity] = useState(Number)
+  const [salePrice, setSalePrice] = useState(0)
+  const [stockQuantity, setStockQuantity] = useState(0)
   const [description, setDescription] = useState("")
   const [selectedProductType, setSelectedProductType] = useState("")
   const [selectedSupplier, setSelectedSupplier] = useState("")
   const [profitMargin, setProfitMargin] = useState("")
-  const [lastPurchasePrice, setLastPurchasePrice] = useState(Number)
+  const [lastPurchasePrice, setLastPurchasePrice] = useState(0)
   const [productTypes, setProductTypes] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -35,7 +37,7 @@ const ProductCreatePage = () => {
         const suppliersResponse = await api.get("/suppliers")
         setSuppliers(suppliersResponse.data)
       } catch (error) {
-        toast.error("Error al cargar product types y suppliers")
+        toast.error("Error al cargar tipos de producto y proveedores")
       }
     }
     fetchData()
@@ -45,7 +47,6 @@ const ProductCreatePage = () => {
     e.preventDefault()
     setLoading(true)
 
-    // Validar que los valores numéricos sean mayores a 0
     if (Number(salePrice) === 0 || Number(lastPurchasePrice) === 0 || Number(stockQuantity) === 0) {
       toast.error("El precio de venta, último precio de compra y cantidad deben ser mayores a 0")
       setLoading(false)
@@ -79,11 +80,12 @@ const ProductCreatePage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <Card className="">
-        <CardHeader>
-          <h2 className="text-2xl font-bold">Crear Nuevo Producto</h2>
-        </CardHeader>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+        <Package className="w-8 h-8" />
+        Crear Nuevo Producto
+      </h1>
+      <Card>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -98,37 +100,33 @@ const ProductCreatePage = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="productType">Tipo de Producto</Label>
-              <select
-                id="productType"
-                value={selectedProductType}
-                onChange={(e) => setSelectedProductType(e.target.value)}
-                className="border rounded p-2 w-full"
-                required
-              >
-                <option value="">Seleccione un tipo</option>
-                {productTypes.map((type) => (
-                  <option key={type.id} value={type.product_type_id}>
-                    {type.type_name}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedProductType} onValueChange={setSelectedProductType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione un tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productTypes.map((type) => (
+                    <SelectItem key={type.product_type_id} value={type.product_type_id.toString()}>
+                      {type.type_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="supplier">Proveedor</Label>
-              <select
-                id="supplier"
-                value={selectedSupplier}
-                onChange={(e) => setSelectedSupplier(e.target.value)}
-                className="border rounded p-2 w-full"
-                required
-              >
-                <option value="">Seleccione un proveedor</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.supplier_id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione un proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.supplier_id} value={supplier.supplier_id.toString()}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="profitMargin">Margen de ganancia (%)</Label>

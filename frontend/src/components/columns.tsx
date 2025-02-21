@@ -53,10 +53,7 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
     header: "Precio Total",
     cell: ({ row }) => {
       const amount = Number.parseFloat(row.getValue("totalPrice"))
-      const formatted = new Intl.NumberFormat("es-CL", {
-        style: "currency",
-        currency: "CLP",
-      }).format(amount)
+      const formatted = formatPriceCLP(amount)
       return <div className="font-medium">{formatted}</div>
     },
   },

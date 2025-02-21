@@ -2,14 +2,13 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { toast } from "react-toastify"
-import { Card, CardHeader, CardFooter, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, Tag, Search, ChevronRight } from "lucide-react"
 import {
   fetchProductTypes,
   createProductType,
@@ -22,43 +21,57 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 
 const ProductTypePage = () => {
   const [productTypes, setProductTypes] = useState<ProductType[]>([])
+  const [filteredProductTypes, setFilteredProductTypes] = useState<ProductType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [formValue, setFormValue] = useState("")
   const [editingType, setEditingType] = useState<ProductType | null>(null)
-
   const [categories, setCategories] = useState<category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [expandedTypes, setExpandedTypes] = useState<Set<number>>(new Set())
 
-  const loadTypes = async () => {
+  const loadTypes = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await fetchProductTypes()
       setProductTypes(data)
+      setFilteredProductTypes(data)
     } catch (error) {
       toast.error("Error al cargar los tipos de producto")
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const data = await fetchProductCategories()
       setCategories(data)
     } catch (error) {
       toast.error("Error al cargar las categorías")
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadTypes()
     loadCategories()
-  }, [])
+  }, [loadTypes, loadCategories])
+
+  useEffect(() => {
+    setFilteredProductTypes(
+      productTypes.filter(
+        (type) =>
+          type.type_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          type.category?.category_name.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    )
+  }, [productTypes, searchTerm])
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,10 +136,25 @@ const ProductTypePage = () => {
     setSelectedCategory(null)
   }
 
+  const toggleExpand = (typeId: number) => {
+    setExpandedTypes((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(typeId)) {
+        newSet.delete(typeId)
+      } else {
+        newSet.add(typeId)
+      }
+      return newSet
+    })
+  }
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Tipos de Producto</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+          <Tag className="w-8 h-8" />
+          Tipos de Producto
+        </h1>
         <Button
           onClick={() => {
             resetForm()
@@ -138,28 +166,74 @@ const ProductTypePage = () => {
         </Button>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Search className="w-5 h-5 text-gray-500" />
+        <Input
+          type="text"
+          placeholder="Buscar tipos de producto..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
       {isLoading ? (
-        <div className="text-center py-4">Cargando tipos de producto...</div>
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando tipos de producto...</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {productTypes.map((pt) => (
-            <Card key={pt.product_type_id} className="flex flex-col justify-between">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">{pt.type_name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{pt.category?.category_name || "Sin categoría"}</p>
-              </CardHeader>
-              <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => openEditModal(pt)}>
-                  <Edit className="w-4 h-4 mr-1" />
-                  Editar
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(pt)}>
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Eliminar
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence>
+            {filteredProductTypes.map((type) => (
+              <motion.div
+                key={type.product_type_id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card rounded-lg shadow-md overflow-hidden"
+              >
+                <div
+                  className="p-4 cursor-pointer flex justify-between items-center"
+                  onClick={() => toggleExpand(type.product_type_id)}
+                >
+                  <h3 className="text-lg font-semibold">{type.type_name}</h3>
+                  <ChevronRight
+                    className={`transform transition-transform duration-200 ${
+                      expandedTypes.has(type.product_type_id) ? "rotate-90" : ""
+                    }`}
+                  />
+                </div>
+                <AnimatePresence>
+                  {expandedTypes.has(type.product_type_id) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="px-4 pb-4"
+                    >
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Categoría: {type.category?.category_name || "Sin categoría"}
+                      </p>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => openEditModal(type)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(type)}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
