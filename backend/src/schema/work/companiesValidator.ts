@@ -4,7 +4,7 @@ export const companiesSchema = z.object({
     company_id: z.number().int().positive().optional(),
     
     rut: z.string()
-        .min(9, { message: "El RUT debe tener al menos 9 caracteres" })
+        .min(8, { message: "El RUT debe tener al menos 9 caracteres" })
         .max(10, { message: "El RUT no puede superar los 10 caracteres" }),
 
     name: z.string()
@@ -13,7 +13,12 @@ export const companiesSchema = z.object({
 
     email: z.string()
         .email({ message: "Formato de email inválido" })
-        .max(100, { message: "El email no puede superar los 100 caracteres" })
+        .max(100, { message: "El email no puede superar los 100 caracteres" }),
+
+    phone: z.string()
+        .min(7, { message: "El teléfono debe tener al menos 7 caracteres" })
+        .max(12, { message: "El teléfono no puede superar los 12 caracteres" })
+        .optional()
 });
 
 export const updateCompaniesSchema = companiesSchema.partial();

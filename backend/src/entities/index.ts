@@ -17,7 +17,7 @@ export { WorkPayment } from "./work/workPaymentEntity";
 export { WorkProductDetail } from "./work/workProductDetailEntity";
 export { WorkTicket } from "./work/workTicketEntity";
 export { PurchaseHistory } from "./products/purchaseHistoryEntity";
-export { Company } from "./companiesEntity";
+export { Company } from "./work/companiesEntity";
 export { StockProduct } from "./products/stockProductEntity";
 export { ProductHistory } from "./products/productsHistoryEntity";
 export { Supplier } from "./work/suppliersEntity";

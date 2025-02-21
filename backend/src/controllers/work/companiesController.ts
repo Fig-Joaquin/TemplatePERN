@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { Company } from "../../entities/companiesEntity";
+import { Company } from "../../entities/work/companiesEntity";
 import { companiesSchema, updateCompaniesSchema } from "../../schema/work/companiesValidator";
 
 const companyRepository = AppDataSource.getRepository(Company);

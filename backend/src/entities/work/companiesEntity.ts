@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 import { IsString, Length, IsEmail } from "class-validator";
 
 @Entity("companies")
@@ -8,7 +8,7 @@ export class Company {
 
     @Column({ length: 12, unique: true })
     @IsString()
-    @Length(9, 12, { message: "El RUT debe tener entre 9 y 12 caracteres" })
+    @Length(8, 12, { message: "El RUT debe tener entre 9 y 12 caracteres" })
     rut!: string;
 
     @Column({ length: 100 })
@@ -21,4 +21,8 @@ export class Company {
     @IsEmail({}, { message: "Email inválido" })
     email!: string;
 
+    @Column({ length: 12, nullable: true })
+    @IsString()
+    @Length(7, 12, { message: "El teléfono debe tener entre 7 y 12 caracteres" })
+    phone?: string;
 }
