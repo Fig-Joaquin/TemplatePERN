@@ -23,12 +23,13 @@ const sidebarStructure = [
     items: [{ name: "Dashboard", path: "/admin/dashboard" }],
   },
   {
-    id: "Personas",
+    id: "Clientes",
     icon: UsersIcon,
-    title: "Personas",
+    title: "Clientes",
     items: [
-      { name: "Clientes", path: "/admin/clientes" },
+      { name: "Personas", path: "/admin/clientes" },
       { name: "Trabajadores", path: "/admin/trabajadores" },
+      { name: "Empresas", path: "/admin/empresas" },
     ],
   },
   {
@@ -141,9 +142,9 @@ const Sidebar = ({
             )}
             onClick={() => !isSidebarOpen && setIsSidebarOpen(true)}
           >
-            <img 
-              src="/OR_LOGO A&M-2.png" 
-              alt="Logo A&M" 
+            <img
+              src="/OR_LOGO A&M-2.png"
+              alt="Logo A&M"
               className="w-10 h-10 object-contain"
             />
           </div>
@@ -195,14 +196,14 @@ const Sidebar = ({
                 )}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <section.icon 
+                  <section.icon
                     className={cn(
                       "w-5 h-5 shrink-0",
                       "transition-colors duration-200",
-                      openSections[section.id] 
-                        ? "text-sidebar-accent" 
+                      openSections[section.id]
+                        ? "text-sidebar-accent"
                         : "text-sidebar"
-                    )} 
+                    )}
                   />
                   {isSidebarOpen && (
                     <span className="text-sm font-medium truncate">

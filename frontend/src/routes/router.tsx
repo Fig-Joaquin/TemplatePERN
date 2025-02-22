@@ -17,6 +17,7 @@ import VehicleModelPage from "@/pages/VehicleModelPage";
 import EmployeePage from "@/pages/employeePage";
 import WorkOrdersPage from "@/pages/WorkOrderPage";
 import WorkOrderCreatePage from "@/pages/WorkOrderCreatePage";
+import CompaniesPage from "@/pages/work/CompaniesPage";
 
 const router = createBrowserRouter([
   {
@@ -45,7 +46,8 @@ const router = createBrowserRouter([
       { path: "trabajadores", element: <EmployeePage />, handle: { title: "Trabajador" } },
       { path: "orden-trabajo", element: <WorkOrdersPage />, handle: { title: "Órdenes de Trabajo" } },
       { path: "nueva-orden-trabajo", element: <WorkOrderCreatePage />, handle: { title: "Órdenes de Trabajo" } },
-
+      { path: "empresas", element: <CompaniesPage />, handle: { title: "Empresas" } },
+      { path: "*", element: <h1>Not Found</h1> },
     ],
   },
 ])

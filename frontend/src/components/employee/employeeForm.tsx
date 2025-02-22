@@ -76,7 +76,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           name="email"
           value={formData.email}
           onChange={handleInputChange}
-          required
           className="w-full border rounded p-2 bg-white text-gray-900"
         />
       </div>
@@ -105,7 +104,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           variant="default"
           className="px-4 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700 transition"
         >
-          {formData.person_type === "employee" ? "Registrar" : "Actualizar"}
+          {formData.person_type === "employee" ? "Actualizar" : "Registrar"}
         </Button>
       </div>
     </form>

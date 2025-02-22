@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
-import {  IsString, Length, IsEmail, Matches } from "class-validator";
+import {  IsString, Length, IsEmail, Matches, IsOptional } from "class-validator";
+import { Transform } from "class-transformer";
 
 @Entity("persons")
 export class Person {
@@ -23,18 +24,22 @@ export class Person {
     first_surname!: string;
 
     @Column({ length: 50, nullable: true })
+    @IsOptional()
     @IsString()
+    @Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? undefined : value))
     @Length(2, 50, { message: "Segundo apellido debe tener entre 2 y 50 caracteres" })
     second_surname?: string;
 
-    @Column({ length: 100 })
+    @Column({ length: 100, nullable: true  })
+    @IsOptional()
+    @Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? undefined : value))
     @IsEmail({}, { message: "Email inválido" })
     @Length(5, 100, { message: "Email debe tener entre 5 y 100 caracteres" })
     email!: string;
 
     @Column({ length: 15 })
     @IsString()
-    @Matches(/^\+?56[0-9]{9}$/, { message: "Formato de teléfono inválido. Debe ser formato chileno (+56)" })
+    @Matches(/^\?56[0-9]{9}$/, { message: "Formato de teléfono inválido. Debe ser formato chileno, empezando por 569" })
     number_phone!: string;
 
     @Column({ length: 20 })

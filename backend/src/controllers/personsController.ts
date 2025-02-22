@@ -64,12 +64,14 @@ export const createPerson = async (req: Request, res: Response, _next: NextFunct
             res.status(409).json({ message: `El RUT '${rut}' ya está registrado en el sistema.` });
             return;
         }
-
-        // Verificar si el email ya está registrado
-        const existingPersonByEmail = await personRepository.findOneBy({ email });
-        if (existingPersonByEmail) {
-            res.status(409).json({ message: `El email '${email}' ya está registrado en el sistema.` });
-            return;
+            
+        // Verificar si el email ya está registrado SOLO si existe
+        if (email !== undefined) {
+            const existingPersonByEmail = await personRepository.findOneBy({ email });
+            if (existingPersonByEmail) {
+                res.status(409).json({ message: `El email '${email}' ya está registrado en el sistema.` });
+                return;
+            }
         }
 
         // Verificar si el teléfono ya está registrado

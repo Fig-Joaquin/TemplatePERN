@@ -51,6 +51,14 @@ export interface company {
   rut: string
 }
 
+export interface Company {
+  company_id: number;
+  rut: string;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
 export interface model {
   vehicle_model_id: number
   model_name: string

@@ -18,17 +18,34 @@ export const PersonSchema = z.object({
         .min(2, "Primer apellido debe tener entre 2 y 50 caracteres")
         .max(50, "Primer apellido debe tener entre 2 y 50 caracteres"),
 
-    second_surname: z
+        second_surname: z
         .string()
-        .min(2, "Segundo apellido debe tener entre 2 y 50 caracteres")
-        .max(50, "Segundo apellido debe tener entre 2 y 50 caracteres")
-        .optional(),
+        .transform(val => (val.trim() === "" ? undefined : val))
+        .optional()
+        .refine(val => (val == null || val.length >= 2), {
+          message: "Segundo apellido debe tener entre 2 y 50 caracteres",
+        })
+        .refine(val => (val == null || val.length <= 50), {
+          message: "Segundo apellido debe tener entre 2 y 50 caracteres",
+        }),
 
-    email: z
+        email: z
         .string()
-        .email("Email inválido")
-        .min(5, "Email debe tener entre 5 y 100 caracteres")
-        .max(100, "Email debe tener entre 5 y 100 caracteres"),
+        .optional()
+        .transform((val) => (val?.trim() === "" ? undefined : val?.trim()))
+        .refine(
+          (val) => val == null || val.length >= 5, 
+          { message: "Email debe tener entre 5 y 100 caracteres" }
+        )
+        .refine(
+          (val) => val == null || val.length <= 100, 
+          { message: "Email debe tener entre 5 y 100 caracteres" }
+        )
+        .refine(
+          (val) => val == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+          { message: "Email inválido" }
+        ),
+      
 
     number_phone: z
         .string()
