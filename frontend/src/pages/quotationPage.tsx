@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { Quotation, WorkProductDetail } from "@/types/interfaces"
-import { fetchQuotations, deleteQuotation } from "@/services/quotationService"
+import { fetchQuotations, deleteQuotation, downloadQuotationPDF } from "@/services/quotationService"
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/columns"
@@ -173,6 +173,18 @@ export default function QuotationPage() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await downloadQuotationPDF(quotation.quotation_id!);
+                      } catch (error) {
+                        toast.error("Error al descargar el PDF");
+                      }
+                    }}
+                  >
+                    Descargar PDF
+                  </Button>
                   <Button
                     variant="destructive"
                     onClick={() => handleDeleteClick(quotation.quotation_id!)}
