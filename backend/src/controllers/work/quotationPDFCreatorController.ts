@@ -48,7 +48,7 @@ export const generateQuotationPDF = async (req: Request, res: Response): Promise
         // Logo
         const pageWidth = 612; // Ancho estándar de página A4 en puntos
         const logoWidth = 200;
-        const logoPath = path.resolve(__dirname, '../../public/images/OR_LOGO A&M.png');
+        const logoPath = path.resolve(__dirname, '../../public/taller_logo.png');
         doc.image(logoPath, 0, 0, { width: logoWidth }); // Alineado con el cuadro de cotización (y=30)
 
         // Título y datos de la empresa - Centrado
