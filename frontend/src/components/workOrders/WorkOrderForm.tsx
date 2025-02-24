@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { createWorkOrder, updateWorkOrder } from "@/services/workOrderService";
+import { createWorkOrder } from "@/services/workOrderService";
 import type { WorkOrder, WorkOrderInput, WorkProductDetail, Quotation } from "@/types/interfaces";
 import { fetchQuotationById } from "@/services/quotationService";
-import { fetchProducts } from "@/services/productService";
 import { createWorkProductDetail } from "@/services/workProductDetail";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NumberInput } from "@/components/numberInput";
 
 interface WorkOrderFormProps {
   initialData?: WorkOrder | null;

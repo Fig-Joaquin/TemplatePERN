@@ -1,9 +1,8 @@
 // backend/src/controllers/chatbotController.ts
+import { AppDataSource } from "../../config/ormconfig";
+import { Product, StockProduct } from "../../entities";
 import { Request, Response } from "express";
-import { AppDataSource } from "../../config/ormConfig";
-import { Product } from "../entities";
 import natural from "natural";
-import { StockProduct } from "../entities/products/stockProductEntity";
 
 const stockProductRepository = AppDataSource.getRepository(StockProduct);
 const productRepository = AppDataSource.getRepository(Product);
