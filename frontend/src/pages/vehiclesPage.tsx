@@ -111,7 +111,7 @@ const VehiclesPage = () => {
       license_plate: licensePlate,
       year,
       color,
-      mileage: mileage,
+      mileageHistory: mileage,
       vehicle_brand_id: selectedBrand.vehicle_brand_id,
       vehicle_model_id: selectedModel.vehicle_model_id,
       person_id: selectedPerson.person_id,

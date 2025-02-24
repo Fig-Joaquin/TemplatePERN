@@ -7,6 +7,7 @@ import Navbar from "./Navbar"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { cn } from "@/lib/utils"
+import { Chatbot}  from "./Chatbot"
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -36,6 +37,9 @@ const AdminLayout = () => {
         <main className="flex-1 p-6 mt-16">
           <Outlet />
         </main>
+        
+        {/* Chatbot */}
+        <Chatbot />
       </div>
 
       {/* Toast container mantiene el z-index más alto */}

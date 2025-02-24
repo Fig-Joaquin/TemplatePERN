@@ -32,6 +32,7 @@ const Login = () => {
         showSuccessToast("Inicio de sesión exitoso")
         navigate("/admin/dashboard")
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError("Credenciales incorrectas. Intenta de nuevo.")
       showErrorToast("Error al iniciar sesión. Verifica tus credenciales.")
