@@ -17,6 +17,7 @@ import  Debtor  from "./work/debtorRoutes";
 import Supplier  from "./work/supliersRoutes";
 import  StockProduct  from "./products/stock_productsController";
 import Companies from "./work/companiesRoutes";
+import { handleChatQuery } from "../controllers/chatbot/chatbotController";
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use("/debtors", Debtor);
 router.use("/suppliers", Supplier);
 router.use("/stockProducts", StockProduct);
 router.use("/companies", Companies);
+router.post("/chat", handleChatQuery);
 
 export default router;
