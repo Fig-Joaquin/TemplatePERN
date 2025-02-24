@@ -120,13 +120,15 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
             }
         }
         // Validar mileageHistoryData
-        if (!mileageHistoryData || !Array.isArray(mileageHistoryData) || mileageHistoryData.length === 0) {
-            res.status(400).json({ message: "Se requiere al menos un registro de kilometraje inicial." });
+        if (mileageHistoryData === null || mileageHistoryData === undefined) {
+            res.status(400).json({ message: "Se requiere un registro de kilometraje inicial." });
             return;
         }
-        const mileageRecords: DeepPartial<MileageHistory>[] = mileageHistoryData.map(record =>
-            typeof record === 'number' ? { current_mileage: record } : { ...record }
-        );
+        const mileageRecords: DeepPartial<MileageHistory>[] = [
+            typeof mileageHistoryData === 'number'
+            ? { current_mileage: mileageHistoryData }
+            : { ...mileageHistoryData }
+        ];
         const vehicle = vehicleRepository.create({
             ...vehicleData,
             model,
