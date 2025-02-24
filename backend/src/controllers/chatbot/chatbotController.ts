@@ -1,6 +1,5 @@
 // backend/src/controllers/chatbotController.ts
-import { AppDataSource } from "../../config/ormconfig";
-import { Product, StockProduct } from "../../entities";
+
 import { Request, Response } from "express";
 import natural from "natural";
 import { handleStockIntent } from '../../services/chatbot/intentHandlers/stockHandler';
