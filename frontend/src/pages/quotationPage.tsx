@@ -94,7 +94,7 @@ export default function QuotationPage() {
               <DialogTrigger asChild>
                 <Button variant="outline">Ver detalles</Button>
               </DialogTrigger>
-              <DialogContent className="bg-card text-card-foreground max-w-4xl">
+              <DialogContent className="bg-card text-card-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Detalles de la Cotización</DialogTitle>
                 </DialogHeader>
@@ -130,13 +130,13 @@ export default function QuotationPage() {
                             const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
                             // Get profit margin from product
                             const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
-                            
+
                             // Calculate base price with profit margin
                             const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
-                            
+
                             // Calculate subtotal before tax (including quantity and labor)
                             const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
-                            
+
                             // Calculate final price with tax
                             const finalPrice = subtotalBeforeTax * (1 + taxRate);
 
@@ -202,7 +202,7 @@ export default function QuotationPage() {
   })
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}

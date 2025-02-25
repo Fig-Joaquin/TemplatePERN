@@ -1,3 +1,4 @@
+// src/pages/CompaniesPage.tsx
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
@@ -7,14 +8,15 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Company } from "@/types/interfaces"
+import { Company, brand } from "@/types/interfaces"
 import { createCompany, deleteCompany, fetchCompanies, updateCompany } from "@/services/work/companiesList"
 import CompanyList from "@/components/work/companiesList"
 import CompanyForm from "@/components/work/companiesForm"
-
+import { fetchVehicleBrands } from "@/services/VehicleBrandService"
 
 const CompaniesPage = () => {
   const [companies, setCompanies] = useState<Company[]>([])
+  const [brands, setBrands] = useState<brand[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -36,8 +38,12 @@ const CompaniesPage = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await fetchCompanies()
-      setCompanies(data)
+      const [companiesData, brandsData] = await Promise.all([
+        fetchCompanies(),
+        fetchVehicleBrands()
+      ])
+      setCompanies(companiesData)
+      setBrands(brandsData)
     } catch (error) {
       toast.error("Error al cargar las empresas")
     } finally {
@@ -184,6 +190,7 @@ const CompaniesPage = () => {
               companies={filteredCompanies}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
+              brands={brands}
             />
           </AnimatePresence>
         )}
@@ -240,4 +247,4 @@ const CompaniesPage = () => {
   )
 }
 
-export default CompaniesPage
+export default CompaniesPage;

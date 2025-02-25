@@ -20,6 +20,7 @@ export class Vehicle {
     @JoinColumn({ name: "company_id" })
     company!: Company;
 
+
     @OneToMany(() => MileageHistory, mileageHistory => mileageHistory.vehicle, { cascade: true })
     mileage_history!: MileageHistory[];
 

@@ -1,6 +1,6 @@
 // src/services/companyService.ts
 import api from "../../utils/axiosConfig";
-import type { Company } from "../../types/interfaces";
+import type { Company, Vehicle } from "../../types/interfaces";
 
 export const fetchCompanies = async (): Promise<Company[]> => {
   const response = await api.get(`/companies`);

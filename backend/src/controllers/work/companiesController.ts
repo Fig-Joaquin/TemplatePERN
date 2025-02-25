@@ -7,7 +7,17 @@ const companyRepository = AppDataSource.getRepository(Company);
 
 export const getAllCompanies = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const companies = await companyRepository.find();
+        const companies = await companyRepository.find(
+            {
+                relations: [
+                    "vehicles",
+                    "vehicles.model",
+                    "vehicles.owner",
+                    "vehicles.company",
+                    "vehicles.model.brand",
+                ]
+            }
+        );
         res.json(companies);
         return;
     } catch (error) {

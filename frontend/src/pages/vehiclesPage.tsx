@@ -1,150 +1,205 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { useEffect, useState, useCallback } from "react";
+import { Car, Search, Plus } from "lucide-react";
+import { toast } from "react-toastify";
+import type { Person, Vehicle, brand, model, Company } from "../types/interfaces";
+import { VehicleCard } from "@/components/VehicleCard";
+import { NumberInput } from "@/components/numberInput";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from "@/services/vehicleService";
+import { fetchPersonsClient } from "@/services/personService";
+import { fetchCompanies } from "@/services/work/companiesList";
+import { fetchVehicleBrands } from "@/services/VehicleBrandService";
+import { fetchVehicleModels } from "@/services/VehicleModelService";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { useEffect, useState, useCallback } from "react"
-import { Car, Search, Plus } from "lucide-react"
-import { toast } from "react-toastify"
-import type { Person, Vehicle, brand, model } from "../types/interfaces"
-import { VehicleCard } from "@/components/VehicleCard"
-import { NumberInput } from "@/components/numberInput"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from "@/services/vehicleService"
-import { fetchPersonsClient } from "@/services/personService"
-import { fetchVehicleBrands } from "@/services/VehicleBrandService"
-import { fetchVehicleModels } from "@/services/VehicleModelService"
-import { motion, AnimatePresence } from "framer-motion"
-
-type ModalType = "create" | "edit" | "delete"
+type ModalType = "create" | "edit" | "delete";
 
 const VehiclesPage = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [persons, setPersons] = useState<Person[]>([])
-  const [brands, setBrands] = useState<brand[]>([])
-  const [models, setModels] = useState<model[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalType, setModalType] = useState<ModalType>("create")
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
-  const [licensePlate, setLicensePlate] = useState("")
-  const [year, setYear] = useState(new Date().getFullYear())
-  const [color, setColor] = useState("")
-  const [mileage, setMileage] = useState(0)
-  const [selectedBrand, setSelectedBrand] = useState<brand | null>(null)
-  const [selectedModel, setSelectedModel] = useState<model | null>(null)
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
-  const [vehicleStatus, setVehicleStatus] = useState("running")
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [brands, setBrands] = useState<brand[]>([]);
+  const [models, setModels] = useState<model[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>("create");
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [licensePlate, setLicensePlate] = useState("");
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [color, setColor] = useState("");
+  const [mileage, setMileage] = useState(0);
+  const [selectedBrand, setSelectedBrand] = useState<brand | null>(null);
+  const [selectedModel, setSelectedModel] = useState<model | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [vehicleStatus, setVehicleStatus] = useState("running");
+  // Nuevo estado para tipo de propietario: "person" o "company"
+  const [ownerType, setOwnerType] = useState<"person" | "company">("person");
 
   const vehicleStatusOptions = [
     { value: "running", label: "Funcionando" },
     { value: "not_running", label: "Averiado" },
-  ]
+  ];
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true)
-      const [vehiclesData, personsData, brandsData, modelsData] = await Promise.all([
+      setLoading(true);
+      const [vehiclesData, personsData, companiesData, brandsData, modelsData] = await Promise.all([
         fetchVehicles(),
         fetchPersonsClient(),
+        fetchCompanies(),
         fetchVehicleBrands(),
         fetchVehicleModels(),
-      ])
-      setVehicles(vehiclesData)
-      setPersons(personsData)
-      setBrands(brandsData)
-      setModels(modelsData)
+      ]);
+      setVehicles(vehiclesData);
+      setPersons(personsData);
+      setCompanies(companiesData);
+      setBrands(brandsData);
+      setModels(modelsData);
     } catch (error: any) {
-      toast.error(error.message || "Error al cargar los datos")
+      toast.error(error.message || "Error al cargar los datos");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchData();
+  }, [fetchData]);
 
   const filteredVehicles = vehicles.filter((vehicle) =>
     vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  );
 
+  // Al abrir el modal, se inicializa el formulario. Se determina el ownerType según si el vehículo tiene owner o company.
   const openModal = (type: ModalType, vehicle?: Vehicle) => {
-    setModalType(type)
-    setSelectedVehicle(vehicle || null)
-    setLicensePlate(vehicle?.license_plate || "")
-    setYear(vehicle?.year || new Date().getFullYear())
-    setColor(vehicle?.color || "")
-    setMileage(vehicle?.mileage_history?.[vehicle.mileage_history.length - 1]?.current_mileage || 0)
-    setSelectedBrand(brands.find((b) => b.vehicle_brand_id === vehicle?.model.brand.vehicle_brand_id) || null)
-    setSelectedModel(models.find((m) => m.vehicle_model_id === vehicle?.model.vehicle_model_id) || null)
-    setSelectedPerson(persons.find((p) => p.person_id === vehicle?.owner?.person_id) || null)
-    setVehicleStatus(vehicle?.vehicle_status || "running")
-    setModalOpen(true)
-  }
+    setModalType(type);
+    setSelectedVehicle(vehicle || null);
+    setLicensePlate(vehicle?.license_plate || "");
+    setYear(vehicle?.year || new Date().getFullYear());
+    setColor(vehicle?.color || "");
+    setMileage(vehicle?.mileage_history?.[vehicle.mileage_history.length - 1]?.current_mileage || 0);
+    setSelectedBrand(
+      brands.find((b) => b.vehicle_brand_id === vehicle?.model.brand.vehicle_brand_id) || null,
+    );
+    setSelectedModel(
+      models.find((m) => m.vehicle_model_id === vehicle?.model.vehicle_model_id) || null,
+    );
+    if (vehicle) {
+      if (vehicle.owner) {
+        setOwnerType("person");
+        setSelectedPerson(persons.find((p) => p.person_id === vehicle.owner.person_id) || null);
+        setSelectedCompany(null);
+      } else if (vehicle.company) {
+        setOwnerType("company");
+        setSelectedCompany(companies.find((c) => c.company_id === vehicle.company.company_id) || null);
+        setSelectedPerson(null);
+      }
+    } else {
+      // En modo creación, por defecto dejamos "person"
+      setOwnerType("person");
+      setSelectedPerson(null);
+      setSelectedCompany(null);
+    }
+    setVehicleStatus(vehicle?.vehicle_status || "running");
+    setModalOpen(true);
+  };
 
   const closeModal = () => {
-    setModalOpen(false)
-    setSelectedVehicle(null)
-    setLicensePlate("")
-    setYear(new Date().getFullYear())
-    setColor("")
-    setMileage(0)
-    setSelectedBrand(null)
-    setSelectedModel(null)
-    setSelectedPerson(null)
-    setVehicleStatus("running")
-  }
+    setModalOpen(false);
+    setSelectedVehicle(null);
+    setLicensePlate("");
+    setYear(new Date().getFullYear());
+    setColor("");
+    setMileage(0);
+    setSelectedBrand(null);
+    setSelectedModel(null);
+    setSelectedPerson(null);
+    setSelectedCompany(null);
+    setOwnerType("person");
+    setVehicleStatus("running");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedBrand || !selectedModel || !selectedPerson) {
-      toast.error("Por favor, complete todos los campos requeridos")
-      return
+    e.preventDefault();
+    // Validar que se haya seleccionado el propietario correcto según ownerType
+    if (ownerType === "person" && !selectedPerson) {
+      toast.error("Por favor, seleccione un propietario (persona)");
+      return;
+    }
+    if (ownerType === "company" && !selectedCompany) {
+      toast.error("Por favor, seleccione una empresa");
+      return;
+    }
+    if (!selectedBrand || !selectedModel) {
+      toast.error("Por favor, complete los campos de marca y modelo");
+      return;
+
     }
 
-    const vehicleData = {
+    // Armar el objeto de datos a enviar
+    const vehicleData: any = {
       license_plate: licensePlate,
       year,
       color,
       mileageHistory: mileage,
       vehicle_brand_id: selectedBrand.vehicle_brand_id,
       vehicle_model_id: selectedModel.vehicle_model_id,
-      person_id: selectedPerson.person_id,
       vehicle_status: vehicleStatus as "running" | "not_running",
+    };
+
+    // Según el ownerType, se asigna la propiedad correspondiente
+    if (ownerType === "person") {
+      vehicleData.person_id = selectedPerson!.person_id;
+    } else {
+      vehicleData.company_id = selectedCompany!.company_id;
     }
 
     try {
       if (modalType === "create") {
-        await createVehicle(vehicleData)
-        toast.success("Vehículo creado exitosamente")
+        await createVehicle(vehicleData);
+        toast.success("Vehículo creado exitosamente");
       } else if (modalType === "edit" && selectedVehicle) {
-        await updateVehicle(selectedVehicle.vehicle_id, vehicleData)
-        toast.success("Vehículo actualizado exitosamente")
+        await updateVehicle(selectedVehicle.vehicle_id, vehicleData);
+        toast.success("Vehículo actualizado exitosamente");
       }
-      fetchData()
-      closeModal()
+      fetchData();
+      closeModal();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error al guardar el vehículo")
+      toast.error(error.response?.data?.message || "Error al guardar el vehículo");
     }
-  }
+  };
 
   const handleDeleteConfirm = async () => {
     if (selectedVehicle) {
       try {
-        await deleteVehicle(selectedVehicle.vehicle_id)
-        toast.success("Vehículo eliminado exitosamente")
-        fetchData()
-        closeModal()
+        await deleteVehicle(selectedVehicle.vehicle_id);
+        toast.success("Vehículo eliminado exitosamente");
+        fetchData();
+        closeModal();
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "Error al eliminar el vehículo")
+        toast.error(error.response?.data?.message || "Error al eliminar el vehículo");
       }
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -204,7 +259,7 @@ const VehiclesPage = () => {
       )}
 
       <Dialog open={modalOpen} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {modalType === "create"
@@ -230,29 +285,27 @@ const VehiclesPage = () => {
             </>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Campo para la placa */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Placa</label>
                 <Input type="text" value={licensePlate} onChange={(e) => setLicensePlate(e.target.value)} required />
               </div>
+              {/* Año, color y kilometraje */}
               <div>
-                <label className="block text-sm mb-1 text-foreground">Año</label>
+                <label className="block text-sm mb-1">Año</label>
                 <Input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} required />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-foreground">Color</label>
-                <Input
-                  type="text"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
-                />
+                <label className="block text-sm mb-1">Color</label>
+                <Input type="text" value={color} onChange={(e) => setColor(e.target.value)} pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$" />
               </div>
               <div>
-                <label className="block text-sm mb-1 text-foreground">Kilometraje</label>
+                <label className="block text-sm mb-1">Kilometraje</label>
                 <NumberInput value={mileage} onChange={(value) => setMileage(value)} min={0} />
               </div>
+              {/* Estado del vehículo */}
               <div>
-                <label className="block text-sm mb-1 text-foreground">Estado del vehículo</label>
+                <label className="block text-sm mb-1">Estado del vehículo</label>
                 <Select value={vehicleStatus} onValueChange={setVehicleStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un estado" />
@@ -266,10 +319,68 @@ const VehiclesPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {/* Nuevo control: Tipo de propietario */}
               <div>
-                <label className="block text-sm mb-1 text-foreground">Marca</label>
+                <label className="block text-sm mb-1">Tipo de propietario</label>
+                <Select value={ownerType} onValueChange={(value) => setOwnerType(value as "person" | "company")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="person">Persona</SelectItem>
+                    <SelectItem value="company">Empresa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Según el tipo, se muestra el selector correspondiente */}
+              {ownerType === "person" ? (
+                <div>
+                  <label className="block text-sm mb-1">Propietario (Persona)</label>
+                  <Select
+                    value={selectedPerson?.person_id?.toString() || ""}
+                    onValueChange={(value) =>
+                      setSelectedPerson(persons.find((p) => p.person_id.toString() === value) || null)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un propietario" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {persons.map((person) => (
+                        <SelectItem key={person.person_id} value={person.person_id.toString()}>
+                          {`${person.name} ${person.first_surname}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm mb-1">Propietario (Empresa)</label>
+                  <Select
+                    value={selectedCompany?.company_id?.toString() || ""}
+                    onValueChange={(value) =>
+                      setSelectedCompany(companies.find((c) => c.company_id.toString() === value) || null)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.company_id} value={company.company_id.toString()}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Selección de marca y modelo */}
+              <div>
+                <label className="block text-sm mb-1">Marca</label>
                 <Select
-                  value={selectedBrand?.vehicle_brand_id.toString()}
+                  value={selectedBrand?.vehicle_brand_id.toString() || ""}
                   onValueChange={(value) =>
                     setSelectedBrand(brands.find((b) => b.vehicle_brand_id.toString() === value) || null)
                   }
@@ -287,18 +398,16 @@ const VehiclesPage = () => {
                 </Select>
               </div>
               <div>
-                <label className="block text-sm mb-1 text-foreground">Modelo</label>
+                <label className="block text-sm mb-1">Modelo</label>
                 <Select
-                  value={selectedModel?.vehicle_model_id.toString()}
+                  value={selectedModel?.vehicle_model_id.toString() || ""}
                   onValueChange={(value) =>
                     setSelectedModel(models.find((m) => m.vehicle_model_id.toString() === value) || null)
                   }
                   disabled={!selectedBrand}
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={selectedBrand ? "Selecciona un modelo" : "Selecciona una marca primero"}
-                    />
+                    <SelectValue placeholder={selectedBrand ? "Selecciona un modelo" : "Selecciona una marca primero"} />
                   </SelectTrigger>
                   <SelectContent>
                     {models
@@ -311,26 +420,7 @@ const VehiclesPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="block text-sm mb-1 text-foreground">Propietario</label>
-                <Select
-                  value={selectedPerson?.person_id.toString()}
-                  onValueChange={(value) =>
-                    setSelectedPerson(persons.find((p) => p.person_id.toString() === value) || null)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un propietario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {persons.map((person) => (
-                      <SelectItem key={person.person_id} value={person.person_id.toString()}>
-                        {`${person.name} ${person.first_surname}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Dialog Footer */}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeModal}>
                   Cancelar
@@ -342,8 +432,7 @@ const VehiclesPage = () => {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
+  );
+};
 
-export default VehiclesPage
-
+export default VehiclesPage;
