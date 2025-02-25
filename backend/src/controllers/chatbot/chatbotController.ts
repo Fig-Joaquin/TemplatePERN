@@ -1,71 +1,45 @@
-// backend/src/controllers/chatbotController.ts
-import { AppDataSource } from "../../config/ormconfig";
-import { Product, StockProduct } from "../../entities";
 import { Request, Response } from "express";
-import natural from "natural";
-import { handleStockIntent } from '../../services/chatbot/intentHandlers/stockHandler';
-import { handleQuotationIntent } from '../../services/chatbot/intentHandlers/quotationHandler';
-import { handleWorkOrderIntent } from '../../services/chatbot/intentHandlers/workorderHandler';
-import { detectIntent } from '../../services/chatbot/intentDetector';
+import { nlpManager } from '../../services/chatbot/nlpManager';
+import { ChatContextManager } from '../../services/chatbot/contextManager';
+import { IntentHandler } from '../../services/chatbot/intentHandler';
 
-// Tokenizer para español
-const tokenizer = new natural.AggressiveTokenizerEs();
-
-interface ChatContext {
-  lastIntent: string;
-  lastEntity?: string;
-  timestamp: number;
-}
-
-const chatContexts = new Map<string, ChatContext>();
-
-// controllers/chatbot/chatbotController.ts
 export const handleChatQuery = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { query, sessionId } = req.body; // Añadir sessionId en las peticiones
-    const tokens = tokenizer.tokenize(query.toLowerCase());
-    
-    // Obtener o crear contexto
-    const context = chatContexts.get(sessionId) || {
-      lastIntent: 'unknown',
-      timestamp: Date.now()
-    };
-    
-    // Verificar si el contexto es reciente (menos de 5 minutos)
-    const isRecentContext = (Date.now() - context.timestamp) < 5 * 60 * 1000;
-    
-    let intent = detectIntent(tokens);
-    
-    // Si no se detecta intención y hay contexto reciente, usar la última intención
-    if (intent === 'unknown' && isRecentContext) {
-      intent = context.lastIntent;
+    try {
+        const { query, sessionId = 'default' } = req.body;
+        console.log('Received query:', query);
+        
+        if (!query) {
+            res.status(400).json({ message: "Query is required" });
+            return;
+        }
+
+        const result = await nlpManager.process(query.toLowerCase());
+        console.log('NLP processing result:', result);
+
+        const context = ChatContextManager.getContext(sessionId);
+        // Pasar las entidades detectadas al manejador de intenciones
+        const response = await IntentHandler.handleIntent(result, context);
+
+        // Guardar la consulta y respuesta en el contexto para futuras referencias
+        context.conversationHistory.push(JSON.stringify({
+            query,
+            response,
+            entities: result.entities,
+            timestamp: new Date()
+        }));
+
+        console.log('Final response:', response);
+        res.json({ 
+            response,
+            entities: result.entities,
+            intent: result.intent,
+            score: result.score
+        });
+    } catch (error) {
+        console.error("Error in handleChatQuery:", error);
+        res.status(500).json({ 
+            message: "Error processing query", 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+        });
     }
-
-    let response = "Lo siento, no pude entender tu consulta. Por favor, reformula la pregunta.";
-
-    switch (intent) {
-      case 'stock':
-        const stockResponse = await handleStockIntent(query);
-        if (stockResponse) response = stockResponse;
-        break;
-      case 'quotation':
-        const quotationResponse = await handleQuotationIntent(query);
-        if (quotationResponse) response = quotationResponse;
-        break;
-      case 'workOrder':
-        const workOrderResponse = await handleWorkOrderIntent(query);
-        if (workOrderResponse) response = workOrderResponse;
-        break;
-    }
-
-    // Actualizar contexto
-    chatContexts.set(sessionId, {
-      lastIntent: intent,
-      timestamp: Date.now()
-    });
-
-    res.json({ response });
-  } catch (error) {
-    res.status(500).json({ message: "Error procesando la consulta", error });
-  }
 };

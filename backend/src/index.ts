@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import { AppDataSource } from "./config/ormconfig";
 import routes from "./routes";
 import cors from "cors";
+import { setupTraining } from './utils/training';
 
 
 
@@ -50,15 +51,23 @@ app.get("/read-cookie", (req: Request, res: Response): void => {
     res.send(`Token: ${token}`);
 });
 
-// Conectar la base de datos
-AppDataSource.initialize()
-    .then(() => {
-        console.log("Database connected successfully!");
+const startServer = async () => {
+    try {
+        await AppDataSource.initialize();
+        console.log("Database connected");
+
+        // Entrenar el NLP manager al inicio
+        await setupTraining();
+        console.log("NLP training completed");
 
         // Iniciar el servidor
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
-    })
-    .catch((error) => console.error("Error connecting to the database", error));
+    } catch (error) {
+        console.error("Error during initialization:", error);
+    }
+};
+
+startServer();

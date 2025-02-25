@@ -27,6 +27,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "natural": "^8.0.1",
+    "node-nlp": "^5.0.0-alpha.5",
     "pdfkit": "^0.16.0",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.1.14",

@@ -1,7 +1,9 @@
 import { AppDataSource } from '../../../config/ormconfig';
 import { WorkOrder } from '../../../entities';
-import natural from 'natural';
+// @ts-ignore
+import { NlpManager } from 'node-nlp';
 
+const manager = new NlpManager({ languages: ['es'] });
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 
 const intentSynonyms = {
@@ -108,10 +110,9 @@ function handleNumberQuery(workOrders: WorkOrder[], number: string) {
 }
 
 function handleClientNameQuery(workOrders: WorkOrder[], query: string) {
-    //const querySound = new natural.Metaphone().process(query);
     const matches = workOrders.map(order => ({
         order,
-        similarity: natural.JaroWinklerDistance(
+        similarity: manager.calculateSimilarity(
             (order.vehicle?.owner?.name || '').toLowerCase(),
             query.toLowerCase()
         )
@@ -139,7 +140,7 @@ function calculateQueryScore(query: string, keywords: string[]) {
     return keywords.reduce((score, keyword) => {
         if (query.includes(keyword)) score += 1;
         if (query.startsWith(keyword)) score += 0.5;
-        if (natural.JaroWinklerDistance(query, keyword) > 0.8) score += 0.3;
+        if (manager.calculateSimilarity(query, keyword) > 0.8) score += 0.3;
         return score;
     }, 0);
 }
