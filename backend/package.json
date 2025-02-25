@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "copy:assets": "copyfiles -u 2 src/public/**/* dist/public",
+    "build": "rimraf ./dist && tsc && npm run copy:assets",
     "start": "npm run build && node dist/index.js",
-    "build": "rimraf ./dist && tsc",
     "serve": "NODE_ENV=production node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts"
   },
@@ -47,6 +48,7 @@
     "@types/node": "^22.10.7",
     "@types/pdfkit": "^0.13.9",
     "@types/validator": "^13.12.2",
+    "copyfiles": "^2.4.1",
     "nodemon": "^3.1.9",
     "rimraf": "^4.4.1",
     "ts-node": "^10.9.2",
