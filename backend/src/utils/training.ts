@@ -1,95 +1,169 @@
 import { nlpManager } from '../services/chatbot/nlpManager';
 
+interface TrainingData {
+    intent: string;
+    patterns: string[];
+    responses: string[];
+    entities?: {
+        [key: string]: string[];
+    };
+}
+
+const trainingData: TrainingData[] = [
+    {
+        intent: 'quotation',
+        patterns: [
+            // Patrones básicos
+            'necesito una cotización',
+            'quiero una cotización',
+            'busco una cotización',
+            'dame una cotización',
+            'hazme una cotización',
+            
+            // Patrones con productos/servicios
+            'cotizar un producto',
+            'cotizar un servicio',
+            'cuánto cuesta',
+            'cuánto vale',
+            'cuánto sale',
+            
+            // Patrones de listado
+            'mostrar cotizaciones',
+            'ver cotizaciones',
+            'lista de cotizaciones',
+            'estado de la cotización',
+            
+            // Patrones con números
+            'cotización número',
+            'cotización del cliente',
+            'cotizaciones pendientes',
+            'cotizaciones aprobadas',
+            'cotizaciones rechazadas',
+            
+            // Patrones temporales
+            'cotizaciones de hoy',
+            'cotizaciones de esta semana',
+            'cotizaciones de este mes',
+            'última cotización',
+            'cotización más reciente',
+            
+            // Patrones de monto
+            'cotización más cara',
+            'cotización más costosa',
+            'cotización más económica',
+            'cotización más barata',
+            'mayor precio',
+            'menor precio'
+        ],
+        responses: [
+            'Consultando la información de cotizaciones...',
+            'Buscando las cotizaciones solicitadas...',
+            'Procesando tu consulta sobre cotizaciones...'
+        ],
+        entities: {
+            status: ['pendiente', 'aprobada', 'rechazada', 'en proceso'],
+            timeframe: ['hoy', 'esta semana', 'este mes', 'última', 'reciente'],
+            amount: ['cara', 'costosa', 'económica', 'barata', 'mayor', 'menor']
+        }
+    },
+    {
+        intent: 'stock',
+        patterns: [
+            'revisar stock',
+            'verificar inventario',
+            'productos disponibles',
+            'stock actual',
+            'hay stock de',
+            'queda producto',
+            'disponibilidad de',
+            'inventario actual',
+            'productos en bodega',
+            'cantidad disponible'
+        ],
+        responses: [
+            'Verificando el inventario...',
+            'Consultando disponibilidad de productos...',
+            'Buscando información de stock...'
+        ],
+        entities: {
+            product: ['filtro', 'aceite', 'batería', 'frenos', 'neumáticos'],
+            quantity: ['bajo', 'alto', 'crítico', 'suficiente', 'agotado']
+        }
+    }
+];
+
 export const setupTraining = async () => {
-    console.log('Starting NLP training...');
+    console.log('Starting enhanced NLP training...');
 
-    // Entrenamiento para cotizaciones
-    nlpManager.addDocument('quotation', 'que cotizaciones hay');
-    nlpManager.addDocument('quotation', 'mostrar cotizaciones');
-    nlpManager.addDocument('quotation', 'cuantas cotizaciones tenemos');
-    nlpManager.addDocument('quotation', 'ver cotizaciones');
-    nlpManager.addDocument('quotation', 'lista de cotizaciones');
-    nlpManager.addDocument('quotation', 'necesito una cotización');
-    nlpManager.addDocument('quotation', 'cotizaciones pendientes');
-    nlpManager.addDocument('quotation', 'cotizaciones disponibles');
-    nlpManager.addDocument('quotation', 'quiero cotizar un servicio');
-    nlpManager.addDocument('quotation', 'dame el precio de');
-    nlpManager.addDocument('quotation', 'cuánto cuesta');
-    nlpManager.addDocument('quotation', 'precio aproximado');
-    nlpManager.addDocument('quotation', 'presupuesto para');
-    nlpManager.addDocument('quotation', 'cotización más reciente');
-    nlpManager.addDocument('quotation', 'última cotización');
-    nlpManager.addDocument('quotation', 'cotización más cara');
-    nlpManager.addDocument('quotation', 'cotizaciones de hoy');
-    nlpManager.addDocument('quotation', 'buscar cotización');
-    nlpManager.addDocument('quotation', 'estado de mi cotización');
-    nlpManager.addDocument('quotation', 'cotización número');
+    // Limpiar entrenamiento previo
+    await nlpManager.clear();
 
-    // Entrenamiento para stock
-    nlpManager.addDocument('stock', 'revisar stock');
-    nlpManager.addDocument('stock', 'verificar inventario');
-    nlpManager.addDocument('stock', 'productos disponibles');
-    nlpManager.addDocument('stock', 'stock actual');
-    nlpManager.addDocument('stock', 'hay stock de');
-    nlpManager.addDocument('stock', 'queda producto');
-    nlpManager.addDocument('stock', 'disponibilidad de');
-    nlpManager.addDocument('stock', 'inventario actual');
-    nlpManager.addDocument('stock', 'productos en bodega');
-    nlpManager.addDocument('stock', 'cantidad disponible');
-    nlpManager.addDocument('stock', 'stock mínimo');
-    nlpManager.addDocument('stock', 'productos agotados');
-    nlpManager.addDocument('stock', 'existencias actuales');
-    nlpManager.addDocument('stock', 'stock crítico');
-    nlpManager.addDocument('stock', 'productos por acabarse');
-    
-    // Entrenamiento para órdenes de trabajo
-    nlpManager.addDocument('workOrder', 'crear orden de trabajo');
-    nlpManager.addDocument('workOrder', 'nueva orden');
-    nlpManager.addDocument('workOrder', 'generar orden');
-    nlpManager.addDocument('workOrder', 'orden de reparación');
-    nlpManager.addDocument('workOrder', 'estado de la orden');
-    nlpManager.addDocument('workOrder', 'órdenes pendientes');
-    nlpManager.addDocument('workOrder', 'trabajos en proceso');
-    nlpManager.addDocument('workOrder', 'reparaciones actuales');
-    nlpManager.addDocument('workOrder', 'orden número');
-    nlpManager.addDocument('workOrder', 'actualizar orden');
-    nlpManager.addDocument('workOrder', 'finalizar orden');
-    nlpManager.addDocument('workOrder', 'cancelar orden');
-    nlpManager.addDocument('workOrder', 'órdenes completadas');
-    nlpManager.addDocument('workOrder', 'historial de órdenes');
-    nlpManager.addDocument('workOrder', 'buscar orden');
+    for (const data of trainingData) {
+        // Entrenar patrones base
+        data.patterns.forEach(pattern => {
+                    nlpManager.addDocument(data.intent, pattern);
+                });
 
-    // Entidades para productos
-    nlpManager.addNamedEntityText('product', 'repuesto', ['es'], [
-        'filtro de aceite', 'filtro de aire', 'pastillas de freno',
-        'aceite de motor', 'bujías', 'correa de distribución',
-        'amortiguadores', 'batería', 'radiador', 'alternador'
-    ]);
+        // Entrenar con variaciones
+        data.patterns.forEach(pattern => {
+                    const variations = generatePatternVariations(pattern);
+                    variations.forEach(variation => {
+                        nlpManager.addDocument(data.intent, variation);
+                    });
+                });
 
-    // Entidades para estados
-    nlpManager.addNamedEntityText('status', 'estado', ['es'], [
-        'pendiente', 'en proceso', 'completado', 'cancelado',
-        'aprobado', 'rechazado', 'en espera', 'finalizado'
-    ]);
+        // Agregar respuestas
+        data.responses.forEach(response => {
+            nlpManager.addAnswer('es', data.intent, response);
+        });
 
-    // Respuestas predeterminadas mejoradas
-    nlpManager.addAnswer('es', 'quotation', 'Consultando las cotizaciones disponibles...');
-    nlpManager.addAnswer('es', 'quotation', 'Buscando información de cotizaciones...');
-    nlpManager.addAnswer('es', 'quotation', 'Procesando tu consulta de cotización...');
+        // Agregar entidades
+        if (data.entities) {
+            for (const [entity, values] of Object.entries(data.entities)) {
+                nlpManager.addNamedEntityText(entity, entity, ['es'], values);
+            }
+        }
+    }
 
-    nlpManager.addAnswer('es', 'stock', 'Verificando el inventario...');
-    nlpManager.addAnswer('es', 'stock', 'Consultando disponibilidad de productos...');
-    nlpManager.addAnswer('es', 'stock', 'Buscando información de stock...');
+    // Agregar entidades comunes
+    nlpManager.addCustomEntities();
 
-    nlpManager.addAnswer('es', 'workOrder', 'Procesando orden de trabajo...');
-    nlpManager.addAnswer('es', 'workOrder', 'Buscando información de la orden...');
-    nlpManager.addAnswer('es', 'workOrder', 'Consultando órdenes de trabajo...');
-
-    // Entrenar el modelo con validación cruzada
+    // Entrenar el modelo
     console.log('Training model...');
     await nlpManager.train();
     console.log('Training completed');
-
-    // Guardar el modelo entrenado
-    
 };
+
+function generatePatternVariations(pattern: string): string[] {
+    const variations: Set<string> = new Set();
+    
+    // Diccionario de sinónimos mejorado
+    const synonyms: { [key: string]: string[] } = {
+        'cotización': ['cotizacion', 'presupuesto', 'precio', 'valor', 'costo'],
+        'mostrar': ['ver', 'listar', 'buscar', 'encontrar', 'consultar'],
+        'estado': ['situación', 'estatus', 'condición'],
+        'productos': ['artículos', 'items', 'elementos', 'materiales'],
+        'stock': ['inventario', 'existencias', 'disponibilidad'],
+        'hay': ['existe', 'tienen', 'cuentan', 'disponen'],
+        'cuánto': ['cual es el precio', 'que precio tiene', 'que vale']
+    };
+
+    // Agregar la variación original
+    variations.add(pattern);
+
+    // Generar variaciones con sinónimos
+    Object.entries(synonyms).forEach(([word, syns]) => {
+        if (pattern.toLowerCase().includes(word.toLowerCase())) {
+            syns.forEach(syn => {
+                variations.add(
+                    pattern.toLowerCase().replace(
+                        new RegExp(word, 'gi'), 
+                        syn
+                    )
+                );
+            });
+        }
+    });
+
+    return Array.from(variations);
+}

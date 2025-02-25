@@ -5,12 +5,16 @@ class NLPManagerSingleton {
     private static instance: NLPManagerSingleton;
     private manager: any;
     private trained: boolean = false;
+    private readonly modelPath: string = './model.nlp';
 
     private constructor() {
         this.manager = new NlpManager({ 
             languages: ['es'],
             forceNER: true,
-            threshold: 0.5
+            threshold: 0.5,
+            autoSave: true,
+            autoLoad: true,
+            modelFileName: this.modelPath
         });
     }
 
@@ -21,27 +25,73 @@ class NLPManagerSingleton {
         return NLPManagerSingleton.instance;
     }
 
+    public async clear(): Promise<void> {
+        try {
+            // Crear una nueva instancia del manager
+            this.manager = new NlpManager({ 
+                languages: ['es'],
+                forceNER: true,
+                threshold: 0.5,
+                autoSave: true,
+                autoLoad: true,
+                modelFileName: this.modelPath
+            });
+            
+            // Reinicializar el estado
+            this.trained = false;
+            
+            console.log('NLP manager cleared successfully');
+        } catch (error) {
+            console.error('Error clearing NLP manager:', error);
+            throw new Error('Failed to clear NLP manager');
+        }
+    }
+
     public getManager(): any {
         return this.manager;
     }
 
     public async train(): Promise<void> {
-        if (!this.trained) {
-            await this.manager.train();
-            this.trained = true;
+        try {
+            if (!this.trained) {
+                console.log('Starting NLP training...');
+                await this.manager.train();
+                this.trained = true;
+                await this.manager.save();
+                console.log('NLP training completed and model saved');
+            }
+        } catch (error) {
+            console.error('Error during training:', error);
+            throw new Error('Failed to train NLP model');
         }
     }
 
     public async process(text: string): Promise<any> {
-        if (!this.trained) {
-            await this.train();
+        try {
+            if (!this.trained) {
+                try {
+                    await this.manager.load(this.modelPath);
+                    this.trained = true;
+                } catch (error) {
+                    console.log('No existing model found, training new model...');
+                    await this.train();
+                }
+            }
+            return await this.manager.process('es', text);
+        } catch (error) {
+            console.error('Error processing text:', error);
+            throw new Error('Failed to process text');
         }
-        return this.manager.process('es', text);
     }
 
     public addDocument(intent: string, text: string): void {
-        this.manager.addDocument('es', text, intent);
-        this.trained = false;
+        try {
+            this.manager.addDocument('es', text, intent);
+            this.trained = false;
+        } catch (error) {
+            console.error('Error adding document:', error);
+            throw new Error('Failed to add document');
+        }
     }
 
     public addEntity(entity: string, option: string, words: string[]): void {
@@ -70,32 +120,93 @@ class NLPManagerSingleton {
         this.trained = false;
     }
 
-    // Agregar método para entidades personalizadas
     public addCustomEntities(): void {
-        // Entidad para nombres propios
-        this.manager.addRegexEntity('clientName', 'es', /(?:cliente|sr\.|sra\.|señor|señora)?\s+([A-ZÁ-Úá-úa-z]+)\s*/i);
-        
-        // Entidad para números de documentos
-        this.manager.addRegexEntity('documentNumber', 'es', /\b\d{7,8}[-]?[0-9kK]?\b/);
-        
-        // Entidad para patentes de vehículos
-        this.manager.addRegexEntity('licensePlate', 'es', /\b[A-Z]{2,4}[\s-]?\d{2,4}\b/i);
-
-        this.trained = false;
+        try {
+            // Mejoradas las expresiones regulares para mayor precisión
+            this.manager.addRegexEntity('clientName', 'es', /(?:cliente|sr\.?|sra\.?|señor|señora|don|doña)\s+([A-ZÁ-Úá-úa-z\s]+)/i);
+            this.manager.addRegexEntity('documentNumber', 'es', /\b\d{1,2}(?:\.|,)?\d{3}(?:\.|,)?\d{3}[-]?[0-9kK]?\b/);
+            this.manager.addRegexEntity('licensePlate', 'es', /\b[BCDFGHJKLPRSTVWXYZ]{2,4}[\s.-]?[0-9]{2,4}\b/i);
+            this.manager.addRegexEntity('phone', 'es', /\b(?:\+?56|0)?\s*[2-9](?:\s*\d){8}\b/);
+            this.manager.addRegexEntity('price', 'es', /\$?\s*\d{1,3}(?:\.\d{3})*(?:,\d{2})?/);
+            
+            this.trained = false;
+        } catch (error) {
+            console.error('Error adding custom entities:', error);
+            throw new Error('Failed to add custom entities');
+        }
     }
 
     public async initializeEntities(): Promise<void> {
-        this.addCustomEntities();
-        if (!this.trained) {
-            await this.train();
+        try {
+            this.addCustomEntities();
+            if (!this.trained) {
+                await this.train();
+            }
+        } catch (error) {
+            console.error('Error initializing entities:', error);
+            throw new Error('Failed to initialize entities');
+        }
+    }
+
+    public async retrain(newPatterns: { intent: string, pattern: string }[]): Promise<void> {
+        // Agregar nuevos patrones
+        newPatterns.forEach(({ intent, pattern }) => {
+            this.addDocument(intent, pattern);
+            
+            // Generar y agregar variaciones
+            const variations = this.generateVariations(pattern);
+            variations.forEach(variation => {
+                this.addDocument(intent, variation);
+            });
+        });
+
+        // Reentrenar el modelo
+        await this.train();
+        this.trained = true;
+        
+        // Guardar el modelo actualizado
+        await this.manager.save();
+    }
+
+    private generateVariations(_pattern: string): string[] {
+        // Similar a la función generatePatternVariations en training.ts
+        // Implementar lógica de generación de variaciones
+        return [];
+    }
+
+    public async save(): Promise<void> {
+        try {
+            await this.manager.save(this.modelPath);
+        } catch (error) {
+            console.error('Error saving model:', error);
+            throw new Error('Failed to save model');
+        }
+    }
+
+    public settings(): any {
+        return this.manager.settings;
+    }
+
+    public getEntities(): string[] {
+        try {
+            return this.manager.entities;
+        } catch (error) {
+            console.error('Error getting entities:', error);
+            return [];
+        }
+    }
+
+    public getIntents(): string[] {
+        try {
+            return this.manager.intents;
+        } catch (error) {
+            console.error('Error getting intents:', error);
+            return [];
         }
     }
 }
 
-// Inicializar el singleton con las entidades personalizadas
-(async () => {
-    const instance = NLPManagerSingleton.getInstance();
-    await instance.initializeEntities();
-})();
-
-export const nlpManager = NLPManagerSingleton.getInstance();
+// Inicializar el singleton
+const instance = NLPManagerSingleton.getInstance();
+instance.initializeEntities().catch((error) => console.error('Error initializing entities:', error));
+export const nlpManager = instance;
