@@ -9,7 +9,8 @@
     "build": "rimraf ./dist && tsc && npm run copy:assets",
     "start": "npm run build && node dist/index.js",
     "serve": "NODE_ENV=production node dist/index.js",
-    "dev": "nodemon --exec ts-node src/index.ts"
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "lint": "eslint . --ext .ts,.tsx"
   },
   "keywords": [],
   "author": "",
@@ -49,6 +50,7 @@
     "@types/pdfkit": "^0.13.9",
     "@types/validator": "^13.12.2",
     "copyfiles": "^2.4.1",
+    "eslint": "^9.21.0",
     "nodemon": "^3.1.9",
     "rimraf": "^4.4.1",
     "ts-node": "^10.9.2",

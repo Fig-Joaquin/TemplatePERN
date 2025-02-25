@@ -5,7 +5,7 @@ class NLPManagerSingleton {
     private static instance: NLPManagerSingleton;
     private manager: any;
     private trained: boolean = false;
-    private readonly modelPath: string = './model.nlp';
+    private readonly modelPath: string = '../../model.nlp';
 
     private constructor() {
         this.manager = new NlpManager({ 
