@@ -17,5 +17,4 @@ vehicleRoutes.get("/person/:personId", getVehiclesByPersonId); // Obtiene los ve
 vehicleRoutes.post("/", createVehicle);            // Crea un nuevo vehículo
 vehicleRoutes.put("/:id", updateVehicle);          // Actualiza un vehículo existente
 vehicleRoutes.delete("/:id", deleteVehicle);       // Elimina un vehículo
-
 export default vehicleRoutes;

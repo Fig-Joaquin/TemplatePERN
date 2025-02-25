@@ -10,7 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,7 +33,6 @@ import type React from "react"
 import { NumberInput } from "@/components/numberInput"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 
-
 const fetchTax = async () => {
   try {
     const res = await getTaxById(1)
@@ -37,12 +43,11 @@ const fetchTax = async () => {
   }
 }
 
-
+// La interfaz SelectedProduct ya no incluye el margen
 interface SelectedProduct {
   productId: number
   quantity: number
   laborPrice: number
-  profitMargin: number
 }
 
 const QuotationCreatePage = () => {
@@ -79,7 +84,6 @@ const QuotationCreatePage = () => {
         toast.error("Error al cargar productos")
       }
     }
-    
 
     const fetchStockProductsData = async () => {
       try {
@@ -103,28 +107,32 @@ const QuotationCreatePage = () => {
   const filteredVehicles = vehicles.filter((v) => {
     const matchesQuery =
       vehicleQuery === "" ||
-      `${v.license_plate} - ${v.model?.brand?.brand_name || ""} ${v.model?.model_name || ""} - ${v.owner ? v.owner.name : v.company?.name || ""}`
+      `${v.license_plate} - ${v.model?.brand?.brand_name || ""} ${v.model?.model_name || ""} - ${v.owner ? v.owner.name : v.company?.name || ""
+        }`
         .toLowerCase()
         .includes(vehicleQuery.toLowerCase())
     const matchesTab = selectedTabIndex === 0 ? !!v.owner : !!v.company
     return matchesQuery && matchesTab
   })
 
-  const handleProductChange = (productId: number, quantity: number, laborPrice: number, profitMargin: number) => {
+  // Actualizamos handleProductChange sin manejar margen
+  const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
     setSelectedProducts((prevSelectedProducts) => {
       const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
       if (existingProduct) {
         return prevSelectedProducts.map((p) =>
-          p.productId === productId ? { ...p, quantity, laborPrice, profitMargin } : p,
+          p.productId === productId ? { ...p, quantity, laborPrice } : p,
         )
       } else {
-        return [...prevSelectedProducts, { productId, quantity, laborPrice, profitMargin }]
+        return [...prevSelectedProducts, { productId, quantity, laborPrice }]
       }
     })
   }
 
   const handleRemoveProduct = (productId: number) => {
-    setSelectedProducts((prevSelectedProducts) => prevSelectedProducts.filter((p) => p.productId !== productId))
+    setSelectedProducts((prevSelectedProducts) =>
+      prevSelectedProducts.filter((p) => p.productId !== productId),
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,7 +143,6 @@ const QuotationCreatePage = () => {
     }
     setLoading(true)
     try {
-      console.log(Math.trunc(totalPrice))
       const newQuotation: Quotation = {
         vehicle_id: selectedVehicle.vehicle_id,
         description,
@@ -145,16 +152,22 @@ const QuotationCreatePage = () => {
 
       const createdQuotation = await createQuotation(newQuotation)
       const newWorkProductDetails: WorkProductDetail[] = selectedProducts.map(
-        ({ productId, quantity, laborPrice, profitMargin }) => {
+        ({ productId, quantity, laborPrice }) => {
           const product = products.find((p) => p.product_id === Number(productId))
           return {
             quotation_id: createdQuotation.quotation?.quotation_id,
             product_id: product?.product_id as number,
             quantity,
             labor_price: laborPrice,
-            tax_id: 1, // default value for 19% tax
-            sale_price: product ? calculateTotalWithMargin(Number(product.sale_price), quantity, profitMargin) : 0,
-            discount: 0, // default value, update if needed
+            tax_id: 1, // Valor por defecto para IVA (19%)
+            sale_price: product
+              ? calculateTotalWithMargin(
+                Number(product.sale_price),
+                quantity,
+                Number(product.profit_margin),
+              )
+              : 0,
+            discount: 0,
           }
         },
       )
@@ -164,7 +177,10 @@ const QuotationCreatePage = () => {
     } catch (error: any) {
       console.log(error)
       toast.error(
-        [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
+        [
+          error.response?.data?.message,
+          error.response?.data?.errors?.map((e: any) => e.message).join(", "),
+        ]
           .filter(Boolean)
           .join(", ") || "Error al crear la cotización",
       )
@@ -173,13 +189,14 @@ const QuotationCreatePage = () => {
     }
   }
 
+  // Función que utiliza el margen del producto (profit_margin) en los cálculos
   const calculateTotalWithMargin = (price: number, quantity: number, profitMargin: number) => {
     return price * quantity * (1 + profitMargin / 100)
   }
 
-  const totalProductPrice = selectedProducts.reduce((total, { productId, quantity, profitMargin }) => {
+  const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
     const product = products.find((p) => p.product_id === Number(productId))
-    return total + (product ? calculateTotalWithMargin(Number(product.sale_price), quantity, profitMargin) : 0)
+    return total + (product ? calculateTotalWithMargin(Number(product.sale_price), quantity, Number(product.profit_margin)) : 0)
   }, 0)
 
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0)
@@ -193,16 +210,16 @@ const QuotationCreatePage = () => {
       <Card className="bg-card shadow-lg border-t-4 border-t-primary">
         <CardHeader className="border-b bg-muted/50 pb-4">
           <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-            <FileText className="w-6 h-6" /> {/* Add icon */}
+            <FileText className="w-6 h-6" /> {/* Icono */}
             Crear Nueva Cotización
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-8"> {/* Increased spacing */}
-            {/* Vehicle Selection Section */}
-            <div className="space-y-4 bg-accent/5 p-4 rounded-lg border"> {/* Added container styling */}
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Sección de selección de vehículo */}
+            <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
               <Label className="text-lg font-semibold flex items-center gap-2">
-                <Car className="w-5 h-5 text-primary" /> {/* Add icon */}
+                <Car className="w-5 h-5 text-primary" /> {/* Icono */}
                 Vehículo
               </Label>
               <Tabs
@@ -211,14 +228,23 @@ const QuotationCreatePage = () => {
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="0" className="data-[state=active]:bg-primary">Personas</TabsTrigger>
-                  <TabsTrigger value="1" className="data-[state=active]:bg-primary">Empresas</TabsTrigger>
+                  <TabsTrigger value="0" className="data-[state=active]:bg-primary">
+                    Personas
+                  </TabsTrigger>
+                  <TabsTrigger value="1" className="data-[state=active]:bg-primary">
+                    Empresas
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
 
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between"
+                  >
                     {selectedVehicle
                       ? `${selectedVehicle.license_plate} - ${selectedVehicle.model?.brand?.brand_name} ${selectedVehicle.model?.model_name}`
                       : "Seleccione un vehículo..."}
@@ -247,7 +273,8 @@ const QuotationCreatePage = () => {
                                   selectedVehicle?.vehicle_id === vehicle.vehicle_id ? "opacity-100" : "opacity-0",
                                 )}
                               />
-                              {vehicle.license_plate} - {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name} -{" "}
+                              {vehicle.license_plate} - {vehicle.model?.brand?.brand_name}{" "}
+                              {vehicle.model?.model_name} -{" "}
                               {vehicle.owner ? vehicle.owner.name : vehicle.company?.name}
                             </CommandItem>
                           ))}
@@ -259,14 +286,14 @@ const QuotationCreatePage = () => {
               </Popover>
             </div>
 
-            {/* Products Section */}
+            {/* Sección de productos */}
             <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
               <div className="flex justify-between items-center">
                 <Label className="text-lg font-semibold flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" /> {/* Add icon */}
+                  <Package className="w-5 h-5 text-primary" /> {/* Icono */}
                   Repuestos Seleccionados
                 </Label>
-                <Button 
+                <Button
                   onClick={() => setShowProductModal(true)}
                   variant="outline"
                   className="hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -275,17 +302,23 @@ const QuotationCreatePage = () => {
                   Añadir Repuesto
                 </Button>
               </div>
-              
-              {/* Products Card with enhanced styling */}
+
+              {/* Tarjeta de productos */}
               <Card className="bg-card shadow-sm">
                 <CardContent className="p-4">
-                  <ScrollArea className="h-[300px] pr-4"> {/* Increased height */}
+                  <ScrollArea className="h-[300px] pr-4">
                     <ul className="space-y-3">
-                      {selectedProducts.map(({ productId, quantity, laborPrice, profitMargin }) => {
+                      {selectedProducts.map(({ productId, quantity, laborPrice }) => {
                         const product = products.find((p) => p.product_id === Number(productId))
-                        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
+                        const stockProduct = stockProducts.find(
+                          (sp) => sp.product?.product_id === Number(productId),
+                        )
                         const totalWithMargin = product
-                          ? calculateTotalWithMargin(Number(product.sale_price), quantity, profitMargin)
+                          ? calculateTotalWithMargin(
+                            Number(product.sale_price),
+                            quantity,
+                            Number(product.profit_margin),
+                          )
                           : 0
                         return (
                           <li
@@ -294,6 +327,8 @@ const QuotationCreatePage = () => {
                           >
                             <div className="flex-1">
                               <p className="font-medium">{product?.product_name}</p>
+                              {/* Se muestra el margen de ganancia del producto */}
+                              <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                               <p className="text-sm text-muted-foreground">
                                 Precio: {formatPriceCLP(Number(product?.sale_price))} - Stock: {stockProduct?.quantity}
                               </p>
@@ -306,9 +341,7 @@ const QuotationCreatePage = () => {
                                 <NumberInput
                                   id={`quantity-${productId}`}
                                   value={quantity}
-                                  onChange={(newValue) =>
-                                    handleProductChange(productId, newValue, laborPrice, profitMargin)
-                                  }
+                                  onChange={(newValue) => handleProductChange(productId, newValue, laborPrice)}
                                   min={1}
                                   max={stockProduct?.quantity}
                                   className="w-20"
@@ -321,29 +354,12 @@ const QuotationCreatePage = () => {
                                 <NumberInput
                                   id={`labor-${productId}`}
                                   value={laborPrice}
-                                  onChange={(newValue) =>
-                                    handleProductChange(productId, quantity, newValue, profitMargin)
-                                  }
+                                  onChange={(newValue) => handleProductChange(productId, quantity, newValue)}
                                   min={0}
                                   className="w-24"
                                   placeholder="Mano de obra"
                                   hideControls
                                   isPrice
-                                />
-                              </div>
-                              <div className="flex flex-col items-end">
-                                <Label htmlFor={`margin-${productId}`} className="text-xs">
-                                  Margen (%)
-                                </Label>
-                                <NumberInput
-                                  id={`margin-${productId}`}
-                                  value={profitMargin}
-                                  onChange={(newValue) =>
-                                    handleProductChange(productId, quantity, laborPrice, newValue)
-                                  }
-                                  min={0}
-                                  max={100}
-                                  className="w-20"
                                 />
                               </div>
                               <div className="flex flex-col items-end">
@@ -360,7 +376,7 @@ const QuotationCreatePage = () => {
                     </ul>
                   </ScrollArea>
 
-                  {/* Totals section with enhanced styling */}
+                  {/* Sección de totales */}
                   <div className="mt-6 space-y-2 border-t pt-4">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="space-y-2">
@@ -389,10 +405,10 @@ const QuotationCreatePage = () => {
               </Card>
             </div>
 
-            {/* Description Section */}
+            {/* Sección de descripción */}
             <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
               <Label htmlFor="description" className="text-lg font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" /> {/* Add icon */}
+                <FileText className="w-5 h-5 text-primary" /> {/* Icono */}
                 Descripción
               </Label>
               <Textarea
@@ -405,10 +421,10 @@ const QuotationCreatePage = () => {
               />
             </div>
 
-            {/* Submit Button */}
-            <Button 
-              type="submit" 
-              disabled={loading} 
+            {/* Botón de envío */}
+            <Button
+              type="submit"
+              disabled={loading}
               className="w-full h-12 text-lg transition-all hover:scale-[1.02]"
             >
               {loading ? (
@@ -420,7 +436,7 @@ const QuotationCreatePage = () => {
               )}
             </Button>
           </form>
-          {/* Product Selection Dialog */}
+          {/* Diálogo para seleccionar productos */}
           <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
             <DialogContent className="max-w-4xl">
               <DialogHeader>
@@ -438,10 +454,10 @@ const QuotationCreatePage = () => {
                       <ScrollArea className="h-[400px]">
                         {products.map((product) => {
                           const stockProduct = stockProducts.find(
-                            (sp) => sp.product?.product_id === product.product_id
+                            (sp) => sp.product?.product_id === product.product_id,
                           )
                           const selectedProduct = selectedProducts.find(
-                            (sp) => sp.productId === product.product_id
+                            (sp) => sp.productId === product.product_id,
                           )
                           const isSelected = !!selectedProduct
 
@@ -451,7 +467,7 @@ const QuotationCreatePage = () => {
                               className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent/5"
                               onSelect={() => {
                                 if (!isSelected) {
-                                  handleProductChange(product.product_id, 1, 0, 0)
+                                  handleProductChange(product.product_id, 1, 0)
                                 }
                               }}
                             >
@@ -460,7 +476,7 @@ const QuotationCreatePage = () => {
                                   checked={isSelected}
                                   onCheckedChange={(checked) => {
                                     if (checked) {
-                                      handleProductChange(product.product_id, 1, 0, 0)
+                                      handleProductChange(product.product_id, 1, 0)
                                     } else {
                                       handleRemoveProduct(product.product_id)
                                     }
@@ -468,33 +484,12 @@ const QuotationCreatePage = () => {
                                 />
                                 <div className="flex-1">
                                   <p className="font-medium">{product.product_name}</p>
+                                  <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
                                   <p className="text-sm text-muted-foreground">
                                     Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
                                     {stockProduct?.quantity || 0}
                                   </p>
                                 </div>
-                                {isSelected && (
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor={`modal-quantity-${product.product_id}`} className="text-xs">
-                                      Cantidad:
-                                    </Label>
-                                    <NumberInput
-                                      id={`modal-quantity-${product.product_id}`}
-                                      value={selectedProduct.quantity}
-                                      onChange={(newValue) =>
-                                        handleProductChange(
-                                          product.product_id,
-                                          newValue,
-                                          selectedProduct.laborPrice,
-                                          selectedProduct.profitMargin
-                                        )
-                                      }
-                                      min={1}
-                                      max={stockProduct?.quantity}
-                                      className="w-20"
-                                    />
-                                  </div>
-                                )}
                               </div>
                             </CommandItem>
                           )
@@ -523,4 +518,3 @@ const QuotationCreatePage = () => {
 }
 
 export default QuotationCreatePage
-

@@ -19,6 +19,7 @@ const mileageHistoryRepository = AppDataSource.getRepository(MileageHistory);
 export const getAllVehicles = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const vehicles = await vehicleRepository
+        
             .createQueryBuilder("vehicle")
             .leftJoinAndSelect("vehicle.model", "model")
             .leftJoinAndSelect("model.brand", "brand")

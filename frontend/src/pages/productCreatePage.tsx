@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
+import React, { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +11,13 @@ import { toast } from "react-toastify"
 import { createProduct } from "../services/productService"
 import api from "../utils/axiosConfig"
 import { NumberInput } from "@/components/numberInput"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Package } from "lucide-react"
 
 const ProductCreatePage = () => {
@@ -20,10 +25,12 @@ const ProductCreatePage = () => {
   const [salePrice, setSalePrice] = useState(0)
   const [stockQuantity, setStockQuantity] = useState(0)
   const [description, setDescription] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("")
   const [selectedProductType, setSelectedProductType] = useState("")
   const [selectedSupplier, setSelectedSupplier] = useState("")
   const [profitMargin, setProfitMargin] = useState("")
   const [lastPurchasePrice, setLastPurchasePrice] = useState(0)
+  const [categories, setCategories] = useState<any[]>([])
   const [productTypes, setProductTypes] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -32,23 +39,39 @@ const ProductCreatePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const categoriesResponse = await api.get("/productCategories")
+        setCategories(categoriesResponse.data)
         const typesResponse = await api.get("/productTypes")
         setProductTypes(typesResponse.data)
         const suppliersResponse = await api.get("/suppliers")
         setSuppliers(suppliersResponse.data)
       } catch (error) {
-        toast.error("Error al cargar tipos de producto y proveedores")
+        toast.error("Error al cargar categorías, tipos de producto y proveedores")
       }
     }
     fetchData()
   }, [])
 
+  // Filtrar los tipos de producto según la categoría seleccionada
+  const filteredProductTypes = selectedCategory
+    ? productTypes.filter(
+      (type) =>
+        type.category.product_category_id.toString() === selectedCategory
+    )
+    : productTypes
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    if (Number(salePrice) === 0 || Number(lastPurchasePrice) === 0 || Number(stockQuantity) === 0) {
-      toast.error("El precio de venta, último precio de compra y cantidad deben ser mayores a 0")
+    if (
+      Number(salePrice) === 0 ||
+      Number(lastPurchasePrice) === 0 ||
+      Number(stockQuantity) === 0
+    ) {
+      toast.error(
+        "El precio de venta, último precio de compra y cantidad deben ser mayores a 0"
+      )
       setLoading(false)
       return
     }
@@ -70,9 +93,12 @@ const ProductCreatePage = () => {
     } catch (error: any) {
       console.log(error)
       toast.error(
-        [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
+        [
+          error.response?.data?.message,
+          error.response?.data?.errors?.map((e: any) => e.message).join(", "),
+        ]
           .filter(Boolean)
-          .join(", ") || "Error al crear el producto",
+          .join(", ") || "Error al crear el producto"
       )
     } finally {
       setLoading(false)
@@ -80,7 +106,7 @@ const ProductCreatePage = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="max-w-4xl mx-auto px-4 py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -102,7 +128,9 @@ const ProductCreatePage = () => {
                 {/* Columna izquierda */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="productName">Nombre del producto</Label>
+                    <Label htmlFor="productName">
+                      Nombre del producto
+                    </Label>
                     <Input
                       id="productName"
                       type="text"
@@ -113,39 +141,73 @@ const ProductCreatePage = () => {
                       className="w-full"
                     />
                   </div>
-
+                  <div className="space-y-2">
+                    <Label htmlFor="productCategory">Categoría</Label>
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={(value) => {
+                        setSelectedCategory(value)
+                        // Reiniciamos el tipo de producto al cambiar la categoría
+                        setSelectedProductType("")
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccione una categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem
+                            key={category.product_category_id}
+                            value={category.product_category_id.toString()}
+                          >
+                            {category.category_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="productType">Tipo de Producto</Label>
-                    <Select value={selectedProductType} onValueChange={setSelectedProductType}>
+                    <Select
+                      value={selectedProductType}
+                      onValueChange={setSelectedProductType}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccione un tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {productTypes.map((type) => (
-                          <SelectItem key={type.product_type_id} value={type.product_type_id.toString()}>
+                        {filteredProductTypes.map((type) => (
+                          <SelectItem
+                            key={type.product_type_id}
+                            value={type.product_type_id.toString()}
+                          >
                             {type.type_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="supplier">Proveedor</Label>
-                    <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+                    <Select
+                      value={selectedSupplier}
+                      onValueChange={setSelectedSupplier}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccione un proveedor" />
                       </SelectTrigger>
                       <SelectContent>
                         {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.supplier_id} value={supplier.supplier_id.toString()}>
+                          <SelectItem
+                            key={supplier.supplier_id}
+                            value={supplier.supplier_id.toString()}
+                          >
                             {supplier.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
                     <Input
@@ -159,11 +221,12 @@ const ProductCreatePage = () => {
                     />
                   </div>
                 </div>
-
                 {/* Columna derecha */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="lastPurchasePrice">Último precio de compra</Label>
+                    <Label htmlFor="lastPurchasePrice">
+                      Último precio de compra
+                    </Label>
                     <NumberInput
                       id="lastPurchasePrice"
                       value={Number(lastPurchasePrice)}
@@ -174,9 +237,10 @@ const ProductCreatePage = () => {
                       className="w-full"
                     />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="profitMargin">Margen de ganancia (%)</Label>
+                    <Label htmlFor="profitMargin">
+                      Margen de ganancia (%)
+                    </Label>
                     <Input
                       id="profitMargin"
                       type="number"
@@ -187,7 +251,6 @@ const ProductCreatePage = () => {
                       className="w-full"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="salePrice">Precio de venta</Label>
                     <NumberInput
@@ -200,9 +263,10 @@ const ProductCreatePage = () => {
                       className="w-full"
                     />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="stockQuantity">Cantidad de Producto</Label>
+                    <Label htmlFor="stockQuantity">
+                      Cantidad de Producto
+                    </Label>
                     <NumberInput
                       id="stockQuantity"
                       value={Number(stockQuantity)}
@@ -214,12 +278,11 @@ const ProductCreatePage = () => {
                   </div>
                 </div>
               </div>
-
               <div className="mt-8 flex justify-end gap-4">
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   variant="outline"
-                  onClick={() => navigate('/admin/productos')}
+                  onClick={() => navigate("/admin/productos")}
                 >
                   Cancelar
                 </Button>
@@ -230,7 +293,7 @@ const ProductCreatePage = () => {
                       Creando...
                     </>
                   ) : (
-                    'Crear Producto'
+                    "Crear Producto"
                   )}
                 </Button>
               </div>
@@ -243,4 +306,3 @@ const ProductCreatePage = () => {
 }
 
 export default ProductCreatePage
-

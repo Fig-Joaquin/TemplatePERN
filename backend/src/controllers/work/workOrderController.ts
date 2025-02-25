@@ -10,21 +10,21 @@ const quotationRepository = AppDataSource.getRepository(Quotation);
 
 export const getAllWorkOrders = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const workOrders = await workOrderRepository.find({
-        relations: [
-          "vehicle",
-          "vehicle.model",
-          "vehicle.model.brand",
-          "vehicle.owner",
-          "vehicle.company",
-          "quotation",
-          "debtors",
-          "productDetails",              // Detalles de productos asociados a la orden
-          "productDetails.product",      // Producto de cada detalle
-          "productDetails.quotation",    // Cotización asociada al detalle (si existe)
-          "productDetails.tax"           // Impuesto asociado al detalle
-        ]
-      });
+        const workOrders = await workOrderRepository.find({
+            relations: [
+              "vehicle",
+              "vehicle.model",
+              "vehicle.model.brand",
+              "vehicle.owner",
+              "vehicle.company",
+              "quotation",
+              "debtors",
+              "productDetails",              // Detalles de productos asociados a la orden
+              "productDetails.product",      // Producto de cada detalle
+              "productDetails.quotation",    // Cotización asociada al detalle (si existe)
+              "productDetails.tax"           // Impuesto asociado al detalle
+            ]
+          });
       res.json(workOrders);
     } catch (error) {
       res.status(500).json({ message: "Error al obtener las órdenes de trabajo", error });

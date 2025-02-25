@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { IsString, Length, IsEmail } from "class-validator";
+import { Vehicle } from "../vehicles/vehicleEntity";
 
 @Entity("companies")
 export class Company {
@@ -25,4 +26,7 @@ export class Company {
     @IsString()
     @Length(7, 12, { message: "El teléfono debe tener entre 7 y 12 caracteres" })
     phone?: string;
+
+    @OneToMany(() => Vehicle, (vehicle) => vehicle.company)
+    vehicles!: Vehicle[];
 }

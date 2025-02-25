@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -8,13 +10,18 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
 import { toast } from "react-toastify";
 import { deleteWorkOrder } from "@/services/workOrderService";
+import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
+import { getTaxById } from "@/services/taxService";
+import { ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface WorkOrderCardProps {
-  workOrder: any; // Tipifica según tu interfaz WorkOrder con relaciones necesarias.
+  workOrder: any; // Ajusta según tu interfaz WorkOrder con las relaciones necesarias.
   onDelete?: (id: number) => void;
 }
 
@@ -33,6 +40,8 @@ const statusColors: Record<string, string> = {
 const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [loadedDetails, setLoadedDetails] = useState<any[]>([]);
+  const [taxRate, setTaxRate] = useState<number>(0);
   const navigate = useNavigate();
 
   const {
@@ -46,24 +55,53 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
     productDetails, // Detalles de productos asociados directamente a la orden
   } = workOrder;
 
-  // Si existe cotización y ésta trae vehículo, se usa; de lo contrario, se utiliza el vehículo de la orden.
+  // Si existe cotización y ésta trae vehículo, se utiliza; de lo contrario, se usa el de la orden.
   const displayVehicle =
     quotation && quotation.vehicle ? quotation.vehicle : vehicle;
 
-  // Si existe cotización y trae detalles, se usan; de lo contrario, se toman los detalles directos.
-  const detailsToShow =
+  // Estado inicial: si quotation.productDetails existe y tiene elementos, se usa; de lo contrario se usa productDetails.
+  const initialDetails =
     quotation && quotation.productDetails && quotation.productDetails.length > 0
       ? quotation.productDetails
-      : productDetails;
+      : productDetails && productDetails.length > 0
+        ? productDetails
+        : [];
 
-  // Calcular el total a partir de los detalles de productos
-  const computedTotal =
-    detailsToShow?.reduce((acc: number, detail: any) => {
-      const subtotal =
-        Number(detail.sale_price) * Number(detail.quantity) +
-        Number(detail.labor_price);
-      return acc + subtotal;
+  // Cargar detalles adicionales si la cotización existe pero no trae detalles
+  useEffect(() => {
+    if (quotation && (!quotation.productDetails || quotation.productDetails.length === 0)) {
+      getWorkProductDetailsByQuotationId(quotation.quotation_id)
+        .then((res) => setLoadedDetails(res))
+        .catch((err) => {
+          console.error("Error al cargar detalles por cotización:", err);
+          toast.error("Error al cargar detalles de productos");
+        });
+    } else {
+      setLoadedDetails(initialDetails);
+    }
+  }, [quotation, productDetails, initialDetails]);
+
+  // Cargar tax rate (IVA)
+  useEffect(() => {
+    const fetchTax = async () => {
+      try {
+        const res = await getTaxById(1);
+        setTaxRate(res.tax_rate / 100);
+      } catch (error) {
+        toast.error("Error al cargar el impuesto");
+      }
+    };
+    fetchTax();
+  }, []);
+
+  // Calcular el subtotal a partir de los detalles cargados
+  const subtotal =
+    loadedDetails.reduce((acc: number, detail: any) => {
+      const sub = Number(detail.sale_price) * Number(detail.quantity) + Number(detail.labor_price);
+      return acc + sub;
     }, 0) || 0;
+  const taxAmount = subtotal * taxRate;
+  const finalTotal = subtotal + taxAmount;
 
   const handleEdit = () => {
     navigate(`/admin/orden-trabajo/editar/${work_order_id}`);
@@ -82,13 +120,11 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
     }
   };
 
-  // Función auxiliar para renderizar la información del dueño o de la empresa.
-  // Si existe un dueño, muestra: "Nombre PrimerApellido - Teléfono: <número>".
-  // Si no, muestra: "NombreEmpresa - Teléfono: <número>" (o "Sin teléfono" si no existe).
+  // Renderiza la información del dueño o empresa según corresponda.
   const renderOwnerOrCompany = () => {
     if (displayVehicle?.owner) {
       const { name, first_surname, number_phone } = displayVehicle.owner;
-      return `${name} ${first_surname} - Teléfono: ${number_phone || "Sin teléfono"}`;
+      return `${name} ${first_surname} - Teléfono: +${number_phone || "Sin teléfono"}`;
     } else if (displayVehicle?.company) {
       const { name, phone } = displayVehicle.company;
       return `${name} - Teléfono: ${phone || "Sin teléfono"}`;
@@ -131,13 +167,12 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
         </CardContent>
       </Card>
 
-      {/* Diálogo principal de la orden */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="bg-card text-card-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalles de la Orden #{work_order_id}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 p-4">
             {/* Información de la Orden */}
             <div>
               <h3 className="font-bold mb-1">Información de la Orden</h3>
@@ -185,33 +220,22 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
             {/* Detalles de Productos */}
             <div>
               <h3 className="font-bold mb-1">Detalles de Productos</h3>
-              {detailsToShow && detailsToShow.length > 0 ? (
-                <div className="overflow-x-auto">
+              {loadedDetails && loadedDetails.length > 0 ? (
+                <ScrollArea className="h-[300px] overflow-x-auto">
                   <table className="min-w-full border-collapse">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="border px-4 py-2 text-left">
-                          Producto
-                        </th>
-                        <th className="border px-4 py-2 text-right">
-                          Cantidad
-                        </th>
-                        <th className="border px-4 py-2 text-right">
-                          Precio Unitario
-                        </th>
-                        <th className="border px-4 py-2 text-right">
-                          Mano de Obra
-                        </th>
-                        <th className="border px-4 py-2 text-right">
-                          Subtotal
-                        </th>
+                        <th className="border px-4 py-2 text-left">Producto</th>
+                        <th className="border px-4 py-2 text-right">Cantidad</th>
+                        <th className="border px-4 py-2 text-right">Precio Unitario</th>
+                        <th className="border px-4 py-2 text-right">Mano de Obra</th>
+                        <th className="border px-4 py-2 text-right">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {detailsToShow.map((detail: any, idx: number) => {
-                        const subtotal =
-                          Number(detail.sale_price) *
-                          Number(detail.quantity) +
+                      {loadedDetails.map((detail, idx: number) => {
+                        const subtotalDetail =
+                          Number(detail.sale_price) * Number(detail.quantity) +
                           Number(detail.labor_price);
                         return (
                           <tr key={idx} className="hover:bg-gray-50">
@@ -228,7 +252,7 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
                               {formatPriceCLP(Number(detail.labor_price))}
                             </td>
                             <td className="border px-4 py-2 text-right">
-                              {formatPriceCLP(subtotal)}
+                              {formatPriceCLP(subtotalDetail)}
                             </td>
                           </tr>
                         );
@@ -236,26 +260,38 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
                     </tbody>
                     <tfoot>
                       <tr className="bg-gray-200">
-                        <td
-                          className="border px-4 py-2 font-bold"
-                          colSpan={4}
-                        >
-                          Total Orden:
+                        <td className="border px-4 py-2 font-bold" colSpan={4}>
+                          Subtotal:
                         </td>
                         <td className="border px-4 py-2 text-right font-bold">
-                          {formatPriceCLP(computedTotal)}
+                          {formatPriceCLP(subtotal)}
+                        </td>
+                      </tr>
+                      <tr className="bg-gray-200">
+                        <td className="border px-4 py-2 font-bold" colSpan={4}>
+                          IVA ({(taxRate * 100).toFixed(0)}%):
+                        </td>
+                        <td className="border px-4 py-2 text-right font-bold">
+                          {formatPriceCLP(taxAmount)}
+                        </td>
+                      </tr>
+                      <tr className="bg-gray-200">
+                        <td className="border px-4 py-2 font-bold" colSpan={4}>
+                          Total Final:
+                        </td>
+                        <td className="border px-4 py-2 text-right font-bold">
+                          {formatPriceCLP(finalTotal)}
                         </td>
                       </tr>
                     </tfoot>
                   </table>
-                </div>
+                </ScrollArea>
               ) : (
                 <p>No hay productos asociados</p>
               )}
             </div>
           </div>
-          {/* Botones de acciones */}
-          <div className="mt-4 flex justify-end space-x-2">
+          <div className="mt-4 flex justify-end space-x-2 border-t pt-4">
             <Button variant="outline" onClick={handleEdit}>
               Editar
             </Button>
@@ -269,7 +305,7 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
 
       {/* Diálogo de confirmación para eliminar */}
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent>
+        <DialogContent className="bg-card text-card-foreground max-w-4xl">
           <DialogHeader>
             <DialogTitle>Confirmar Eliminación</DialogTitle>
           </DialogHeader>
@@ -280,10 +316,7 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
             <Button variant="outline" onClick={handleDeleteConfirmed}>
               Eliminar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmDelete(false)}
-            >
+            <Button variant="destructive" onClick={() => setConfirmDelete(false)}>
               Cancelar
             </Button>
           </div>

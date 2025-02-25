@@ -25,7 +25,7 @@ const sidebarStructure = [
   {
     id: "Clientes",
     icon: UsersIcon,
-    title: "Clientes",
+    title: "Personas y Empresas ",
     items: [
       { name: "Personas", path: "/admin/clientes" },
       { name: "Trabajadores", path: "/admin/trabajadores" },
@@ -38,8 +38,8 @@ const sidebarStructure = [
     title: "Vehículos",
     items: [
       { name: "Lista de vehículos", path: "/admin/vehiculos" },
-      { name: "Registrar vehículo", path: "/admin/vehiculos/nuevo" },
-      { name: "Historial de kilometraje", path: "/admin/vehiculos/kilometraje" },
+      // { name: "Registrar vehículo", path: "/admin/vehiculos/nuevo" },
+      // { name: "Historial de kilometraje", path: "/admin/vehiculos/kilometraje" },
       { name: "Marcas de Vehículos", path: "/admin/marcas-vehiculos" },
       { name: "Modelos de Vehículos", path: "/admin/modelos-vehiculos" },
     ],
@@ -59,8 +59,8 @@ const sidebarStructure = [
     title: "Órdenes de Trabajo",
     items: [
       { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
-      { name: "Crear orden", path: "/admin/nueva-orden-trabajo" },
-      { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
+      { name: "Nueva Orden de Trabajo", path: "/admin/nueva-orden-trabajo" },
+      // { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
     ],
   },
   {
@@ -70,8 +70,8 @@ const sidebarStructure = [
     items: [
       { name: "Lista de productos", path: "/admin/productos" },
       { name: "Registrar producto", path: "/admin/productos/nuevo" },
-      { name: "Compras", path: "/admin/inventario/compras" },
-      { name: "Historial de compras", path: "/admin/inventario/historial" },
+      // { name: "Compras", path: "/admin/inventario/compras" },
+      // { name: "Historial de compras", path: "/admin/inventario/historial" },
       { name: "Categorias de productos", path: "/admin/categorias-productos" },
       { name: "Tipos de productos", path: "/admin/tipo-productos" },
     ],

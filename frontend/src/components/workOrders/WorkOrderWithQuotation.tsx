@@ -13,6 +13,7 @@ import { fetchQuotations } from "../../services/quotationService";
 import { createWorkOrder } from "../../services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "../../services/workProductDetail";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
+import { getTaxById } from "@/services/taxService";
 import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput } from "../../types/interfaces";
 
 const WorkOrderWithQuotation = () => {
@@ -26,6 +27,7 @@ const WorkOrderWithQuotation = () => {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [productDetails, setProductDetails] = useState<WorkProductDetail[]>([]);
+  const [taxRate, setTaxRate] = useState<number>(0);
 
   // Carga inicial de vehículos
   useEffect(() => {
@@ -40,6 +42,20 @@ const WorkOrderWithQuotation = () => {
     fetchData();
   }, []);
 
+  // Carga del tax rate
+  useEffect(() => {
+    const fetchTax = async () => {
+      try {
+        const res = await getTaxById(1);
+        const tax = res.tax_rate / 100;
+        setTaxRate(tax);
+      } catch (error) {
+        toast.error("Error al cargar impuesto");
+      }
+    };
+    fetchTax();
+  }, []);
+
   // Carga de cotizaciones para el vehículo seleccionado y las ordena por fecha descendente
   useEffect(() => {
     if (selectedVehicle) {
@@ -49,7 +65,6 @@ const WorkOrderWithQuotation = () => {
             const qVehicleId = q.vehicle_id || (q.vehicle && q.vehicle.vehicle_id);
             return qVehicleId === selectedVehicle.vehicle_id;
           });
-          // Ordena las cotizaciones de la más reciente a la más antigua
           filtered.sort(
             (a, b) =>
               new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
@@ -71,7 +86,7 @@ const WorkOrderWithQuotation = () => {
       const fetchProductDetails = async () => {
         try {
           const details = await getWorkProductDetailsByQuotationId(
-            selectedQuotation.quotation_id
+            selectedQuotation!.quotation_id!
           );
           setProductDetails(details);
         } catch (error) {
@@ -84,6 +99,17 @@ const WorkOrderWithQuotation = () => {
     }
   }, [selectedQuotation]);
 
+  // Cálculo de totales
+  const subtotal = productDetails.reduce(
+    (sum, detail) =>
+      sum +
+      Number(detail.sale_price) * detail.quantity +
+      Number(detail.labor_price),
+    0
+  );
+  const taxAmount = subtotal * taxRate;
+  const finalTotal = subtotal + taxAmount;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicle || !description || !selectedQuotation) {
@@ -95,7 +121,7 @@ const WorkOrderWithQuotation = () => {
       const workOrderPayload: Partial<WorkOrderInput> = {
         vehicle_id: selectedVehicle.vehicle_id,
         quotation_id: selectedQuotation.quotation_id,
-        total_amount: Number(selectedQuotation.total_price),
+        total_amount: Math.trunc(finalTotal),
         description,
       };
       await createWorkOrder(workOrderPayload);
@@ -241,8 +267,9 @@ const WorkOrderWithQuotation = () => {
                 <p>
                   <strong>Estado:</strong> {selectedQuotation.quotation_Status}
                 </p>
+                {/* Ahora el total final de la cotización se muestra con tax */}
                 <p>
-                  <strong>Total:</strong> {formatPriceCLP(selectedQuotation.total_price)}
+                  <strong>Total (incl. IVA):</strong> {formatPriceCLP(selectedQuotation.total_price)}
                 </p>
                 {selectedQuotation.vehicle && selectedQuotation.vehicle.mileage_history && (
                   <p>
@@ -269,7 +296,7 @@ const WorkOrderWithQuotation = () => {
                       </thead>
                       <tbody>
                         {productDetails.map((detail) => {
-                          const subtotal =
+                          const subtotalDetail =
                             Number(detail.sale_price) * detail.quantity +
                             Number(detail.labor_price);
                           return (
@@ -284,7 +311,7 @@ const WorkOrderWithQuotation = () => {
                                 {formatPriceCLP(Number(detail.labor_price))}
                               </td>
                               <td className="border px-4 py-2 text-right">
-                                {formatPriceCLP(subtotal)}
+                                {formatPriceCLP(subtotalDetail)}
                               </td>
                             </tr>
                           );
@@ -293,18 +320,26 @@ const WorkOrderWithQuotation = () => {
                       <tfoot>
                         <tr className="bg-gray-100">
                           <td className="border px-4 py-2 font-bold" colSpan={5}>
-                            Total Productos:
+                            Subtotal:
                           </td>
                           <td className="border px-4 py-2 text-right font-bold">
-                            {formatPriceCLP(
-                              productDetails.reduce(
-                                (sum, detail) =>
-                                  sum +
-                                  Number(detail.sale_price) * detail.quantity +
-                                  Number(detail.labor_price),
-                                0
-                              )
-                            )}
+                            {formatPriceCLP(subtotal)}
+                          </td>
+                        </tr>
+                        <tr className="bg-gray-100">
+                          <td className="border px-4 py-2 font-bold" colSpan={5}>
+                            IVA (19%):
+                          </td>
+                          <td className="border px-4 py-2 text-right font-bold">
+                            {formatPriceCLP(taxAmount)}
+                          </td>
+                        </tr>
+                        <tr className="bg-gray-100">
+                          <td className="border px-4 py-2 font-bold" colSpan={5}>
+                            Total Final:
+                          </td>
+                          <td className="border px-4 py-2 text-right font-bold">
+                            {formatPriceCLP(finalTotal)}
                           </td>
                         </tr>
                       </tfoot>
@@ -340,7 +375,7 @@ const WorkOrderWithQuotation = () => {
                     </div>
                     <div>
                       <Label className="block">Kilometraje Actual:</Label>
-                      <p>{latestMileage ? latestMileage : "N/A"}</p>
+                      <p>{latestMileage ? latestMileage.toLocaleString("es-CL") : "N/A"} Km</p>
                     </div>
                     <div className="col-span-2">
                       <Label className="block">Propietario / Empresa:</Label>
@@ -356,8 +391,9 @@ const WorkOrderWithQuotation = () => {
                         <ul className="list-disc list-inside">
                           {selectedQuotation.vehicle.mileage_history.map((mileage) => (
                             <li key={mileage.mileage_history_id}>
-                              {new Date(mileage.registration_date).toLocaleDateString()}: {mileage.current_mileage} km
+                              {new Date(mileage.registration_date).toLocaleDateString()}: {mileage.current_mileage.toLocaleString("es-CL")} km
                             </li>
+
                           ))}
                         </ul>
                       </div>

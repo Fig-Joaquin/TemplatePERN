@@ -81,6 +81,8 @@ const RutInput: React.FC<RutInputProps> = ({ name, value, onChange, id, required
       onChange={handleChange}
       required={required}
       className={className}
+      placeholder="12.345.678-9"
+
     />
   )
 }

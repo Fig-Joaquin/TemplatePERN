@@ -1,13 +1,11 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { toast } from "react-toastify"
 import { Plus, Search, Users } from "lucide-react"
 import ClientList from "../components/clientList"
 import ClientForm from "../components/clientForm"
-import type { Person } from "../types/interfaces"
+import type { Person, Vehicle } from "../types/interfaces"
 import { createPerson, updatePerson, fetchPersonsClient } from "../services/personService"
 import { fetchVehiclesByPersonId } from "../services/vehicleService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -17,13 +15,16 @@ import { motion, AnimatePresence } from "framer-motion"
 
 const ClientPage = () => {
   const [persons, setPersons] = useState<Person[]>([])
+  const [vehiclesMap, setVehiclesMap] = useState<{ [key: number]: Vehicle[] }>({})
   const [loading, setLoading] = useState(true)
+  const [vehiclesLoading, setVehiclesLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [clientToDelete, setClientToDelete] = useState<number | null>(null)
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
+
   const initialFormData = {
     rut: "",
     name: "",
@@ -36,6 +37,7 @@ const ClientPage = () => {
   const [createFormData, setCreateFormData] = useState(initialFormData)
   const [editFormData, setEditFormData] = useState(initialFormData)
 
+  // Cargar todos los clientes
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
@@ -47,6 +49,43 @@ const ClientPage = () => {
       setLoading(false)
     }
   }, [])
+
+  // Una vez cargados los clientes, obtener los vehículos de cada uno
+  // Dentro de ClientPage.tsx
+
+  useEffect(() => {
+    if (persons.length === 0) {
+      setVehiclesLoading(false)
+      return
+    }
+    const fetchAllVehicles = async () => {
+      try {
+        setVehiclesLoading(true)
+        const vehiclesArray = await Promise.all(
+          persons.map(async (person) => {
+            try {
+              const personVehicles = await fetchVehiclesByPersonId(person.person_id)
+              return { id: person.person_id, vehicles: personVehicles }
+            } catch (err) {
+              console.error("Error fetching vehicles for person", person.person_id, err)
+              // Retornamos un array vacío si falla la petición para este cliente
+              return { id: person.person_id, vehicles: [] }
+            }
+          })
+        )
+        const map = vehiclesArray.reduce((acc, { id, vehicles }) => {
+          acc[id] = vehicles
+          return acc
+        }, {} as { [key: number]: Vehicle[] })
+        setVehiclesMap(map)
+      } catch (error) {
+        console.error("Error en fetchAllVehicles:", error)
+      } finally {
+        setVehiclesLoading(false)
+      }
+    }
+    fetchAllVehicles()
+  }, [persons])
 
   useEffect(() => {
     fetchData()
@@ -78,7 +117,7 @@ const ClientPage = () => {
       toast.error(
         [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
           .filter(Boolean)
-          .join(", ") || "Error al crear el cliente",
+          .join(", ") || "Error al crear el cliente"
       )
     }
   }
@@ -98,7 +137,7 @@ const ClientPage = () => {
       toast.error(
         [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
           .filter(Boolean)
-          .join(", ") || "Error al actualizar el cliente",
+          .join(", ") || "Error al actualizar el cliente"
       )
     }
   }
@@ -132,7 +171,7 @@ const ClientPage = () => {
         toast.error(
           [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
             .filter(Boolean)
-            .join(", ") || "Error al eliminar el cliente",
+            .join(", ") || "Error al eliminar el cliente"
         )
       } finally {
         setDeleteModalOpen(false)
@@ -144,17 +183,20 @@ const ClientPage = () => {
   const filteredPersons = persons.filter(
     (person) =>
       person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.rut.toLowerCase().includes(searchTerm.toLowerCase()),
+      person.rut.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Mientras se cargan tanto clientes como vehículos, mostramos un spinner
+  const isLoading = loading || vehiclesLoading
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <Users className="w-8 h-8" />
           Lista de Clientes
         </h1>
-        <Button onClick={() => setAddModalOpen(true)}>
+        <Button onClick={() => setAddModalOpen(true)} className="mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Cliente
         </Button>
@@ -168,16 +210,16 @@ const ClientPage = () => {
           onChange={handleSearch}
           className="pl-10"
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
 
       <motion.div
-        className="bg-card shadow-lg rounded-lg overflow-hidden"
+        className="bg-card shadow rounded-lg overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {loading ? (
+        {isLoading ? (
           <div className="text-center py-10">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-lg text-muted-foreground">Cargando clientes...</p>
@@ -186,7 +228,7 @@ const ClientPage = () => {
           <AnimatePresence>
             <ClientList
               persons={filteredPersons}
-              getVehiclesByPersonId={fetchVehiclesByPersonId}
+              vehiclesMap={vehiclesMap}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
             />
@@ -236,7 +278,7 @@ const ClientPage = () => {
           <DialogHeader>
             <DialogTitle>Confirmar Eliminación</DialogTitle>
           </DialogHeader>
-          <p>¿Estás seguro de eliminar este cliente?</p>
+          <p className="text-center">¿Estás seguro de eliminar este cliente?</p>
           <div className="flex justify-end mt-4 gap-2">
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancelar
@@ -252,4 +294,3 @@ const ClientPage = () => {
 }
 
 export default ClientPage
-

@@ -29,6 +29,19 @@ CREATE TYPE public.product_purchases_purchase_status_enum AS ENUM (
 ALTER TYPE public.product_purchases_purchase_status_enum OWNER TO postgres;
 
 --
+-- Name: quotations_quotation_status_enum; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.quotations_quotation_status_enum AS ENUM (
+    'approved',
+    'rejected',
+    'pending'
+);
+
+
+ALTER TYPE public.quotations_quotation_status_enum OWNER TO postgres;
+
+--
 -- Name: vehicles_vehicle_status_enum; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -58,14 +71,87 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: companies; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.companies (
+    company_id integer NOT NULL,
+    rut character varying(12) NOT NULL,
+    name character varying(100) NOT NULL,
+    email character varying(100) NOT NULL,
+    phone character varying(12)
+);
+
+
+ALTER TABLE public.companies OWNER TO postgres;
+
+--
+-- Name: companies_company_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.companies_company_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.companies_company_id_seq OWNER TO postgres;
+
+--
+-- Name: companies_company_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.companies_company_id_seq OWNED BY public.companies.company_id;
+
+
+--
+-- Name: debtors; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.debtors (
+    debtor_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    description character varying(255) NOT NULL,
+    work_order_id integer NOT NULL
+);
+
+
+ALTER TABLE public.debtors OWNER TO postgres;
+
+--
+-- Name: debtors_debtor_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.debtors_debtor_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.debtors_debtor_id_seq OWNER TO postgres;
+
+--
+-- Name: debtors_debtor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.debtors_debtor_id_seq OWNED BY public.debtors.debtor_id;
+
+
+--
 -- Name: mileage_history; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.mileage_history (
     mileage_history_id integer NOT NULL,
-    vehicle_id integer NOT NULL,
     current_mileage integer NOT NULL,
-    registration_date timestamp without time zone NOT NULL
+    registration_date timestamp without time zone DEFAULT now() NOT NULL,
+    vehicle_id integer NOT NULL
 );
 
 
@@ -137,7 +223,7 @@ CREATE TABLE public.persons (
     name character varying(50) NOT NULL,
     first_surname character varying(50) NOT NULL,
     second_surname character varying(50),
-    email character varying(100) NOT NULL,
+    email character varying(100),
     number_phone character varying(15) NOT NULL,
     person_type character varying(20) NOT NULL
 );
@@ -202,18 +288,56 @@ ALTER SEQUENCE public.product_categories_product_category_id_seq OWNED BY public
 
 
 --
+-- Name: product_history; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.product_history (
+    product_history_id integer NOT NULL,
+    description character varying(500) NOT NULL,
+    last_purchase_price numeric(10,2) NOT NULL,
+    sale_price numeric(10,2) NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    product_id integer NOT NULL
+);
+
+
+ALTER TABLE public.product_history OWNER TO postgres;
+
+--
+-- Name: product_history_product_history_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.product_history_product_history_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.product_history_product_history_id_seq OWNER TO postgres;
+
+--
+-- Name: product_history_product_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.product_history_product_history_id_seq OWNED BY public.product_history.product_history_id;
+
+
+--
 -- Name: product_purchases; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.product_purchases (
     product_purchase_id integer NOT NULL,
-    product_id integer NOT NULL,
-    purchase_history_id integer NOT NULL,
-    tax_id integer NOT NULL,
     purchase_status public.product_purchases_purchase_status_enum DEFAULT 'processed'::public.product_purchases_purchase_status_enum NOT NULL,
     purchase_price numeric(10,2) NOT NULL,
     quantity integer NOT NULL,
-    total_price numeric(10,2) NOT NULL
+    total_price numeric(10,2) NOT NULL,
+    product_id integer NOT NULL,
+    purchase_history_id integer NOT NULL,
+    tax_id integer NOT NULL
 );
 
 
@@ -247,8 +371,8 @@ ALTER SEQUENCE public.product_purchases_product_purchase_id_seq OWNED BY public.
 
 CREATE TABLE public.product_types (
     product_type_id integer NOT NULL,
-    product_category_id integer NOT NULL,
-    type_name character varying(50) NOT NULL
+    type_name character varying(50) NOT NULL,
+    product_category_id integer NOT NULL
 );
 
 
@@ -282,13 +406,14 @@ ALTER SEQUENCE public.product_types_product_type_id_seq OWNED BY public.product_
 
 CREATE TABLE public.products (
     product_id integer NOT NULL,
-    product_type_id integer NOT NULL,
     product_name character varying(100) NOT NULL,
     profit_margin numeric(5,2) NOT NULL,
-    last_purchase_price numeric(10,2) NOT NULL,
-    sale_price numeric(10,2) NOT NULL,
+    last_purchase_price bigint NOT NULL,
+    sale_price bigint NOT NULL,
     description text NOT NULL,
-    product_quantity integer NOT NULL
+    product_quantity integer NOT NULL,
+    supplier_id integer NOT NULL,
+    product_type_id integer NOT NULL
 );
 
 
@@ -358,11 +483,11 @@ ALTER SEQUENCE public.purchase_history_purchase_history_id_seq OWNED BY public.p
 
 CREATE TABLE public.quotations (
     quotation_id integer NOT NULL,
-    vehicle_id integer NOT NULL,
-    mileage_history_id integer NOT NULL,
     description text NOT NULL,
-    quotation_status character varying(50) NOT NULL,
-    entry_date timestamp without time zone NOT NULL
+    "quotation_Status" public.quotations_quotation_status_enum DEFAULT 'pending'::public.quotations_quotation_status_enum NOT NULL,
+    total_price numeric(10,2) NOT NULL,
+    entry_date timestamp without time zone DEFAULT now() NOT NULL,
+    vehicle_id integer NOT NULL
 );
 
 
@@ -388,6 +513,80 @@ ALTER SEQUENCE public.quotations_quotation_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.quotations_quotation_id_seq OWNED BY public.quotations.quotation_id;
+
+
+--
+-- Name: stock_products; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.stock_products (
+    stock_product_id integer NOT NULL,
+    quantity bigint NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    product_id integer
+);
+
+
+ALTER TABLE public.stock_products OWNER TO postgres;
+
+--
+-- Name: stock_products_stock_product_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.stock_products_stock_product_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.stock_products_stock_product_id_seq OWNER TO postgres;
+
+--
+-- Name: stock_products_stock_product_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.stock_products_stock_product_id_seq OWNED BY public.stock_products.stock_product_id;
+
+
+--
+-- Name: suppliers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.suppliers (
+    supplier_id integer NOT NULL,
+    name character varying(100) NOT NULL,
+    address character varying(255) NOT NULL,
+    city character varying(100) NOT NULL,
+    description character varying(500) NOT NULL,
+    phone character varying(15) NOT NULL
+);
+
+
+ALTER TABLE public.suppliers OWNER TO postgres;
+
+--
+-- Name: suppliers_supplier_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.suppliers_supplier_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.suppliers_supplier_id_seq OWNER TO postgres;
+
+--
+-- Name: suppliers_supplier_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.suppliers_supplier_id_seq OWNED BY public.suppliers.supplier_id;
 
 
 --
@@ -430,10 +629,10 @@ ALTER SEQUENCE public.taxes_tax_id_seq OWNED BY public.taxes.tax_id;
 
 CREATE TABLE public.users (
     user_id integer NOT NULL,
-    person_id integer NOT NULL,
     user_role character varying(20) NOT NULL,
     username character varying(30) NOT NULL,
-    password character varying(60) NOT NULL
+    password character varying(60) NOT NULL,
+    person_id integer NOT NULL
 );
 
 
@@ -501,8 +700,8 @@ ALTER SEQUENCE public.vehicle_brands_vehicle_brand_id_seq OWNED BY public.vehicl
 
 CREATE TABLE public.vehicle_models (
     vehicle_model_id integer NOT NULL,
-    vehicle_brand_id integer NOT NULL,
-    model_name character varying(50) NOT NULL
+    model_name character varying(50) NOT NULL,
+    vehicle_brand_id integer NOT NULL
 );
 
 
@@ -536,12 +735,13 @@ ALTER SEQUENCE public.vehicle_models_vehicle_model_id_seq OWNED BY public.vehicl
 
 CREATE TABLE public.vehicles (
     vehicle_id integer NOT NULL,
-    vehicle_model_id integer NOT NULL,
-    person_id integer NOT NULL,
     license_plate character varying(8) NOT NULL,
     vehicle_status public.vehicles_vehicle_status_enum DEFAULT 'running'::public.vehicles_vehicle_status_enum NOT NULL,
     year integer NOT NULL,
-    color character varying(30) NOT NULL
+    color character varying(30) NOT NULL,
+    vehicle_model_id integer NOT NULL,
+    person_id integer,
+    company_id integer
 );
 
 
@@ -575,13 +775,12 @@ ALTER SEQUENCE public.vehicles_vehicle_id_seq OWNED BY public.vehicles.vehicle_i
 
 CREATE TABLE public.work_orders (
     work_order_id integer NOT NULL,
-    vehicle_id integer NOT NULL,
-    quotation_id integer NOT NULL,
-    person_id integer NOT NULL,
-    mileage_history_id integer NOT NULL,
     total_amount numeric(10,2) NOT NULL,
     order_status public.work_orders_order_status_enum DEFAULT 'not_started'::public.work_orders_order_status_enum NOT NULL,
-    order_date timestamp without time zone NOT NULL
+    description text,
+    order_date timestamp without time zone DEFAULT now() NOT NULL,
+    vehicle_id integer NOT NULL,
+    quotation_id integer
 );
 
 
@@ -615,11 +814,11 @@ ALTER SEQUENCE public.work_orders_work_order_id_seq OWNED BY public.work_orders.
 
 CREATE TABLE public.work_payments (
     work_payment_id integer NOT NULL,
-    payment_type_id integer NOT NULL,
-    work_order_id integer NOT NULL,
     payment_status character varying(50) NOT NULL,
     amount_paid numeric(10,2) NOT NULL,
-    payment_date timestamp without time zone NOT NULL
+    payment_date timestamp without time zone NOT NULL,
+    payment_type_id integer NOT NULL,
+    work_order_id integer NOT NULL
 );
 
 
@@ -653,14 +852,14 @@ ALTER SEQUENCE public.work_payments_work_payment_id_seq OWNED BY public.work_pay
 
 CREATE TABLE public.work_product_details (
     work_product_detail_id integer NOT NULL,
-    work_order_id integer NOT NULL,
-    product_id integer NOT NULL,
-    quotation_id integer NOT NULL,
-    tax_id integer NOT NULL,
     quantity integer NOT NULL,
     sale_price numeric(10,2) NOT NULL,
     discount numeric(5,2) NOT NULL,
-    labor_price numeric(10,2) NOT NULL
+    labor_price numeric(10,2) NOT NULL,
+    work_order_id integer,
+    product_id integer NOT NULL,
+    quotation_id integer,
+    tax_id integer NOT NULL
 );
 
 
@@ -694,10 +893,10 @@ ALTER SEQUENCE public.work_product_details_work_product_detail_id_seq OWNED BY p
 
 CREATE TABLE public.work_tickets (
     work_ticket_id integer NOT NULL,
-    work_order_id integer NOT NULL,
     description text NOT NULL,
     ticket_status character varying(50) NOT NULL,
-    ticket_date timestamp without time zone NOT NULL
+    ticket_date timestamp without time zone NOT NULL,
+    work_order_id integer NOT NULL
 );
 
 
@@ -726,6 +925,20 @@ ALTER SEQUENCE public.work_tickets_work_ticket_id_seq OWNED BY public.work_ticke
 
 
 --
+-- Name: companies company_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.companies ALTER COLUMN company_id SET DEFAULT nextval('public.companies_company_id_seq'::regclass);
+
+
+--
+-- Name: debtors debtor_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.debtors ALTER COLUMN debtor_id SET DEFAULT nextval('public.debtors_debtor_id_seq'::regclass);
+
+
+--
 -- Name: mileage_history mileage_history_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -751,6 +964,13 @@ ALTER TABLE ONLY public.persons ALTER COLUMN person_id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.product_categories ALTER COLUMN product_category_id SET DEFAULT nextval('public.product_categories_product_category_id_seq'::regclass);
+
+
+--
+-- Name: product_history product_history_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.product_history ALTER COLUMN product_history_id SET DEFAULT nextval('public.product_history_product_history_id_seq'::regclass);
 
 
 --
@@ -786,6 +1006,20 @@ ALTER TABLE ONLY public.purchase_history ALTER COLUMN purchase_history_id SET DE
 --
 
 ALTER TABLE ONLY public.quotations ALTER COLUMN quotation_id SET DEFAULT nextval('public.quotations_quotation_id_seq'::regclass);
+
+
+--
+-- Name: stock_products stock_product_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_products ALTER COLUMN stock_product_id SET DEFAULT nextval('public.stock_products_stock_product_id_seq'::regclass);
+
+
+--
+-- Name: suppliers supplier_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.suppliers ALTER COLUMN supplier_id SET DEFAULT nextval('public.suppliers_supplier_id_seq'::regclass);
 
 
 --
@@ -852,10 +1086,27 @@ ALTER TABLE ONLY public.work_tickets ALTER COLUMN work_ticket_id SET DEFAULT nex
 
 
 --
+-- Data for Name: companies; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.companies (company_id, rut, name, email, phone) FROM stdin;
+\.
+
+
+--
+-- Data for Name: debtors; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.debtors (debtor_id, created_at, description, work_order_id) FROM stdin;
+\.
+
+
+--
 -- Data for Name: mileage_history; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.mileage_history (mileage_history_id, vehicle_id, current_mileage, registration_date) FROM stdin;
+COPY public.mileage_history (mileage_history_id, current_mileage, registration_date, vehicle_id) FROM stdin;
+1	89273	2025-02-25 06:03:21.719542	1
 \.
 
 
@@ -872,7 +1123,8 @@ COPY public.payment_types (payment_type_id, type_name) FROM stdin;
 --
 
 COPY public.persons (person_id, rut, name, first_surname, second_surname, email, number_phone, person_type) FROM stdin;
-2	204876541	joaquin	sánchez	figueroa	jkea@gmail.com	+56123456789	administrador
+1	204876541	Joaquin	Sanchez	Figueroa	joaquin@gmail.com	56912341234	administrador
+2	12958324K	Catalina	Pereira	\N	cata@gmail.com	56948392234	cliente
 \.
 
 
@@ -885,10 +1137,18 @@ COPY public.product_categories (product_category_id, category_name) FROM stdin;
 
 
 --
+-- Data for Name: product_history; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.product_history (product_history_id, description, last_purchase_price, sale_price, updated_at, product_id) FROM stdin;
+\.
+
+
+--
 -- Data for Name: product_purchases; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.product_purchases (product_purchase_id, product_id, purchase_history_id, tax_id, purchase_status, purchase_price, quantity, total_price) FROM stdin;
+COPY public.product_purchases (product_purchase_id, purchase_status, purchase_price, quantity, total_price, product_id, purchase_history_id, tax_id) FROM stdin;
 \.
 
 
@@ -896,7 +1156,7 @@ COPY public.product_purchases (product_purchase_id, product_id, purchase_history
 -- Data for Name: product_types; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.product_types (product_type_id, product_category_id, type_name) FROM stdin;
+COPY public.product_types (product_type_id, type_name, product_category_id) FROM stdin;
 \.
 
 
@@ -904,7 +1164,7 @@ COPY public.product_types (product_type_id, product_category_id, type_name) FROM
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.products (product_id, product_type_id, product_name, profit_margin, last_purchase_price, sale_price, description, product_quantity) FROM stdin;
+COPY public.products (product_id, product_name, profit_margin, last_purchase_price, sale_price, description, product_quantity, supplier_id, product_type_id) FROM stdin;
 \.
 
 
@@ -920,7 +1180,23 @@ COPY public.purchase_history (purchase_history_id, purchase_date, arrival_date, 
 -- Data for Name: quotations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.quotations (quotation_id, vehicle_id, mileage_history_id, description, quotation_status, entry_date) FROM stdin;
+COPY public.quotations (quotation_id, description, "quotation_Status", total_price, entry_date, vehicle_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: stock_products; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.stock_products (stock_product_id, quantity, updated_at, product_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: suppliers; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.suppliers (supplier_id, name, address, city, description, phone) FROM stdin;
 \.
 
 
@@ -936,8 +1212,8 @@ COPY public.taxes (tax_id, tax_rate) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (user_id, person_id, user_role, username, password) FROM stdin;
-1	2	administrador	admin	$2a$10$g61f68/SVRNdY.WvTgOc1OdxPXEP.VBqHzaggx7u94IBhgpA0hiTq
+COPY public.users (user_id, user_role, username, password, person_id) FROM stdin;
+1	administrador	admin	$2a$10$iePQy3r19BFn1u/V8WEO5.0cDpPNPa5CX3uGZ1FEftGiMTcQpNb6q	1
 \.
 
 
@@ -946,6 +1222,16 @@ COPY public.users (user_id, person_id, user_role, username, password) FROM stdin
 --
 
 COPY public.vehicle_brands (vehicle_brand_id, brand_name) FROM stdin;
+1	Toyota
+2	Chevrolet
+3	Suzuki
+4	Hyundai
+5	Kia
+6	Nissan
+7	Ford
+8	Mitsubishi
+9	Mazda
+10	Peugeot
 \.
 
 
@@ -953,7 +1239,47 @@ COPY public.vehicle_brands (vehicle_brand_id, brand_name) FROM stdin;
 -- Data for Name: vehicle_models; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.vehicle_models (vehicle_model_id, vehicle_brand_id, model_name) FROM stdin;
+COPY public.vehicle_models (vehicle_model_id, model_name, vehicle_brand_id) FROM stdin;
+2	Corolla	1
+3	Yaris	1
+4	Hilux	1
+5	Rav4	1
+6	Spark	2
+7	Sail	2
+8	Onix	2
+9	Tracker	2
+10	Swift	3
+11	Baleno	3
+12	Vitara	3
+13	S-Cross	3
+14	Accent	4
+15	Elantra	4
+16	Tucson	4
+17	Santa Fe	4
+18	Rio	5
+19	Cerato	5
+20	Sportage	5
+21	Sorento	5
+22	March	6
+23	Versa	6
+24	Navara	6
+25	X-Trail	6
+26	Fiesta	7
+27	Focus	7
+28	Ranger	7
+29	Escape	7
+30	Mirage	8
+31	Lancer	8
+32	Outlander	8
+33	Montero	8
+34	Mazda2	9
+35	Mazda3	9
+36	CX-5	9
+37	BT-50	9
+38	208	10
+39	308	10
+40	3008	10
+41	5008	10
 \.
 
 
@@ -961,7 +1287,8 @@ COPY public.vehicle_models (vehicle_model_id, vehicle_brand_id, model_name) FROM
 -- Data for Name: vehicles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.vehicles (vehicle_id, vehicle_model_id, person_id, license_plate, vehicle_status, year, color) FROM stdin;
+COPY public.vehicles (vehicle_id, license_plate, vehicle_status, year, color, vehicle_model_id, person_id, company_id) FROM stdin;
+1	KJLM32	running	2021	Blanco	5	2	\N
 \.
 
 
@@ -969,7 +1296,7 @@ COPY public.vehicles (vehicle_id, vehicle_model_id, person_id, license_plate, ve
 -- Data for Name: work_orders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.work_orders (work_order_id, vehicle_id, quotation_id, person_id, mileage_history_id, total_amount, order_status, order_date) FROM stdin;
+COPY public.work_orders (work_order_id, total_amount, order_status, description, order_date, vehicle_id, quotation_id) FROM stdin;
 \.
 
 
@@ -977,7 +1304,7 @@ COPY public.work_orders (work_order_id, vehicle_id, quotation_id, person_id, mil
 -- Data for Name: work_payments; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.work_payments (work_payment_id, payment_type_id, work_order_id, payment_status, amount_paid, payment_date) FROM stdin;
+COPY public.work_payments (work_payment_id, payment_status, amount_paid, payment_date, payment_type_id, work_order_id) FROM stdin;
 \.
 
 
@@ -985,7 +1312,7 @@ COPY public.work_payments (work_payment_id, payment_type_id, work_order_id, paym
 -- Data for Name: work_product_details; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.work_product_details (work_product_detail_id, work_order_id, product_id, quotation_id, tax_id, quantity, sale_price, discount, labor_price) FROM stdin;
+COPY public.work_product_details (work_product_detail_id, quantity, sale_price, discount, labor_price, work_order_id, product_id, quotation_id, tax_id) FROM stdin;
 \.
 
 
@@ -993,15 +1320,29 @@ COPY public.work_product_details (work_product_detail_id, work_order_id, product
 -- Data for Name: work_tickets; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.work_tickets (work_ticket_id, work_order_id, description, ticket_status, ticket_date) FROM stdin;
+COPY public.work_tickets (work_ticket_id, description, ticket_status, ticket_date, work_order_id) FROM stdin;
 \.
+
+
+--
+-- Name: companies_company_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.companies_company_id_seq', 1, false);
+
+
+--
+-- Name: debtors_debtor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.debtors_debtor_id_seq', 1, false);
 
 
 --
 -- Name: mileage_history_mileage_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mileage_history_mileage_history_id_seq', 1, false);
+SELECT pg_catalog.setval('public.mileage_history_mileage_history_id_seq', 1, true);
 
 
 --
@@ -1023,6 +1364,13 @@ SELECT pg_catalog.setval('public.persons_person_id_seq', 2, true);
 --
 
 SELECT pg_catalog.setval('public.product_categories_product_category_id_seq', 1, false);
+
+
+--
+-- Name: product_history_product_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.product_history_product_history_id_seq', 1, false);
 
 
 --
@@ -1061,6 +1409,20 @@ SELECT pg_catalog.setval('public.quotations_quotation_id_seq', 1, false);
 
 
 --
+-- Name: stock_products_stock_product_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.stock_products_stock_product_id_seq', 1, false);
+
+
+--
+-- Name: suppliers_supplier_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.suppliers_supplier_id_seq', 1, false);
+
+
+--
 -- Name: taxes_tax_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1078,21 +1440,21 @@ SELECT pg_catalog.setval('public.users_user_id_seq', 1, true);
 -- Name: vehicle_brands_vehicle_brand_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.vehicle_brands_vehicle_brand_id_seq', 1, false);
+SELECT pg_catalog.setval('public.vehicle_brands_vehicle_brand_id_seq', 10, true);
 
 
 --
 -- Name: vehicle_models_vehicle_model_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.vehicle_models_vehicle_model_id_seq', 1, false);
+SELECT pg_catalog.setval('public.vehicle_models_vehicle_model_id_seq', 41, true);
 
 
 --
 -- Name: vehicles_vehicle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.vehicles_vehicle_id_seq', 1, false);
+SELECT pg_catalog.setval('public.vehicles_vehicle_id_seq', 1, true);
 
 
 --
@@ -1156,6 +1518,14 @@ ALTER TABLE ONLY public.work_product_details
 
 
 --
+-- Name: debtors PK_57df4e48795a008a9651220c4ca; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.debtors
+    ADD CONSTRAINT "PK_57df4e48795a008a9651220c4ca" PRIMARY KEY (debtor_id);
+
+
+--
 -- Name: quotations PK_687f20ddb3d275c2c1a696214e2; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1188,6 +1558,14 @@ ALTER TABLE ONLY public.vehicle_models
 
 
 --
+-- Name: companies PK_8c008cd5c4c0c20cf1e77f68e8d; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.companies
+    ADD CONSTRAINT "PK_8c008cd5c4c0c20cf1e77f68e8d" PRIMARY KEY (company_id);
+
+
+--
 -- Name: product_types PK_91a2058eff2209e67033c7378dd; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1212,6 +1590,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: suppliers PK_a2692f796d16e0a30040860112a; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.suppliers
+    ADD CONSTRAINT "PK_a2692f796d16e0a30040860112a" PRIMARY KEY (supplier_id);
+
+
+--
 -- Name: products PK_a8940a4bf3b90bd7ac15c8f4dd9; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1220,11 +1606,27 @@ ALTER TABLE ONLY public.products
 
 
 --
+-- Name: product_history PK_bdbe3435a427635504788cdc597; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.product_history
+    ADD CONSTRAINT "PK_bdbe3435a427635504788cdc597" PRIMARY KEY (product_history_id);
+
+
+--
 -- Name: purchase_history PK_be78d0f76ac22bc6c80dfe18826; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.purchase_history
     ADD CONSTRAINT "PK_be78d0f76ac22bc6c80dfe18826" PRIMARY KEY (purchase_history_id);
+
+
+--
+-- Name: stock_products PK_c31ac5aac3859d3738c771de0d7; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_products
+    ADD CONSTRAINT "PK_c31ac5aac3859d3738c771de0d7" PRIMARY KEY (stock_product_id);
 
 
 --
@@ -1268,6 +1670,14 @@ ALTER TABLE ONLY public.taxes
 
 
 --
+-- Name: stock_products REL_378d8fa4ec52d825ecdccd2f55; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_products
+    ADD CONSTRAINT "REL_378d8fa4ec52d825ecdccd2f55" UNIQUE (product_id);
+
+
+--
 -- Name: vehicle_brands UQ_0eae59d498a87b3d119d76df204; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1281,6 +1691,14 @@ ALTER TABLE ONLY public.vehicle_brands
 
 ALTER TABLE ONLY public.product_categories
     ADD CONSTRAINT "UQ_29ede20c8ca7fac25e9bb9e1ed3" UNIQUE (category_name);
+
+
+--
+-- Name: companies UQ_5d80d8df0f3b64b99fcb9165917; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.companies
+    ADD CONSTRAINT "UQ_5d80d8df0f3b64b99fcb9165917" UNIQUE (rut);
 
 
 --
@@ -1332,6 +1750,14 @@ ALTER TABLE ONLY public.vehicles
 
 
 --
+-- Name: products FK_0ec433c1e1d444962d592d86c86; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT "FK_0ec433c1e1d444962d592d86c86" FOREIGN KEY (supplier_id) REFERENCES public.suppliers(supplier_id);
+
+
+--
 -- Name: work_orders FK_18fb19db181c9e178cc8e5b6c8f; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1364,6 +1790,14 @@ ALTER TABLE ONLY public.vehicles
 
 
 --
+-- Name: stock_products FK_378d8fa4ec52d825ecdccd2f555; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_products
+    ADD CONSTRAINT "FK_378d8fa4ec52d825ecdccd2f555" FOREIGN KEY (product_id) REFERENCES public.products(product_id) ON DELETE CASCADE;
+
+
+--
 -- Name: product_purchases FK_4357b44ff7a7707fd9b5259f75d; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1372,19 +1806,19 @@ ALTER TABLE ONLY public.product_purchases
 
 
 --
+-- Name: debtors FK_5d04f6c0df41422ae07a5b65cf3; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.debtors
+    ADD CONSTRAINT "FK_5d04f6c0df41422ae07a5b65cf3" FOREIGN KEY (work_order_id) REFERENCES public.work_orders(work_order_id);
+
+
+--
 -- Name: users FK_5ed72dcd00d6e5a88c6a6ba3d18; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT "FK_5ed72dcd00d6e5a88c6a6ba3d18" FOREIGN KEY (person_id) REFERENCES public.persons(person_id);
-
-
---
--- Name: quotations FK_6360416ee5e7ffea21129226c10; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.quotations
-    ADD CONSTRAINT "FK_6360416ee5e7ffea21129226c10" FOREIGN KEY (mileage_history_id) REFERENCES public.mileage_history(mileage_history_id);
 
 
 --
@@ -1412,14 +1846,6 @@ ALTER TABLE ONLY public.work_orders
 
 
 --
--- Name: work_orders FK_7a47f0f20f4639d58e424e4d9d0; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.work_orders
-    ADD CONSTRAINT "FK_7a47f0f20f4639d58e424e4d9d0" FOREIGN KEY (person_id) REFERENCES public.persons(person_id);
-
-
---
 -- Name: quotations FK_85f1f4b160e1b5825d383242d41; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1433,14 +1859,6 @@ ALTER TABLE ONLY public.quotations
 
 ALTER TABLE ONLY public.work_product_details
     ADD CONSTRAINT "FK_93fba8c621a908edb880864943d" FOREIGN KEY (tax_id) REFERENCES public.taxes(tax_id);
-
-
---
--- Name: work_orders FK_9674ed3a7ded040e8fa7c3bad41; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.work_orders
-    ADD CONSTRAINT "FK_9674ed3a7ded040e8fa7c3bad41" FOREIGN KEY (mileage_history_id) REFERENCES public.mileage_history(mileage_history_id);
 
 
 --
@@ -1468,11 +1886,27 @@ ALTER TABLE ONLY public.vehicle_models
 
 
 --
+-- Name: product_history FK_d0e845cfa7cb0c5f092ae9acab1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.product_history
+    ADD CONSTRAINT "FK_d0e845cfa7cb0c5f092ae9acab1" FOREIGN KEY (product_id) REFERENCES public.products(product_id);
+
+
+--
 -- Name: work_product_details FK_dc4f495ca4fac1fc5813ea7c77c; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.work_product_details
     ADD CONSTRAINT "FK_dc4f495ca4fac1fc5813ea7c77c" FOREIGN KEY (quotation_id) REFERENCES public.quotations(quotation_id);
+
+
+--
+-- Name: vehicles FK_e11ef2dcd880132d31bd9f92c2a; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vehicles
+    ADD CONSTRAINT "FK_e11ef2dcd880132d31bd9f92c2a" FOREIGN KEY (company_id) REFERENCES public.companies(company_id);
 
 
 --

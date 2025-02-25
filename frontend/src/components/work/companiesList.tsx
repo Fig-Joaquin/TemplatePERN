@@ -1,15 +1,17 @@
 // src/components/companyList.tsx
-
-import type { Company } from "../../types/interfaces";
+import type { Company, brand } from "../../types/interfaces";
 import { Button } from "@/components/ui/button";
+import VehicleList from "../vehicleList";
+import RutFormatter from "../RutFormatter";
 
 interface CompanyListProps {
   companies: Company[];
   handleEdit: (company: Company) => void;
   handleDelete: (companyId: number) => void;
+  brands?: brand[];
 }
 
-const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handleDelete }) => {
+const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handleDelete, brands }) => {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -27,6 +29,9 @@ const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handle
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Teléfono
             </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Vehículos
+            </th>
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
             </th>
@@ -36,7 +41,7 @@ const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handle
           {companies.map((company) => (
             <tr key={company.company_id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {company.rut}
+                <RutFormatter rut={company.rut} />
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {company.name}
@@ -45,7 +50,14 @@ const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handle
                 {company.email}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {company.phone || "Sin teléfono"}
+                +{company.phone || "Sin teléfono"}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {company.vehicles && company.vehicles.length > 0 ? (
+                  <VehicleList vehicles={company.vehicles} brands={brands} />
+                ) : (
+                  "No hay vehículos"
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                 <Button variant="outline" onClick={() => handleEdit(company)}>

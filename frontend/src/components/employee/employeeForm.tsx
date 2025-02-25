@@ -1,6 +1,6 @@
 // EmployeeForm.tsx
 import type React from "react"
-import { Input } from "@/components/ui/input" // Otros inputs los mantienes si lo deseas
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import type { EmployeeFormProps } from "../../types/interfaces"
@@ -54,7 +54,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
       </div>
       <div className="mb-4">
         <Label htmlFor="second_surname" className="block text-sm mb-1">
-          Segundo Apellido
+          Segundo Apellido (opcional)
         </Label>
         <Input
           id="second_surname"
@@ -68,7 +68,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
       </div>
       <div className="mb-4">
         <Label htmlFor="email" className="block text-sm mb-1">
-          Email
+          Email (opcional)
         </Label>
         <Input
           id="email"
@@ -90,6 +90,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           value={formData.number_phone}
           onChange={handleInputChange}
           required
+          placeholder="56912345678"
           className="w-full border rounded p-2 bg-white text-gray-900"
         />
       </div>
@@ -112,4 +113,3 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
 }
 
 export default EmployeeForm
-
