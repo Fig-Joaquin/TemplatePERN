@@ -7,7 +7,7 @@ interface NLPResult {
     utterance: string;
 }
 
-export async function handleIntent(nlpResult: NLPResult, context: ChatContext): Promise<string> {
+export default async function handleIntent(nlpResult: NLPResult, context: ChatContext): Promise<string> {
         try {
         console.log('NLP Result:', JSON.stringify(nlpResult, null, 2));
             const intent = nlpResult.intent;

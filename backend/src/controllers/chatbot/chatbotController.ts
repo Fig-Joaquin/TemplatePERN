@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import { nlpManager } from '../../services/chatbot/nlpManager';
 import { ChatContextManager } from '../../services/chatbot/contextManager';
-import { IntentHandler } from '../../services/chatbot/intentHandler';
+
+// Define NLPResult type locally
+interface NLPResult {
+  intent: string;
+  utterance: string;
+  score: number;
+  entities: unknown[];
+  [key: string]: unknown;
+}
+import IntentHandler from '../../services/chatbot/intentHandler';
 
 export const handleChatQuery = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -13,12 +22,12 @@ export const handleChatQuery = async (req: Request, res: Response): Promise<void
             return;
         }
 
-        const result = await nlpManager.process(query.toLowerCase());
+        const result = await nlpManager.process(query.toLowerCase()) as NLPResult;
         console.log('NLP processing result:', result);
 
         const context = ChatContextManager.getContext(sessionId);
         // Pasar las entidades detectadas al manejador de intenciones
-        const response = await IntentHandler.handleIntent(result, context);
+        const response = await IntentHandler(result, context);
 
         // Guardar la consulta y respuesta en el contexto para futuras referencias
         context.conversationHistory.push(JSON.stringify({
