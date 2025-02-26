@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 
 // Extender Request para incluir la propiedad user
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: unknown;
 }
 
 export const authenticateUser = (req: AuthRequest, res: Response, next: NextFunction): void => {

@@ -1,6 +1,6 @@
 export interface ChatContext {
     lastIntent: string;
-    entities: Record<string, any>;
+    entities: Record<string, unknown>;
     timestamp: number;
     conversationHistory: string[];
 }

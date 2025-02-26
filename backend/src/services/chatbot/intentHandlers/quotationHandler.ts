@@ -1,7 +1,7 @@
+ 
 import { AppDataSource } from '../../../config/ormconfig';
 import { Quotation, WorkProductDetail } from '../../../entities';
 import { formatPriceCLP } from '../../../utils/formatPriceCLP';
-// @ts-ignore
 import { NlpManager } from 'node-nlp';
 
 const manager = new NlpManager({ languages: ['es'] });
@@ -55,7 +55,7 @@ const setupNlpManager = async () => {
 // Entrenar el modelo inmediatamente
 setupNlpManager();
 
-export const handleQuotationIntent = async (query: string, entities?: any[]) => {
+export const handleQuotationIntent = async (query: string, entities?: unknown[]) => {
   try {
     console.log('Processing quotation intent with query:', query);
     
@@ -67,14 +67,14 @@ export const handleQuotationIntent = async (query: string, entities?: any[]) => 
     // Rest of the handler logic based on query type
     switch (queryType) {
       case 'number':
-        const numberMatch = query.match(/(?:cotizacion|cotización)?\s*[#]?(\d+)/i)?.[1];
-        return handleNumberQuery(quotations, numberMatch!, query);
+        { const numberMatch = query.match(/(?:cotizacion|cotización)?\s*[#]?(\d+)/i)?.[1];
+        return handleNumberQuery(quotations, numberMatch!, query); }
       case 'count':
         return handleCountQuery(quotations, query);
       case 'status':
         return handleStatusQuery(quotations, query);
       case 'client':
-        return handleClientQuery(quotations, query, entities);
+        return handleClientQuery(quotations, query, entities as NlpEntity[] | undefined);
       case 'date':
         return handleDateQuery(quotations);
       case 'list':
@@ -495,7 +495,12 @@ function extractClientName(query: string): string | null {
  * @param entities Entidades detectadas
  * @returns Respuesta con las cotizaciones del cliente
  */
-function handleClientQuery(quotations: Quotation[], query: string, entities?: any[]) {
+interface NlpEntity {
+  entity: string;
+  utteranceText: string;
+}
+
+function handleClientQuery(quotations: Quotation[], query: string, entities?: NlpEntity[]) {
   const clientName = extractClientName(query) || 
                     entities?.find(e => e.entity === 'clientName')?.utteranceText;
 

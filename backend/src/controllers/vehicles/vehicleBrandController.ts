@@ -82,10 +82,10 @@ export const createVehicleBrand = async (req: Request, res: Response, _next: Nex
     } catch (error) {
         if (error instanceof QueryFailedError) {
             // Manejar errores específicos de PostgreSQL
-            if ((error as any).code === "23505") {
+            if ((error as unknown as Record<string, unknown>).code === "23505") {
                 res.status(409).json({
                     message: `La marca '${req.body.brand_name}' ya existe en la base de datos.`,
-                    error: (error as any).detail
+                    error: (error as unknown as Record<string, unknown>).detail
                 });
                 return;
             }

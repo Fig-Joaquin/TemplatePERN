@@ -2,11 +2,14 @@ import { ChatContext } from './contextManager';
 import { handleQuotationIntent } from './intentHandlers/quotationHandler';
 import { handleStockIntent } from './intentHandlers/stockHandler';
 
-export class IntentHandler {
-    static async handleIntent(nlpResult: any, context: ChatContext): Promise<string> {
-        console.log('NLP Result:', JSON.stringify(nlpResult, null, 2));
-        
+interface NLPResult {
+    intent: string;
+    utterance: string;
+}
+
+export async function handleIntent(nlpResult: NLPResult, context: ChatContext): Promise<string> {
         try {
+        console.log('NLP Result:', JSON.stringify(nlpResult, null, 2));
             const intent = nlpResult.intent;
             const utterance = nlpResult.utterance;
 
@@ -31,9 +34,8 @@ export class IntentHandler {
                 default:
                     return "No pude entender tu consulta. ¿Podrías reformularla?";
             }
-        } catch (error) {
-            console.error('Error in handleIntent:', error);
-            return "Lo siento, hubo un error al procesar tu solicitud.";
-        }
+    } catch (error) {
+        console.error('Error in handleIntent:', error);
+        return "Lo siento, hubo un error al procesar tu solicitud.";
     }
 }

@@ -144,9 +144,9 @@ export const generateQuotationPDF = async (req: Request, res: Response): Promise
                                     .current_mileage
                             ).toLocaleString('es-CL')
                         : quotation.vehicle?.mileage_history &&
-                            (quotation.vehicle?.mileage_history as any).current_mileage
+                            (quotation.vehicle?.mileage_history as unknown as { current_mileage: number }).current_mileage
                         ? Number(
-                                (quotation.vehicle?.mileage_history as any).current_mileage
+                                (quotation.vehicle?.mileage_history as unknown as { current_mileage: number }).current_mileage
                             ).toLocaleString('es-CL')
                         : ''
                 }`,

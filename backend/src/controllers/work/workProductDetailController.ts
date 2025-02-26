@@ -63,6 +63,14 @@ export const getWorkProductDetailsByQuotationId = async (req: Request, res: Resp
     }
 };
 
+interface WorkProductDetailInput {
+    work_order_id?: number;
+    product_id: number;
+    quotation_id?: number;
+    tax_id: number;
+    [key: string]: unknown;
+}
+
 export const createWorkProductDetail = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const validationResult = workProductDetailSchema.safeParse(req.body);
@@ -72,7 +80,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
         }
 
         // Extraer IDs y demás datos
-        const { work_order_id, product_id, quotation_id, tax_id, ...rest } = validationResult.data as any;
+        const { work_order_id, product_id, quotation_id, tax_id, ...rest } = validationResult.data as WorkProductDetailInput;
 
 
         console.log("work_order_id: ", work_order_id + " quotation_id: ", quotation_id );
@@ -86,7 +94,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
         // Verificar existencia de WorkOrder si se proporcionó
         let workOrder;
         if (work_order_id) {
-            workOrder = await workOrderRepository.findOneBy({ work_order_id: parseInt(work_order_id) });
+            workOrder = await workOrderRepository.findOneBy({ work_order_id: work_order_id });
             if (!workOrder) {
                 res.status(404).json({ message: "Orden de trabajo no encontrada" });
                 return;
@@ -94,7 +102,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
         }
 
         // Verificar existencia de Product
-        const product = await productRepository.findOneBy({ product_id: parseInt(product_id) });
+        const product = await productRepository.findOneBy({ product_id: product_id });
         if (!product) {
             res.status(404).json({ message: "Producto no encontrado" });
             return;
@@ -103,7 +111,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
         // Verificar existencia de Quotation si se proporcionó
         let quotation;
         if (quotation_id) {
-            quotation = await quotationRepository.findOneBy({ quotation_id: parseInt(quotation_id) });
+            quotation = await quotationRepository.findOneBy({ quotation_id: quotation_id });
             if (!quotation) {
                 res.status(404).json({ message: "Cotización no encontrada" });
                 return;
@@ -111,7 +119,7 @@ export const createWorkProductDetail = async (req: Request, res: Response, _next
         }
 
         // Verificar existencia de Tax
-        const tax = await taxRepository.findOneBy({ tax_id: parseInt(tax_id) });
+        const tax = await taxRepository.findOneBy({ tax_id: tax_id });
         if (!tax) {
             res.status(404).json({ message: "Impuesto no encontrado" });
             return;

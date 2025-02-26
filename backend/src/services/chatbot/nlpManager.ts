@@ -1,9 +1,9 @@
-// @ts-ignore
+ 
 import { NlpManager } from 'node-nlp';
 
 class NLPManagerSingleton {
     private static instance: NLPManagerSingleton;
-    private manager: any;
+    private manager: InstanceType<typeof NlpManager>;
     private trained: boolean = false;
     private readonly modelPath: string = '../../model.nlp';
 
@@ -47,7 +47,7 @@ class NLPManagerSingleton {
         }
     }
 
-    public getManager(): any {
+    public getManager(): unknown {
         return this.manager;
     }
 
@@ -66,7 +66,7 @@ class NLPManagerSingleton {
         }
     }
 
-    public async process(text: string): Promise<any> {
+    public async process(text: string): Promise<unknown> {
         try {
             if (!this.trained) {
                 try {
@@ -183,7 +183,7 @@ class NLPManagerSingleton {
         }
     }
 
-    public settings(): any {
+    public settings(): unknown {
         return this.manager.settings;
     }
 

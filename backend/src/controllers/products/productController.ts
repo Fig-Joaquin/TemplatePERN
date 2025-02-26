@@ -90,9 +90,10 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         await stockProductRepository.save(newStock);
 
         res.status(201).json({ message: "Producto creado exitosamente", product });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error al crear producto:", error);
-        res.status(500).json({ message: "Error interno al crear producto", error: error.message || error });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        res.status(500).json({ message: "Error interno al crear producto", error: errorMessage });
     }
 };
 

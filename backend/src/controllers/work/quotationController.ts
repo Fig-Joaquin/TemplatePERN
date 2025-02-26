@@ -57,7 +57,7 @@ export const createQuotation = async (req: Request, res: Response, _next: NextFu
             return;
         }
         
-        const { vehicle_id, ...quotationData } = validationResult.data as any;
+        const { vehicle_id, ...quotationData } = validationResult.data as { vehicle_id: number } & Record<string, unknown>;
 
         // Verificar que al menos person_id o company_id esté presente
 
@@ -105,10 +105,10 @@ export const updateQuotation = async (req: Request, res: Response, _next: NextFu
             });
             return;
         }
-        const updateData = validationResult.data as any;
+        const updateData = validationResult.data as Record<string, unknown>;
         // Si se provee vehicle_id directamente, se verifica la existencia y se reemplaza con el objeto vehicle
-        if (updateData.vehicle_id) {
-            const vehicle = await vehicleRepository.findOneBy({ vehicle_id: updateData.vehicle_id });
+        if ('vehicle_id' in updateData && updateData.vehicle_id) {
+            const vehicle = await vehicleRepository.findOneBy({ vehicle_id: updateData.vehicle_id as number });
             if (!vehicle) {
                 res.status(404).json({ message: "Vehículo no encontrado" });
                 return;

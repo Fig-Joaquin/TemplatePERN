@@ -76,7 +76,7 @@ export const createProductHistory = async (req: Request, res: Response, _next: N
 
     await productHistoryRepository.save(newHistory);
     res.status(201).json({ message: "Historial de producto creado exitosamente", productHistory: newHistory });
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.status(500).json({
       message: "Error al crear historial de producto",
       error: error instanceof Error ? error.message : error
@@ -129,7 +129,7 @@ export const updateProductHistory = async (req: Request, res: Response, _next: N
     productHistoryRepository.merge(history, updateData);
     await productHistoryRepository.save(history);
     res.json({ message: "Historial de producto actualizado exitosamente", productHistory: history });
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.status(500).json({
       message: "Error al actualizar historial de producto",
       error: error instanceof Error ? error.message : error

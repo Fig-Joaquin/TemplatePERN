@@ -85,8 +85,8 @@ export const createPerson = async (req: Request, res: Response, _next: NextFunct
         const person = personRepository.create(validationResult.data);
         await personRepository.save(person);
         res.status(201).json({ message: "Persona creada exitosamente", person });
-    } catch (error: any) {
-        if (error.code === '23505') {
+    } catch (error: unknown) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === '23505') {
             res.status(409).json({ message: "El RUT ya existe en el sistema" });
             return;
         }
@@ -119,8 +119,8 @@ export const updatePerson = async (req: Request, res: Response, _next: NextFunct
         await personRepository.save(person);
         res.json(person);
         return;
-    } catch (error: any) {
-        if (error.code === '23505') {
+    } catch (error: unknown) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === '23505') {
             res.status(400).json({ message: "El RUT ya existe en el sistema" });
             return;
         }

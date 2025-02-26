@@ -83,15 +83,15 @@ export const updateStockProduct = async (req: Request, res: Response, _next: Nex
             res.status(404).json({ message: "Producto en stock no encontrado" });
             return;
         }
-        const updateData = (await StockProductSchema.partial().safeParse(req.body)).data as any;
+        const updateData = (await StockProductSchema.partial().safeParse(req.body)).data as DeepPartial<StockProduct>;
         // Verificar si se provee product_id directamente en la actualización
-        if (updateData.product_id) {
-            const product = await productRepository.findOneBy({ product_id: updateData.product_id });
+        if (typeof updateData === 'object' && updateData !== null && 'product_id' in updateData) {
+            const product = await productRepository.findOneBy({ product_id: (updateData as { product_id: number }).product_id });
             if (!product) {
                 res.status(404).json({ message: "Producto no encontrado" });
                 return;
             }
-            updateData.product = product;
+            (updateData as DeepPartial<StockProduct>).product = product;
             delete updateData.product_id;
         }
         stockProductRepository.merge(stockProduct, updateData as DeepPartial<StockProduct>);

@@ -1,6 +1,5 @@
 import { AppDataSource } from '../../../config/ormconfig';
 import { Product, StockProduct } from '../../../entities';
-// @ts-ignore
 import { NlpManager } from 'node-nlp';
 
 const manager = new NlpManager({ languages: ['es'] });

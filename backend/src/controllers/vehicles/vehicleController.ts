@@ -141,10 +141,10 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
         res.status(201).json({ message: "Vehículo creado exitosamente", vehicle });
     } catch (error) {
         if (error instanceof QueryFailedError) {
-            if ((error as any).code === "23505") {
+            if (error instanceof Object && 'code' in error && error.code === "23505") {
                 res.status(409).json({
                     message: `El vehículo con patente '${req.body.license_plate}' ya está registrado.`,
-                    error: (error as any).detail
+                    error: 'detail' in error ? error.detail : 'Error de duplicación'
                 });
                 return;
             }

@@ -80,8 +80,8 @@ export const createCompany = async (req: Request, res: Response, _next: NextFunc
         const company = companyRepository.create(validationResult.data);
         await companyRepository.save(company);
         res.status(201).json({ message: "Empresa creada exitosamente", company });
-    } catch (error: any) {
-        if (error.code === "23505") {
+    } catch (error: unknown) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === "23505") {
             res.status(409).json({ message: "El RUT ya existe en el sistema" });
             return;
         }
@@ -114,8 +114,8 @@ export const updateCompany = async (req: Request, res: Response, _next: NextFunc
         await companyRepository.save(company);
         res.json(company);
         return;
-    } catch (error: any) {
-        if (error.code === "23505") {
+    } catch (error: unknown) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === "23505") {
             res.status(400).json({ message: "El RUT ya existe en el sistema" });
             return;
         }

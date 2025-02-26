@@ -50,7 +50,7 @@ export const createSupplier = async (req: Request, res: Response, _next: NextFun
             return;
         }
         // Extraer product_id y demás datos
-        const { product_id, ...supplierData } = validationResult.data as any;
+        const { product_id, ...supplierData } = validationResult.data as { product_id?: number; [key: string]: unknown };
         if (product_id) {
             const product = await productRepository.findOneBy({ product_id });
             if (!product) {
@@ -93,7 +93,7 @@ export const updateSupplier = async (req: Request, res: Response, _next: NextFun
             return;
         }
 
-        const updateData = validationResult.data as any;
+        const updateData = validationResult.data as { product_id?: number } & { products?: Product[] };
         if (updateData.product_id) {
             const product = await productRepository.findOneBy({ product_id: updateData.product_id });
             if (!product) {
