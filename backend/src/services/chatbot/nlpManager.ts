@@ -1,11 +1,19 @@
- 
+// @ts-ignore
 import { NlpManager } from 'node-nlp';
 
 class NLPManagerSingleton {
     private static instance: NLPManagerSingleton;
     private manager: InstanceType<typeof NlpManager>;
     private trained: boolean = false;
-    private readonly modelPath: string = '../../model.nlp';
+    private readonly modelPath: string = '../model.nlp';
+    private learningData: {
+        query: string;
+        detectedIntent: string;
+        feedback?: 'positive' | 'negative';
+        timestamp: number;
+    }[] = [];
+    private readonly learningDataPath: string = '../learning_data.json';
+    private readonly MAX_LEARNING_DATA: number = 1000;
 
     private constructor() {
         this.manager = new NlpManager({ 
@@ -16,6 +24,7 @@ class NLPManagerSingleton {
             autoLoad: true,
             modelFileName: this.modelPath
         });
+        this.loadLearningData().catch(err => console.error('Error loading learning data:', err));
     }
 
     public static getInstance(): NLPManagerSingleton {
@@ -77,10 +86,118 @@ class NLPManagerSingleton {
                     await this.train();
                 }
             }
-            return await this.manager.process('es', text);
+            const result = await this.manager.process('es', text);
+            
+            // Store query for potential learning
+            this.recordQuery(text, (result as any).intent || 'unknown');
+            
+            return result;
         } catch (error) {
             console.error('Error processing text:', error);
             throw new Error('Failed to process text');
+        }
+    }
+
+    // Record user query for learning
+    private recordQuery(query: string, detectedIntent: string): void {
+        this.learningData.push({
+            query,
+            detectedIntent,
+            timestamp: Date.now()
+        });
+        
+        // Keep learning data under the maximum size
+        if (this.learningData.length > this.MAX_LEARNING_DATA) {
+            this.learningData = this.learningData.slice(-this.MAX_LEARNING_DATA);
+        }
+        
+        // Save learning data periodically (every 50 new entries)
+        if (this.learningData.length % 50 === 0) {
+            this.saveLearningData().catch(err => 
+                console.error('Error saving learning data:', err)
+            );
+        }
+    }
+
+    // Record feedback on a response
+    public async provideFeedback(query: string, wasCorrect: boolean): Promise<void> {
+        try {
+            // Find the query in learning data
+            const entry = this.learningData.find(entry => entry.query === query);
+            if (entry) {
+                entry.feedback = wasCorrect ? 'positive' : 'negative';
+                await this.saveLearningData();
+            }
+            
+            // If incorrect and we have the right intent, use it for training
+            if (!wasCorrect && entry) {
+                // This would be handled by a more sophisticated retraining mechanism
+                // For now, we just mark it for manual review
+                console.log(`Marked query for retraining: "${query}" - Current intent: ${entry.detectedIntent}`);
+            }
+        } catch (error) {
+            console.error('Error providing feedback:', error);
+        }
+    }
+
+    // Learn from successful interactions
+    public async learnFromInteractions(): Promise<void> {
+        try {
+            const candidatesForLearning = this.learningData
+                .filter(entry => entry.feedback === 'positive')
+                .slice(-100); // Take last 100 positive examples
+            
+            if (candidatesForLearning.length > 5) {
+                console.log(`Self-learning from ${candidatesForLearning.length} positive interactions...`);
+                
+                // Add these positive examples to training data
+                for (const entry of candidatesForLearning) {
+                    if (entry.detectedIntent !== 'unknown') {
+                        this.addDocument(entry.detectedIntent, entry.query);
+                    }
+                }
+                
+                // Retrain the model with new examples
+                this.trained = false;
+                await this.train();
+                console.log('Self-learning complete');
+            }
+        } catch (error) {
+            console.error('Error during self-learning:', error);
+        }
+    }
+
+    private async saveLearningData(): Promise<void> {
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const dataDir = path.dirname(this.learningDataPath);
+            
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
+            
+            await fs.promises.writeFile(
+                this.learningDataPath, 
+                JSON.stringify(this.learningData), 
+                'utf8'
+            );
+        } catch (error) {
+            console.error('Error saving learning data:', error);
+        }
+    }
+
+    private async loadLearningData(): Promise<void> {
+        try {
+            const fs = require('fs');
+            if (fs.existsSync(this.learningDataPath)) {
+                const data = await fs.promises.readFile(this.learningDataPath, 'utf8');
+                this.learningData = JSON.parse(data);
+                console.log(`Loaded ${this.learningData.length} learning data entries`);
+            }
+        } catch (error) {
+            console.error('Error loading learning data:', error);
+            this.learningData = [];
         }
     }
 
@@ -134,6 +251,16 @@ class NLPManagerSingleton {
             console.error('Error adding custom entities:', error);
             throw new Error('Failed to add custom entities');
         }
+    }
+
+    public enhanceCustomEntities(): void {
+        // Entidades más precisas con expresiones regulares mejoradas
+        this.manager.addRegexEntity('price', 'es', /\$?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?)\b/);
+        this.manager.addRegexEntity('date', 'es', /\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/);
+        
+        // Añadir más entidades del dominio automotriz
+        this.addNamedEntityText('vehicle_part', 'filter', ['es'], ['filtro', 'filtros', 'filtro de aceite', 'filtro de aire']);
+        this.addNamedEntityText('vehicle_part', 'oil', ['es'], ['aceite', 'lubricante', 'aceite de motor']);
     }
 
     public async initializeEntities(): Promise<void> {
@@ -204,9 +331,24 @@ class NLPManagerSingleton {
             return [];
         }
     }
+    
+    // Schedule periodic self-learning
+    public schedulePeriodicLearning(intervalHours = 24): void {
+        setInterval(() => {
+            this.learnFromInteractions().catch(error => 
+                console.error('Error in scheduled learning:', error)
+            );
+        }, intervalHours * 60 * 60 * 1000);
+        
+        console.log(`Scheduled self-learning every ${intervalHours} hours`);
+    }
 }
 
 // Inicializar el singleton
 const instance = NLPManagerSingleton.getInstance();
 instance.initializeEntities().catch((error) => console.error('Error initializing entities:', error));
+
+// Schedule self-learning every 24 hours
+instance.schedulePeriodicLearning(24);
+
 export const nlpManager = instance;

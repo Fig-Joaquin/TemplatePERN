@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+// @ts-ignore
 import { nlpManager } from '../../services/chatbot/nlpManager';
 import { ChatContextManager } from '../../services/chatbot/contextManager';
 
@@ -27,7 +28,7 @@ export const handleChatQuery = async (req: Request, res: Response): Promise<void
 
         const context = ChatContextManager.getContext(sessionId);
         // Pasar las entidades detectadas al manejador de intenciones
-        const response = await IntentHandler(result, context);
+        const response = await IntentHandler(result, context, sessionId);
 
         // Guardar la consulta y respuesta en el contexto para futuras referencias
         context.conversationHistory.push(JSON.stringify({
@@ -48,6 +49,55 @@ export const handleChatQuery = async (req: Request, res: Response): Promise<void
         console.error("Error in handleChatQuery:", error);
         res.status(500).json({ 
             message: "Error processing query", 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+    }
+};
+
+export const handleChatFeedback = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { query, wasCorrect, sessionId = 'default' } = req.body;
+        
+        if (!query || wasCorrect === undefined) {
+            res.status(400).json({ message: "Query and feedback status are required" });
+            return;
+        }
+
+        console.log(`Received feedback for query: "${query}" - Was correct: ${wasCorrect}`);
+        
+        // Record the feedback in NLP manager
+        await nlpManager.provideFeedback(query, wasCorrect);
+        
+        // Update context with feedback information
+        const context = ChatContextManager.getContext(sessionId);
+        if (context.conversationHistory.length > 0) {
+            // Find the relevant conversation entry and update it with feedback
+            const updatedHistory = context.conversationHistory.map(entry => {
+                try {
+                    const parsed = JSON.parse(entry);
+                    if (parsed.query === query) {
+                        return JSON.stringify({
+                            ...parsed,
+                            feedback: wasCorrect ? 'positive' : 'negative',
+                            feedbackTimestamp: new Date()
+                        });
+                    }
+                    return entry;
+                } catch (e) {
+                    return entry;
+                }
+            });
+            
+            ChatContextManager.updateContext(sessionId, { 
+                conversationHistory: updatedHistory 
+            });
+        }
+        
+        res.json({ success: true, message: "Feedback recorded" });
+    } catch (error) {
+        console.error("Error in handleChatFeedback:", error);
+        res.status(500).json({ 
+            message: "Error processing feedback", 
             error: error instanceof Error ? error.message : 'Unknown error' 
         });
     }

@@ -1,7 +1,7 @@
- 
 import { AppDataSource } from '../../../config/ormconfig';
 import { Quotation, WorkProductDetail } from '../../../entities';
 import { formatPriceCLP } from '../../../utils/formatPriceCLP';
+// @ts-ignore
 import { NlpManager } from 'node-nlp';
 
 const manager = new NlpManager({ languages: ['es'] });
@@ -9,6 +9,13 @@ const manager = new NlpManager({ languages: ['es'] });
 // Repositorios
 const quotationRepository = AppDataSource.getRepository(Quotation);
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
+
+// Cache para almacenar temporalmente las últimas cotizaciones consultadas
+const quotationsCache = new Map<string, {
+    quotations: Quotation[],
+    lastAccessed: number,
+    query: string
+}>();
 
 // Configurar el NLP manager con las intenciones y expresiones
 const setupNlpManager = async () => {
@@ -55,41 +62,81 @@ const setupNlpManager = async () => {
 // Entrenar el modelo inmediatamente
 setupNlpManager();
 
-export const handleQuotationIntent = async (query: string, entities?: unknown[]) => {
-  try {
-    console.log('Processing quotation intent with query:', query);
-    
-    // Get quotations with query type for proper handling
-    const queryType = detectQueryType(query);
-    const quotations = await fetchRelevantQuotations(query, queryType);
-    console.log(`Processing ${quotations.length} quotations`);
+export const handleQuotationIntent = async (query: string, entities?: any[], isFollowUp = false): Promise<string> => {
+    try {
+        console.log('Processing quotation intent with query:', query);
+        
+        // Get cached quotations if this is a follow-up question
+        let quotations: Quotation[] = [];
+        const cacheKey = getCacheKey(query);
+        
+        if (isFollowUp && quotationsCache.has(cacheKey)) {
+            console.log('Using cached quotations for follow-up question');
+            const cached = quotationsCache.get(cacheKey)!;
+            quotations = cached.quotations;
+            cached.lastAccessed = Date.now();
+            
+            // For follow-up questions about a specific quotation
+            const specificQuotationQuery = extractQuotationNumberFromFollowUp(query);
+            if (specificQuotationQuery) {
+                return handleNumberQuery(quotations, specificQuotationQuery, query);
+            }
+            
+            // Handle detail-specific follow-up questions
+            if (isDetailQuestion(query)) {
+                return handleDetailFollowUp(query, quotations);
+            }
+        } else {
+            // Get quotations with query type for proper handling
+            const queryType = detectQueryType(query);
+            quotations = await fetchRelevantQuotations(query, queryType);
+            console.log(`Processing ${quotations.length} quotations`);
+            
+            // Cache the results for follow-up questions
+            quotationsCache.set(cacheKey, {
+                quotations,
+                lastAccessed: Date.now(),
+                query
+            });
+            
+            // Clean old cache entries
+            cleanQuotationsCache();
+        }
 
-    // Rest of the handler logic based on query type
-    switch (queryType) {
-      case 'number':
-        { const numberMatch = query.match(/(?:cotizacion|cotización)?\s*[#]?(\d+)/i)?.[1];
-        return handleNumberQuery(quotations, numberMatch!, query); }
-      case 'count':
-        return handleCountQuery(quotations, query);
-      case 'status':
-        return handleStatusQuery(quotations, query);
-      case 'client':
-        return handleClientQuery(quotations, query, entities as NlpEntity[] | undefined);
-      case 'date':
-        return handleDateQuery(quotations);
-      case 'list':
-        return handleListQuery(quotations);
-      case 'amount_high':
-        return handleAmountQuery(quotations, 'highest');
-      case 'amount_low':
-        return handleAmountQuery(quotations, 'lowest');
-      default:
-        return handleDefaultQuery(quotations, query);
+        // Process based on query type
+        const queryType = isFollowUp ? 
+            detectFollowUpQueryType(query) : 
+            detectQueryType(query);
+            
+        switch (queryType) {
+            case 'number':
+                { const numberMatch = query.match(/(?:cotizacion|cotización)?\s*[#]?(\d+)/i)?.[1];
+                return handleNumberQuery(quotations, numberMatch!, query); }
+            case 'count':
+                return handleCountQuery(quotations, query);
+            case 'status':
+                return handleStatusQuery(quotations, query);
+            case 'client':
+                return handleClientQuery(quotations, query, entities);
+            case 'date':
+                return handleDateQuery(quotations);
+            case 'list':
+                return handleListQuery(quotations);
+            case 'amount_high':
+                return handleAmountQuery(quotations, 'highest');
+            case 'amount_low':
+                return handleAmountQuery(quotations, 'lowest');
+            case 'detail':
+                return handleDetailFollowUp(query, quotations);
+            case 'product':
+                return handleProductFollowUp(query, quotations);
+            default:
+                return handleDefaultQuery(quotations, query);
+        }
+    } catch (error) {
+        console.error("Error en handleQuotationIntent:", error);
+        return "Lo siento, ocurrió un error al consultar las cotizaciones. Por favor, verifica que la base de datos esté conectada correctamente.";
     }
-  } catch (error) {
-    console.error("Error en handleQuotationIntent:", error);
-    return "Lo siento, ocurrió un error al consultar las cotizaciones. Por favor, verifica que la base de datos esté conectada correctamente.";
-  }
 };
 
 /**
@@ -525,4 +572,137 @@ function handleClientQuery(quotations: Quotation[], query: string, entities?: Nl
     clientQuotations.map(q => 
       `- Cotización #${q.quotation_id} (${new Date(q.entry_date).toLocaleDateString()}) - ${formatPriceCLP(q.total_price || 0)}`
     ).join('\n');
+}
+
+/**
+ * Get a cache key for the query
+ */
+function getCacheKey(query: string): string {
+    // Generate a simple hash from the query
+    let hash = 0;
+    for (let i = 0; i < query.length; i++) {
+        const char = query.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return `q_${hash}`;
+}
+
+/**
+ * Clean old cache entries (older than 5 minutes)
+ */
+function cleanQuotationsCache(): void {
+    const now = Date.now();
+    for (const [key, value] of quotationsCache.entries()) {
+        if (now - value.lastAccessed > 5 * 60 * 1000) { // 5 minutes
+            quotationsCache.delete(key);
+        }
+    }
+}
+
+/**
+ * Extract quotation number from follow-up question
+ */
+function extractQuotationNumberFromFollowUp(query: string): string | null {
+    const match = query.match(/(?:la|el|esta|este|esa|ese)?\s*(?:cotizacion|cotización)?\s*(?:numero|número)?\s*[#]?(\d+)/i);
+    return match ? match[1] : null;
+}
+
+/**
+ * Check if this is a detail-specific question
+ */
+function isDetailQuestion(query: string): boolean {
+    const detailKeywords = [
+        'detalle', 'detalles', 'productos', 'servicios', 
+        'items', 'artículo', 'articulo', 'que incluye',
+        'que contiene', 'qué incluye', 'qué contiene',
+        'más información', 'mas informacion'
+    ];
+    
+    return detailKeywords.some(keyword => 
+        query.toLowerCase().includes(keyword)
+    );
+}
+
+/**
+ * Detect query type for follow-up questions
+ */
+function detectFollowUpQueryType(query: string): string {
+    const lowercaseQuery = query.toLowerCase();
+    
+    if (isDetailQuestion(query)) {
+        return 'detail';
+    }
+    
+    if (lowercaseQuery.includes('producto') || 
+        lowercaseQuery.includes('servicio') ||
+        lowercaseQuery.includes('repuesto')) {
+        return 'product';
+    }
+    
+    if (lowercaseQuery.match(/estado|estatus|pendiente|aprobada|rechazada/i)) {
+        return 'status';
+    }
+    
+    if (lowercaseQuery.match(/precio|costo|valor|monto|total/i)) {
+        return 'amount_high'; // Default to amount for price questions
+    }
+    
+    if (lowercaseQuery.match(/fecha|cuando|cuándo|reciente/i)) {
+        return 'date';
+    }
+    
+    return 'default';
+}
+
+/**
+ * Handle follow-up questions about quotation details
+ */
+async function handleDetailFollowUp(query: string, quotations: Quotation[]): Promise<string> {
+    try {
+        // If only one quotation, assume it's about that one
+        if (quotations.length === 1) {
+            return formatDetailedQuotation(quotations[0]);
+        }
+        
+        // Try to extract a quotation number
+        const numberMatch = extractQuotationNumberFromFollowUp(query);
+        if (numberMatch) {
+            const quotation = quotations.find(q => q.quotation_id === parseInt(numberMatch));
+            if (quotation) {
+                return formatDetailedQuotation(quotation);
+            }
+        }
+        
+        return "No se pudo determinar a qué cotización te refieres. Por favor, proporciona más detalles.";
+    } catch (error) {
+        console.error('Error handling detail follow-up:', error);
+        return "Lo siento, ocurrió un error al procesar la consulta de seguimiento.";
+    }
+}
+
+/**
+ * Handle follow-up questions about specific products or services
+ */
+async function handleProductFollowUp(query: string, quotations: Quotation[]): Promise<string> {
+    try {
+        // If only one quotation, assume it's about that one
+        if (quotations.length === 1) {
+            return formatDetailedQuotation(quotations[0]);
+        }
+        
+        // Try to extract a quotation number
+        const numberMatch = extractQuotationNumberFromFollowUp(query);
+        if (numberMatch) {
+            const quotation = quotations.find(q => q.quotation_id === parseInt(numberMatch));
+            if (quotation) {
+                return formatDetailedQuotation(quotation);
+            }
+        }
+        
+        return "No se pudo determinar a qué cotización te refieres. Por favor, proporciona más detalles.";
+    } catch (error) {
+        console.error('Error handling product follow-up:', error);
+        return "Lo siento, ocurrió un error al procesar la consulta de seguimiento.";
+    }
 }

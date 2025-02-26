@@ -7,7 +7,7 @@
     "threshold": 0.5,
     "autoSave": true,
     "autoLoad": true,
-    "modelFileName": "../../model.nlp"
+    "modelFileName": "../model.nlp"
   },
   "nluManager": {
     "settings": {},
@@ -38,8 +38,608 @@
         "useMasterDomain": true,
         "trainByDomain": false,
         "keepStopwords": true,
-        "stemDict": {},
-        "intentDict": {},
+        "stemDict": {
+          "cotic,necesit,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "necesit,presupuest,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "necesit,prec,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "necesit,una,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,necesit,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,quer,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "presupuest,quer,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "prec,quer,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "quer,una,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,quer,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "busc,cotic,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "busc,presupuest,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "busc,prec,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "busc,una,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "busc,cost,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,dam,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "dam,presupuest,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "dam,prec,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "dam,una,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,dam,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,hazm,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "hazm,presupuest,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "hazm,prec,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "hazm,una,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,hazm,una": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,product,un": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,servic,un": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,cuant": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,cual,el,prec,ser": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,prec,que,ten": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,que,val": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cuant,val": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cual,el,prec,ser,val": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "prec,que,ten,val": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "que,val,val": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cuant,sal": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cual,el,prec,sal,ser": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "prec,que,sal,ten": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "que,sal,val": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,mostr": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,list": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "busc,cotizacion": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,encontr": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "consult,cotizacion": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,ver": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,de,list": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,de,el,estad": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "de,el,estad,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "de,el,estad,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "de,el,estad,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,de,el,estad": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,de,el,situacion": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,de,el,estatu": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "condicion,cotic,de,el": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,numer": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "numer,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "numer,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "numer,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,numer": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "client,cotic,del": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "client,del,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "client,del,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "client,del,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "client,cost,del": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,pendient": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "aprob,cotizacion": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,rechac": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,de,hoy": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,de,esta,seman": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotizacion,de,este,mes": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,ultim": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "presupuest,ultim": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "prec,ultim": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "ultim,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,ultim": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,mas,recient": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "mas,presupuest,recient": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "mas,prec,recient": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "mas,recient,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,mas,recient": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "car,cotic,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "car,mas,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "car,mas,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "car,mas,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "car,cost,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "costos,cotic,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "costos,mas,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "costos,mas,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "costos,mas,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,costos,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cotic,econom,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "econom,mas,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "econom,mas,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "econom,mas,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "cost,econom,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "barat,cotic,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "barat,mas,presupuest": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "barat,mas,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "barat,mas,valor": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "barat,cost,mas": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "mayor,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "menor,prec": {
+            "domain": "default",
+            "intent": "quotation"
+          },
+          "revis,stock": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "inventar,revis": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "existent,revis": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "disponibil,revis": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "inventar,verific": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "dispon,product": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "articul,dispon": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "dispon,item": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "dispon,element": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "dispon,material": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "actual,stock": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "actual,existent": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "actual,disponibil": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,hab,stock": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,hab,inventar": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,existent,hab": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,disponibil,hab": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,exist,stock": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,stock,ten": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cont,de,stock": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,dispon,stock": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "product,qued": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,disponibil": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "actual,inventar": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "bodeg,en,product": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "articul,bodeg,en": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "bodeg,en,item": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "bodeg,element,en": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "bodeg,en,material": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cantid,dispon": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,prec,unidad,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cost,cuant,de,product,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cost,cual,de,el,prec,product,ser,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cost,de,prec,product,que,ten,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cost,de,product,que,val,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,product,total,valor,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "articul,de,total,valor,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,item,total,valor,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,element,total,valor,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "de,material,total,valor,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "compr,cuant,sal,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "compr,cual,el,prec,sal,ser,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "compr,prec,que,sal,ten,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "compr,que,sal,val,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "por,prec,unidad,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "calcul,cost,de,el,x": {
+            "domain": "default",
+            "intent": "stock"
+          },
+          "cual,de,el,ser,unidad,valor,x": {
+            "domain": "default",
+            "intent": "stock"
+          }
+        },
+        "intentDict": {
+          "quotation": "default",
+          "stock": "default"
+        },
         "useStemDict": true,
         "domains": {
           "master_domain": {
@@ -61,8 +661,774 @@
             },
             "language": "es",
             "keepStopwords": true,
-            "docs": [],
-            "features": {},
+            "docs": [
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "busc",
+                  "una",
+                  "cotic"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotic",
+                  "un",
+                  "product"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cuant",
+                  "val"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "ver",
+                  "cotizacion"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotic",
+                  "numer"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotizacion",
+                  "pendient"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotizacion",
+                  "rechac"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotizacion",
+                  "de",
+                  "esta",
+                  "seman"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "ultim",
+                  "cotic"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotic",
+                  "mas",
+                  "car"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cotic",
+                  "mas",
+                  "econom"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "menor",
+                  "prec"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "necesit",
+                  "una",
+                  "prec"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "quer",
+                  "una",
+                  "presupuest"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "quer",
+                  "una",
+                  "cost"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "busc",
+                  "una",
+                  "valor"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "dam",
+                  "una",
+                  "presupuest"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "dam",
+                  "una",
+                  "valor"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "hazm",
+                  "una",
+                  "presupuest"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "hazm",
+                  "una",
+                  "valor"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cual",
+                  "ser",
+                  "el",
+                  "prec",
+                  "cost"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "que",
+                  "val",
+                  "cost"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "que",
+                  "val",
+                  "val"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "que",
+                  "val",
+                  "sal"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "encontr",
+                  "cotizacion"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "estad",
+                  "de",
+                  "el",
+                  "prec"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "situacion",
+                  "de",
+                  "el",
+                  "cotic"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "numer"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "numer"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "del",
+                  "client"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "prec",
+                  "del",
+                  "client"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "del",
+                  "client"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cost",
+                  "del",
+                  "client"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "ultim",
+                  "presupuest"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "ultim",
+                  "prec"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "ultim",
+                  "valor"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "ultim",
+                  "cost"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "mas",
+                  "recient"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "prec",
+                  "mas",
+                  "recient"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "mas",
+                  "recient"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cost",
+                  "mas",
+                  "recient"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "mas",
+                  "car"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "prec",
+                  "mas",
+                  "car"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "mas",
+                  "car"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cost",
+                  "mas",
+                  "car"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "mas",
+                  "costos"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "prec",
+                  "mas",
+                  "costos"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "mas",
+                  "costos"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cost",
+                  "mas",
+                  "costos"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "mas",
+                  "econom"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "prec",
+                  "mas",
+                  "econom"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "mas",
+                  "econom"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cost",
+                  "mas",
+                  "econom"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "presupuest",
+                  "mas",
+                  "barat"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "prec",
+                  "mas",
+                  "barat"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "valor",
+                  "mas",
+                  "barat"
+                ]
+              },
+              {
+                "intent": "quotation",
+                "tokens": [
+                  "cost",
+                  "mas",
+                  "barat"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "verific",
+                  "inventar"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "stock",
+                  "actual"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "qued",
+                  "product"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "inventar",
+                  "actual"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "cantid",
+                  "dispon"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "valor",
+                  "total",
+                  "de",
+                  "x",
+                  "product"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "prec",
+                  "por",
+                  "x",
+                  "unidad"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "cual",
+                  "ser",
+                  "el",
+                  "valor",
+                  "de",
+                  "x",
+                  "unidad"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "revis",
+                  "existent"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "articul",
+                  "dispon"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "element",
+                  "dispon"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "existent",
+                  "actual"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "hab",
+                  "inventar",
+                  "de"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "hab",
+                  "disponibil",
+                  "de"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "ten",
+                  "stock",
+                  "de"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "dispon",
+                  "stock",
+                  "de"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "item",
+                  "en",
+                  "bodeg"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "element",
+                  "en",
+                  "bodeg"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "material",
+                  "en",
+                  "bodeg"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "cual",
+                  "ser",
+                  "el",
+                  "prec",
+                  "cost",
+                  "x",
+                  "de",
+                  "product"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "que",
+                  "prec",
+                  "ten",
+                  "cost",
+                  "x",
+                  "de",
+                  "product"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "que",
+                  "val",
+                  "cost",
+                  "x",
+                  "de",
+                  "product"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "valor",
+                  "total",
+                  "de",
+                  "x",
+                  "articul"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "valor",
+                  "total",
+                  "de",
+                  "x",
+                  "item"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "valor",
+                  "total",
+                  "de",
+                  "x",
+                  "element"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "valor",
+                  "total",
+                  "de",
+                  "x",
+                  "material"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "cual",
+                  "ser",
+                  "el",
+                  "prec",
+                  "sal",
+                  "compr",
+                  "x"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "que",
+                  "prec",
+                  "ten",
+                  "sal",
+                  "compr",
+                  "x"
+                ]
+              },
+              {
+                "intent": "stock",
+                "tokens": [
+                  "que",
+                  "val",
+                  "sal",
+                  "compr",
+                  "x"
+                ]
+              }
+            ],
+            "features": {
+              "una": 15,
+              "cost": 20,
+              "val": 8,
+              "cotizacion": 3,
+              "list": 1,
+              "de": 20,
+              "el": 11,
+              "mas": 15,
+              "prec": 24,
+              "necesit": 4,
+              "presupuest": 14,
+              "valor": 18,
+              "quer": 4,
+              "busc": 5,
+              "dam": 4,
+              "hazm": 4,
+              "cual": 5,
+              "ser": 5,
+              "que": 10,
+              "ten": 6,
+              "sal": 6,
+              "encontr": 1,
+              "consult": 1,
+              "ver": null,
+              "estad": 4,
+              "situacion": 1,
+              "estatu": 1,
+              "condicion": 1,
+              "numer": 4,
+              "del": 4,
+              "client": 4,
+              "ultim": 4,
+              "cotic": null,
+              "recient": 4,
+              "car": 4,
+              "costos": 4,
+              "econom": 4,
+              "barat": 4,
+              "inventar": 1,
+              "product": 3,
+              "dispon": 5,
+              "disponibil": 3,
+              "x": 10,
+              "revis": 3,
+              "existent": 3,
+              "articul": 3,
+              "item": 3,
+              "element": 3,
+              "material": 3,
+              "actual": 1,
+              "hab": 3,
+              "exist": 1,
+              "stock": 4,
+              "cont": 1,
+              "en": 4,
+              "bodeg": 4,
+              "total": 4,
+              "compr": 3
+            },
             "isEditing": false,
             "className": "BrainNLU",
             "classifier": {
@@ -86,18 +1452,228 @@
               "labels": [],
               "network": {
                 "sizes": [
-                  1,
-                  1
+                  51,
+                  3
                 ],
                 "layers": [
                   {
-                    "nonefeature": {}
+                    "busc": {},
+                    "una": {},
+                    "nonefeature": {},
+                    "product": {},
+                    "val": {},
+                    "cotizacion": {},
+                    "numer": {},
+                    "de": {},
+                    "ultim": {},
+                    "mas": {},
+                    "car": {},
+                    "econom": {},
+                    "prec": {},
+                    "necesit": {},
+                    "quer": {},
+                    "presupuest": {},
+                    "cost": {},
+                    "valor": {},
+                    "dam": {},
+                    "hazm": {},
+                    "cual": {},
+                    "ser": {},
+                    "el": {},
+                    "que": {},
+                    "sal": {},
+                    "encontr": {},
+                    "estad": {},
+                    "situacion": {},
+                    "del": {},
+                    "client": {},
+                    "recient": {},
+                    "costos": {},
+                    "barat": {},
+                    "inventar": {},
+                    "stock": {},
+                    "actual": {},
+                    "dispon": {},
+                    "total": {},
+                    "x": {},
+                    "revis": {},
+                    "existent": {},
+                    "articul": {},
+                    "element": {},
+                    "hab": {},
+                    "disponibil": {},
+                    "ten": {},
+                    "item": {},
+                    "en": {},
+                    "bodeg": {},
+                    "material": {},
+                    "compr": {}
                   },
                   {
-                    "None": {
-                      "bias": 4.150278709,
+                    "quotation": {
+                      "bias": 11.556785273,
                       "weights": {
-                        "nonefeature": 8.289545059
+                        "busc": 0.375414133,
+                        "una": 0.673299015,
+                        "nonefeature": -11.178424835,
+                        "product": -5.098185062,
+                        "val": 1.101044059,
+                        "cotizacion": 1.11425221,
+                        "numer": 0.906340063,
+                        "de": 0.263932794,
+                        "ultim": 0.818010569,
+                        "mas": 0.657893598,
+                        "car": 0.141349301,
+                        "econom": 0.165551007,
+                        "prec": -0.078375466,
+                        "necesit": -0.071976401,
+                        "quer": 0.078178048,
+                        "presupuest": -0.203459293,
+                        "cost": -0.163978681,
+                        "valor": -0.21350114,
+                        "dam": 0.140772194,
+                        "hazm": 0.150907114,
+                        "cual": 0.159771711,
+                        "ser": 0.159771711,
+                        "el": 0.404213101,
+                        "que": -0.425983995,
+                        "sal": -0.072414316,
+                        "encontr": -0.514902532,
+                        "estad": -0.082671963,
+                        "situacion": 0.327094853,
+                        "del": 0.382443339,
+                        "client": 0.382443339,
+                        "recient": 0.085470475,
+                        "costos": 0.118377477,
+                        "barat": 0.147183552,
+                        "inventar": -11.429086685,
+                        "stock": -6.904886246,
+                        "actual": -4.960657597,
+                        "dispon": -11.148582458,
+                        "total": -1.319690466,
+                        "x": -11.957688332,
+                        "revis": -4.96213913,
+                        "existent": -6.602474213,
+                        "articul": -1.249235511,
+                        "element": -1.916678905,
+                        "hab": -6.079672813,
+                        "disponibil": -5.738941669,
+                        "ten": -4.910856247,
+                        "item": -1.917656183,
+                        "en": -4.826273441,
+                        "bodeg": -4.826273441,
+                        "material": -1.915342927,
+                        "compr": -1.843087077
+                      }
+                    },
+                    "stock": {
+                      "bias": 6.498642877,
+                      "weights": {
+                        "busc": -1.675103664,
+                        "una": -5.060539722,
+                        "nonefeature": -13.101895332,
+                        "product": 0.825107694,
+                        "val": -5.580657482,
+                        "cotizacion": -5.778934479,
+                        "numer": -5.760999203,
+                        "de": -5.712779999,
+                        "ultim": -7.299853802,
+                        "mas": -6.112535,
+                        "car": -1.224529266,
+                        "econom": -1.220408797,
+                        "prec": -10.567732811,
+                        "necesit": -0.3930493,
+                        "quer": -2.271568775,
+                        "presupuest": -1.212192059,
+                        "cost": 1.121265769,
+                        "valor": -8.040935516,
+                        "dam": -0.424037427,
+                        "hazm": -0.296833605,
+                        "cual": 1.876365066,
+                        "ser": 1.876365066,
+                        "el": -0.972799599,
+                        "que": -2.237746239,
+                        "sal": -2.870149374,
+                        "encontr": -0.447423935,
+                        "estad": -1.001065135,
+                        "situacion": -1.848098516,
+                        "del": -3.664572477,
+                        "client": -3.664572477,
+                        "recient": -1.226891756,
+                        "costos": -1.222288847,
+                        "barat": -1.218449831,
+                        "inventar": 6.545334816,
+                        "stock": 6.404650688,
+                        "actual": -0.328279078,
+                        "dispon": 5.659518719,
+                        "total": 1.629728198,
+                        "x": 17.5838871,
+                        "revis": -0.296438932,
+                        "existent": 6.319201946,
+                        "articul": 0.486142009,
+                        "element": 0.495646715,
+                        "hab": 5.163661003,
+                        "disponibil": 6.598497391,
+                        "ten": 5.128031254,
+                        "item": 0.595002413,
+                        "en": 2.735767603,
+                        "bodeg": 2.735767603,
+                        "material": 0.567297041,
+                        "compr": -0.950689733
+                      }
+                    },
+                    "None": {
+                      "bias": 0.594604758,
+                      "weights": {
+                        "busc": -0.441877156,
+                        "una": -0.572792113,
+                        "nonefeature": 11.905386925,
+                        "product": -1.497770905,
+                        "val": -1.005134225,
+                        "cotizacion": -1.016137004,
+                        "numer": -1.005134106,
+                        "de": -0.481634647,
+                        "ultim": -1.005133986,
+                        "mas": -0.673723221,
+                        "car": -0.33141163,
+                        "econom": -0.3314116,
+                        "prec": -1.030392289,
+                        "necesit": -0.025837963,
+                        "quer": -0.048893601,
+                        "presupuest": -0.177430987,
+                        "cost": -0.169330463,
+                        "valor": -0.172917396,
+                        "dam": -0.033457112,
+                        "hazm": -0.022726644,
+                        "cual": -0.026004134,
+                        "ser": -0.026004134,
+                        "el": -0.282253176,
+                        "que": -0.100290127,
+                        "sal": -0.029299704,
+                        "encontr": -0.001603557,
+                        "estad": -0.009889106,
+                        "situacion": -0.246360078,
+                        "del": -0.219003856,
+                        "client": -0.219003856,
+                        "recient": -0.005538538,
+                        "costos": -0.00335355,
+                        "barat": -0.002008589,
+                        "inventar": -1.005133867,
+                        "stock": -0.250947028,
+                        "actual": -0.346839815,
+                        "dispon": -1.005133867,
+                        "x": -0.467379153,
+                        "revis": -0.272048086,
+                        "existent": -0.322556049,
+                        "articul": -0.067089133,
+                        "element": -0.099937618,
+                        "hab": -0.062430181,
+                        "disponibil": -0.062430181,
+                        "ten": -0.000252648,
+                        "item": -0.098067835,
+                        "en": -0.248695821,
+                        "bodeg": -0.248695821,
+                        "material": -0.097212687
                       }
                     }
                   }
@@ -119,7 +1695,856 @@
         }
       }
     },
-    "extraSentences": []
+    "extraSentences": [
+      [
+        "es",
+        "necesito una cotización"
+      ],
+      [
+        "es",
+        "quiero una cotización"
+      ],
+      [
+        "es",
+        "busco una cotización"
+      ],
+      [
+        "es",
+        "dame una cotización"
+      ],
+      [
+        "es",
+        "hazme una cotización"
+      ],
+      [
+        "es",
+        "cotizar un producto"
+      ],
+      [
+        "es",
+        "cotizar un servicio"
+      ],
+      [
+        "es",
+        "cuánto cuesta"
+      ],
+      [
+        "es",
+        "cuánto vale"
+      ],
+      [
+        "es",
+        "cuánto sale"
+      ],
+      [
+        "es",
+        "mostrar cotizaciones"
+      ],
+      [
+        "es",
+        "ver cotizaciones"
+      ],
+      [
+        "es",
+        "lista de cotizaciones"
+      ],
+      [
+        "es",
+        "estado de la cotización"
+      ],
+      [
+        "es",
+        "cotización número"
+      ],
+      [
+        "es",
+        "cotización del cliente"
+      ],
+      [
+        "es",
+        "cotizaciones pendientes"
+      ],
+      [
+        "es",
+        "cotizaciones aprobadas"
+      ],
+      [
+        "es",
+        "cotizaciones rechazadas"
+      ],
+      [
+        "es",
+        "cotizaciones de hoy"
+      ],
+      [
+        "es",
+        "cotizaciones de esta semana"
+      ],
+      [
+        "es",
+        "cotizaciones de este mes"
+      ],
+      [
+        "es",
+        "última cotización"
+      ],
+      [
+        "es",
+        "cotización más reciente"
+      ],
+      [
+        "es",
+        "cotización más cara"
+      ],
+      [
+        "es",
+        "cotización más costosa"
+      ],
+      [
+        "es",
+        "cotización más económica"
+      ],
+      [
+        "es",
+        "cotización más barata"
+      ],
+      [
+        "es",
+        "mayor precio"
+      ],
+      [
+        "es",
+        "menor precio"
+      ],
+      [
+        "es",
+        "necesito una cotización"
+      ],
+      [
+        "es",
+        "necesito una cotizacion"
+      ],
+      [
+        "es",
+        "necesito una presupuesto"
+      ],
+      [
+        "es",
+        "necesito una precio"
+      ],
+      [
+        "es",
+        "necesito una valor"
+      ],
+      [
+        "es",
+        "necesito una costo"
+      ],
+      [
+        "es",
+        "quiero una cotización"
+      ],
+      [
+        "es",
+        "quiero una cotizacion"
+      ],
+      [
+        "es",
+        "quiero una presupuesto"
+      ],
+      [
+        "es",
+        "quiero una precio"
+      ],
+      [
+        "es",
+        "quiero una valor"
+      ],
+      [
+        "es",
+        "quiero una costo"
+      ],
+      [
+        "es",
+        "busco una cotización"
+      ],
+      [
+        "es",
+        "busco una cotizacion"
+      ],
+      [
+        "es",
+        "busco una presupuesto"
+      ],
+      [
+        "es",
+        "busco una precio"
+      ],
+      [
+        "es",
+        "busco una valor"
+      ],
+      [
+        "es",
+        "busco una costo"
+      ],
+      [
+        "es",
+        "dame una cotización"
+      ],
+      [
+        "es",
+        "dame una cotizacion"
+      ],
+      [
+        "es",
+        "dame una presupuesto"
+      ],
+      [
+        "es",
+        "dame una precio"
+      ],
+      [
+        "es",
+        "dame una valor"
+      ],
+      [
+        "es",
+        "dame una costo"
+      ],
+      [
+        "es",
+        "hazme una cotización"
+      ],
+      [
+        "es",
+        "hazme una cotizacion"
+      ],
+      [
+        "es",
+        "hazme una presupuesto"
+      ],
+      [
+        "es",
+        "hazme una precio"
+      ],
+      [
+        "es",
+        "hazme una valor"
+      ],
+      [
+        "es",
+        "hazme una costo"
+      ],
+      [
+        "es",
+        "cotizar un producto"
+      ],
+      [
+        "es",
+        "cotizar un servicio"
+      ],
+      [
+        "es",
+        "cuánto cuesta"
+      ],
+      [
+        "es",
+        "cual es el precio cuesta"
+      ],
+      [
+        "es",
+        "que precio tiene cuesta"
+      ],
+      [
+        "es",
+        "que vale cuesta"
+      ],
+      [
+        "es",
+        "cuánto vale"
+      ],
+      [
+        "es",
+        "cual es el precio vale"
+      ],
+      [
+        "es",
+        "que precio tiene vale"
+      ],
+      [
+        "es",
+        "que vale vale"
+      ],
+      [
+        "es",
+        "cuánto sale"
+      ],
+      [
+        "es",
+        "cual es el precio sale"
+      ],
+      [
+        "es",
+        "que precio tiene sale"
+      ],
+      [
+        "es",
+        "que vale sale"
+      ],
+      [
+        "es",
+        "mostrar cotizaciones"
+      ],
+      [
+        "es",
+        "ver cotizaciones"
+      ],
+      [
+        "es",
+        "listar cotizaciones"
+      ],
+      [
+        "es",
+        "buscar cotizaciones"
+      ],
+      [
+        "es",
+        "encontrar cotizaciones"
+      ],
+      [
+        "es",
+        "consultar cotizaciones"
+      ],
+      [
+        "es",
+        "ver cotizaciones"
+      ],
+      [
+        "es",
+        "lista de cotizaciones"
+      ],
+      [
+        "es",
+        "estado de la cotización"
+      ],
+      [
+        "es",
+        "estado de la cotizacion"
+      ],
+      [
+        "es",
+        "estado de la presupuesto"
+      ],
+      [
+        "es",
+        "estado de la precio"
+      ],
+      [
+        "es",
+        "estado de la valor"
+      ],
+      [
+        "es",
+        "estado de la costo"
+      ],
+      [
+        "es",
+        "situación de la cotización"
+      ],
+      [
+        "es",
+        "estatus de la cotización"
+      ],
+      [
+        "es",
+        "condición de la cotización"
+      ],
+      [
+        "es",
+        "cotización número"
+      ],
+      [
+        "es",
+        "cotizacion número"
+      ],
+      [
+        "es",
+        "presupuesto número"
+      ],
+      [
+        "es",
+        "precio número"
+      ],
+      [
+        "es",
+        "valor número"
+      ],
+      [
+        "es",
+        "costo número"
+      ],
+      [
+        "es",
+        "cotización del cliente"
+      ],
+      [
+        "es",
+        "cotizacion del cliente"
+      ],
+      [
+        "es",
+        "presupuesto del cliente"
+      ],
+      [
+        "es",
+        "precio del cliente"
+      ],
+      [
+        "es",
+        "valor del cliente"
+      ],
+      [
+        "es",
+        "costo del cliente"
+      ],
+      [
+        "es",
+        "cotizaciones pendientes"
+      ],
+      [
+        "es",
+        "cotizaciones aprobadas"
+      ],
+      [
+        "es",
+        "cotizaciones rechazadas"
+      ],
+      [
+        "es",
+        "cotizaciones de hoy"
+      ],
+      [
+        "es",
+        "cotizaciones de esta semana"
+      ],
+      [
+        "es",
+        "cotizaciones de este mes"
+      ],
+      [
+        "es",
+        "última cotización"
+      ],
+      [
+        "es",
+        "última cotizacion"
+      ],
+      [
+        "es",
+        "última presupuesto"
+      ],
+      [
+        "es",
+        "última precio"
+      ],
+      [
+        "es",
+        "última valor"
+      ],
+      [
+        "es",
+        "última costo"
+      ],
+      [
+        "es",
+        "cotización más reciente"
+      ],
+      [
+        "es",
+        "cotizacion más reciente"
+      ],
+      [
+        "es",
+        "presupuesto más reciente"
+      ],
+      [
+        "es",
+        "precio más reciente"
+      ],
+      [
+        "es",
+        "valor más reciente"
+      ],
+      [
+        "es",
+        "costo más reciente"
+      ],
+      [
+        "es",
+        "cotización más cara"
+      ],
+      [
+        "es",
+        "cotizacion más cara"
+      ],
+      [
+        "es",
+        "presupuesto más cara"
+      ],
+      [
+        "es",
+        "precio más cara"
+      ],
+      [
+        "es",
+        "valor más cara"
+      ],
+      [
+        "es",
+        "costo más cara"
+      ],
+      [
+        "es",
+        "cotización más costosa"
+      ],
+      [
+        "es",
+        "cotizacion más costosa"
+      ],
+      [
+        "es",
+        "presupuesto más costosa"
+      ],
+      [
+        "es",
+        "precio más costosa"
+      ],
+      [
+        "es",
+        "valor más costosa"
+      ],
+      [
+        "es",
+        "costo más costosa"
+      ],
+      [
+        "es",
+        "cotización más económica"
+      ],
+      [
+        "es",
+        "cotizacion más económica"
+      ],
+      [
+        "es",
+        "presupuesto más económica"
+      ],
+      [
+        "es",
+        "precio más económica"
+      ],
+      [
+        "es",
+        "valor más económica"
+      ],
+      [
+        "es",
+        "costo más económica"
+      ],
+      [
+        "es",
+        "cotización más barata"
+      ],
+      [
+        "es",
+        "cotizacion más barata"
+      ],
+      [
+        "es",
+        "presupuesto más barata"
+      ],
+      [
+        "es",
+        "precio más barata"
+      ],
+      [
+        "es",
+        "valor más barata"
+      ],
+      [
+        "es",
+        "costo más barata"
+      ],
+      [
+        "es",
+        "mayor precio"
+      ],
+      [
+        "es",
+        "menor precio"
+      ],
+      [
+        "es",
+        "revisar stock"
+      ],
+      [
+        "es",
+        "verificar inventario"
+      ],
+      [
+        "es",
+        "productos disponibles"
+      ],
+      [
+        "es",
+        "stock actual"
+      ],
+      [
+        "es",
+        "hay stock de"
+      ],
+      [
+        "es",
+        "queda producto"
+      ],
+      [
+        "es",
+        "disponibilidad de"
+      ],
+      [
+        "es",
+        "inventario actual"
+      ],
+      [
+        "es",
+        "productos en bodega"
+      ],
+      [
+        "es",
+        "cantidad disponible"
+      ],
+      [
+        "es",
+        "precio de X unidades"
+      ],
+      [
+        "es",
+        "cuánto cuesta X de producto"
+      ],
+      [
+        "es",
+        "valor total de X productos"
+      ],
+      [
+        "es",
+        "cuánto saldría comprar X"
+      ],
+      [
+        "es",
+        "precio por X unidades"
+      ],
+      [
+        "es",
+        "calcula el costo de X"
+      ],
+      [
+        "es",
+        "cuál es el valor de X unidades"
+      ],
+      [
+        "es",
+        "revisar stock"
+      ],
+      [
+        "es",
+        "revisar inventario"
+      ],
+      [
+        "es",
+        "revisar existencias"
+      ],
+      [
+        "es",
+        "revisar disponibilidad"
+      ],
+      [
+        "es",
+        "verificar inventario"
+      ],
+      [
+        "es",
+        "productos disponibles"
+      ],
+      [
+        "es",
+        "artículos disponibles"
+      ],
+      [
+        "es",
+        "items disponibles"
+      ],
+      [
+        "es",
+        "elementos disponibles"
+      ],
+      [
+        "es",
+        "materiales disponibles"
+      ],
+      [
+        "es",
+        "stock actual"
+      ],
+      [
+        "es",
+        "inventario actual"
+      ],
+      [
+        "es",
+        "existencias actual"
+      ],
+      [
+        "es",
+        "disponibilidad actual"
+      ],
+      [
+        "es",
+        "hay stock de"
+      ],
+      [
+        "es",
+        "hay inventario de"
+      ],
+      [
+        "es",
+        "hay existencias de"
+      ],
+      [
+        "es",
+        "hay disponibilidad de"
+      ],
+      [
+        "es",
+        "existe stock de"
+      ],
+      [
+        "es",
+        "tienen stock de"
+      ],
+      [
+        "es",
+        "cuentan stock de"
+      ],
+      [
+        "es",
+        "disponen stock de"
+      ],
+      [
+        "es",
+        "queda producto"
+      ],
+      [
+        "es",
+        "disponibilidad de"
+      ],
+      [
+        "es",
+        "inventario actual"
+      ],
+      [
+        "es",
+        "productos en bodega"
+      ],
+      [
+        "es",
+        "artículos en bodega"
+      ],
+      [
+        "es",
+        "items en bodega"
+      ],
+      [
+        "es",
+        "elementos en bodega"
+      ],
+      [
+        "es",
+        "materiales en bodega"
+      ],
+      [
+        "es",
+        "cantidad disponible"
+      ],
+      [
+        "es",
+        "precio de X unidades"
+      ],
+      [
+        "es",
+        "cuánto cuesta X de producto"
+      ],
+      [
+        "es",
+        "cual es el precio cuesta x de producto"
+      ],
+      [
+        "es",
+        "que precio tiene cuesta x de producto"
+      ],
+      [
+        "es",
+        "que vale cuesta x de producto"
+      ],
+      [
+        "es",
+        "valor total de X productos"
+      ],
+      [
+        "es",
+        "valor total de x artículos"
+      ],
+      [
+        "es",
+        "valor total de x items"
+      ],
+      [
+        "es",
+        "valor total de x elementos"
+      ],
+      [
+        "es",
+        "valor total de x materiales"
+      ],
+      [
+        "es",
+        "cuánto saldría comprar X"
+      ],
+      [
+        "es",
+        "cual es el precio saldría comprar x"
+      ],
+      [
+        "es",
+        "que precio tiene saldría comprar x"
+      ],
+      [
+        "es",
+        "que vale saldría comprar x"
+      ],
+      [
+        "es",
+        "precio por X unidades"
+      ],
+      [
+        "es",
+        "calcula el costo de X"
+      ],
+      [
+        "es",
+        "cuál es el valor de X unidades"
+      ]
+    ]
   },
   "nerManager": {
     "settings": {},
@@ -141,6 +2566,96 @@
       "URL"
     ],
     "namedEntities": {
+      "status": {
+        "type": "enum",
+        "name": "status",
+        "localeFallback": {
+          "*": "en"
+        },
+        "locales": {
+          "es": {
+            "status": [
+              "pendiente",
+              "aprobada",
+              "rechazada",
+              "en proceso"
+            ]
+          }
+        }
+      },
+      "timeframe": {
+        "type": "enum",
+        "name": "timeframe",
+        "localeFallback": {
+          "*": "en"
+        },
+        "locales": {
+          "es": {
+            "timeframe": [
+              "hoy",
+              "esta semana",
+              "este mes",
+              "última",
+              "reciente"
+            ]
+          }
+        }
+      },
+      "amount": {
+        "type": "enum",
+        "name": "amount",
+        "localeFallback": {
+          "*": "en"
+        },
+        "locales": {
+          "es": {
+            "amount": [
+              "cara",
+              "costosa",
+              "económica",
+              "barata",
+              "mayor",
+              "menor"
+            ]
+          }
+        }
+      },
+      "product": {
+        "type": "enum",
+        "name": "product",
+        "localeFallback": {
+          "*": "en"
+        },
+        "locales": {
+          "es": {
+            "product": [
+              "filtro",
+              "aceite",
+              "batería",
+              "frenos",
+              "neumáticos"
+            ]
+          }
+        }
+      },
+      "quantity": {
+        "type": "enum",
+        "name": "quantity",
+        "localeFallback": {
+          "*": "en"
+        },
+        "locales": {
+          "es": {
+            "quantity": [
+              "bajo",
+              "alto",
+              "crítico",
+              "suficiente",
+              "agotado"
+            ]
+          }
+        }
+      },
       "clientName": {
         "type": "regex",
         "name": "clientName",
@@ -204,7 +2719,32 @@
     }
   },
   "slotManager": {},
-  "responses": {},
+  "responses": {
+    "es": {
+      "quotation": [
+        {
+          "response": "Consultando la información de cotizaciones..."
+        },
+        {
+          "response": "Buscando las cotizaciones solicitadas..."
+        },
+        {
+          "response": "Procesando tu consulta sobre cotizaciones..."
+        }
+      ],
+      "stock": [
+        {
+          "response": "Verificando el inventario..."
+        },
+        {
+          "response": "Consultando disponibilidad de productos..."
+        },
+        {
+          "response": "Buscando información de stock..."
+        }
+      ]
+    }
+  },
   "actions": {},
   "utteranceDict": {
     "?": "help"

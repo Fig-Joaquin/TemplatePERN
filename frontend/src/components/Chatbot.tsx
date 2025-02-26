@@ -1,11 +1,13 @@
 import { useState } from "react"
-import { SendHorizontal, X, Trash2, MessageCircle } from "lucide-react"
+import { SendHorizontal, X, Trash2, MessageCircle, ThumbsUp, ThumbsDown } from "lucide-react"
 import { toast } from "react-toastify"
-import { sendChatQuery } from "../services/chatbotService"
+import { sendChatQuery, sendChatFeedback } from "../services/chatbotService"
 
 interface Message {
   text: string
   isUser: boolean
+  id?: string
+  hasFeedback?: boolean
 }
 
 export const Chatbot = () => {
@@ -25,13 +27,41 @@ export const Chatbot = () => {
 
     try {
       const { response } = await sendChatQuery(input)
-      const botMessage: Message = { text: response, isUser: false }
+      const botMessage: Message = { 
+        text: response, 
+        isUser: false,
+        id: Date.now().toString(), // Unique ID for the message
+        hasFeedback: false
+      }
       setMessages((prev) => [...prev, botMessage])
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Error al procesar tu consulta")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleFeedback = async (messageId: string, isPositive: boolean) => {
+    // Find the message and its corresponding user query
+    const messageIndex = messages.findIndex(m => !m.isUser && m.id === messageId);
+    if (messageIndex <= 0) return;
+    
+    const botMessage = messages[messageIndex];
+    const userQuery = messages[messageIndex - 1].text;
+    
+    try {
+      await sendChatFeedback(userQuery, botMessage.text, isPositive);
+      
+      // Update message to show feedback was given
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId ? { ...msg, hasFeedback: true } : msg
+        )
+      );
+      
+      toast.success(isPositive ? "¡Gracias por tu feedback positivo!" : "Gracias por ayudarnos a mejorar");
+    } catch (error) {
+      toast.error("Error al enviar feedback");
     }
   }
 
@@ -85,6 +115,23 @@ export const Chatbot = () => {
               }`}
             >
               {message.text}
+              
+              {!message.isUser && !message.hasFeedback && (
+                <div className="flex justify-end mt-2 gap-2">
+                  <button 
+                    onClick={() => handleFeedback(message.id!, true)}
+                    className="p-1 hover:bg-green-100 rounded-full"
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleFeedback(message.id!, false)}
+                    className="p-1 hover:bg-red-100 rounded-full"
+                  >
+                    <ThumbsDown className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}

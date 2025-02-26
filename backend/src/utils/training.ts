@@ -78,7 +78,14 @@ const trainingData: TrainingData[] = [
             'disponibilidad de',
             'inventario actual',
             'productos en bodega',
-            'cantidad disponible'
+            'cantidad disponible',
+            'precio de X unidades',
+            'cuánto cuesta X de producto',
+            'valor total de X productos',
+            'cuánto saldría comprar X',
+            'precio por X unidades',
+            'calcula el costo de X',
+            'cuál es el valor de X unidades'
         ],
         responses: [
             'Verificando el inventario...',
