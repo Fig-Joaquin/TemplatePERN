@@ -1,17 +1,8 @@
 import { Request, Response } from "express";
-// @ts-ignore
-import { nlpManager } from '../../services/chatbot/nlpManager';
 import { ChatContextManager } from '../../services/chatbot/contextManager';
-
-// Define NLPResult type locally
-interface NLPResult {
-  intent: string;
-  utterance: string;
-  score: number;
-  entities: unknown[];
-  [key: string]: unknown;
-}
-import IntentHandler from '../../services/chatbot/intentHandler';
+import handleIntent from '../../services/chatbot/intentHandler';
+import { AppDataSource } from "../../config/ormconfig";
+import { Quotation } from "../../entities";
 
 export const handleChatQuery = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -23,27 +14,64 @@ export const handleChatQuery = async (req: Request, res: Response): Promise<void
             return;
         }
 
-        const result = await nlpManager.process(query.toLowerCase()) as NLPResult;
-        console.log('NLP processing result:', result);
-
         const context = ChatContextManager.getContext(sessionId);
-        // Pasar las entidades detectadas al manejador de intenciones
-        const response = await IntentHandler(result, context, sessionId);
+        
+        // Create a simple input object for Ollama
+        const input = { utterance: query };
+        
+        // Special case for common queries that need direct database access
+        const lowerQuery = query.toLowerCase();
+        if (lowerQuery.includes("pendiente") && (lowerQuery.includes("cotizacion") || lowerQuery.includes("cotización"))) {
+            const pendingQuotations = await AppDataSource.getRepository(Quotation).find({
+                where: { quotation_Status: 'pending' },
+                relations: ["vehicle", "vehicle.owner", "vehicle.company"]
+            });
+            
+            if (pendingQuotations.length === 0) {
+                res.json({
+                    response: "No hay cotizaciones pendientes en el sistema actualmente.",
+                    intent: 'database_direct',
+                    score: 1.0
+                });
+                return;
+            }
+            
+            let response = `Hay ${pendingQuotations.length} cotización(es) pendiente(s):\n\n`;
+            pendingQuotations.forEach(quotation => {
+                const clientName = quotation.vehicle?.owner?.name || quotation.vehicle?.company?.name || "No especificado";
+                response += `- Cotización #${quotation.quotation_id}: Cliente ${clientName}\n`;
+            });
+            
+            // Save conversation history
+            context.conversationHistory.push(JSON.stringify({
+                query,
+                response,
+                timestamp: new Date()
+            }));
+            
+            res.json({
+                response,
+                intent: 'database_direct',
+                score: 1.0
+            });
+            return;
+        }
+        
+        // Process with Ollama for other queries
+        const response = await handleIntent(input, context, sessionId);
 
-        // Guardar la consulta y respuesta en el contexto para futuras referencias
+        // Save conversation history
         context.conversationHistory.push(JSON.stringify({
             query,
             response,
-            entities: result.entities,
             timestamp: new Date()
         }));
 
         console.log('Final response:', response);
         res.json({ 
             response,
-            entities: result.entities,
-            intent: result.intent,
-            score: result.score
+            intent: 'chatbot',
+            score: 1.0
         });
     } catch (error) {
         console.error("Error in handleChatQuery:", error);
@@ -64,9 +92,6 @@ export const handleChatFeedback = async (req: Request, res: Response): Promise<v
         }
 
         console.log(`Received feedback for query: "${query}" - Was correct: ${wasCorrect}`);
-        
-        // Record the feedback in NLP manager
-        await nlpManager.provideFeedback(query, wasCorrect);
         
         // Update context with feedback information
         const context = ChatContextManager.getContext(sessionId);
@@ -100,5 +125,22 @@ export const handleChatFeedback = async (req: Request, res: Response): Promise<v
             message: "Error processing feedback", 
             error: error instanceof Error ? error.message : 'Unknown error' 
         });
+    }
+};
+
+export const resetChatSession = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { sessionId } = req.body;
+      
+      // Force a new context for this session ID by deleting the old one
+      ChatContextManager.deleteContext(sessionId);
+      
+      res.json({ success: true, message: "Chat session reset successfully" });
+    } catch (error) {
+      console.error("Error in resetChatSession:", error);
+      res.status(500).json({ 
+        message: "Error resetting chat session", 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
 };

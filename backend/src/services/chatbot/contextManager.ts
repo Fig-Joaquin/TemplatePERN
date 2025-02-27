@@ -16,7 +16,7 @@ export interface ChatContext {
 }
 
 export class ChatContextManager {
-    private static contexts = new Map<string, ChatContext>();
+    private static contexts: Map<string, ChatContext> = new Map();
     private static readonly CONTEXT_TIMEOUT = 15 * 60 * 1000; // 15 minutes for longer conversations
 
     static getContext(sessionId: string): ChatContext {
@@ -131,5 +131,14 @@ export class ChatContextManager {
             console.error("Error parsing conversation history:", error);
             return null;
         }
+    }
+
+    static getConversationHistory(sessionId: string): string[] {
+        const context = this.getContext(sessionId);
+        return context.conversationHistory || [];
+    }
+
+    static deleteContext(sessionId: string): void {
+        this.contexts.delete(sessionId);
     }
 }

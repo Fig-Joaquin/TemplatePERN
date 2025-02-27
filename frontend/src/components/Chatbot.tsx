@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { SendHorizontal, X, Trash2, MessageCircle, ThumbsUp, ThumbsDown } from "lucide-react"
 import { toast } from "react-toastify"
-import { sendChatQuery, sendChatFeedback } from "../services/chatbotService"
+import { sendChatQuery, sendChatFeedback, resetChatSession } from "../services/chatbotService"
 
 interface Message {
   text: string
@@ -15,6 +15,39 @@ export const Chatbot = () => {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+
+  // Función para crear efecto de tipeo
+  const typeBotMessage = (messageId: string, fullText: string) => {
+    let displayText = "";
+    let charIndex = 0;
+    
+    // Velocidad de tipeo (menor número = más rápido)
+    const typingSpeed = 15;
+    
+    const typeChar = () => {
+      if (charIndex < fullText.length) {
+        displayText += fullText[charIndex];
+        charIndex++;
+        
+        // Actualizar el mensaje con el texto actual
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === messageId ? { ...msg, text: displayText } : msg
+          )
+        );
+        
+        // Programar el siguiente caracter
+        setTimeout(typeChar, typingSpeed);
+      } else {
+        // Tipeo completado
+        setIsTyping(false);
+      }
+    };
+    
+    // Iniciar tipeo
+    typeChar();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,18 +57,25 @@ export const Chatbot = () => {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setLoading(true)
+    setIsTyping(true)
+
+    // Agregar mensaje placeholder que se actualizará con la respuesta real
+    const placeholderId = Date.now().toString();
+    setMessages((prev) => [
+      ...prev, 
+      { text: "•", isUser: false, id: placeholderId, hasFeedback: false }
+    ])
 
     try {
       const { response } = await sendChatQuery(input)
-      const botMessage: Message = { 
-        text: response, 
-        isUser: false,
-        id: Date.now().toString(), // Unique ID for the message
-        hasFeedback: false
-      }
-      setMessages((prev) => [...prev, botMessage])
+      
+      // Implementar el efecto de tipeo gradualmente mostrando el mensaje
+      typeBotMessage(placeholderId, response);
     } catch (error) {
       toast.error("Error al procesar tu consulta")
+      // Eliminar mensaje placeholder en caso de error
+      setMessages(prev => prev.filter(m => m.id !== placeholderId));
+      setIsTyping(false);
     } finally {
       setLoading(false)
     }
@@ -67,6 +107,7 @@ export const Chatbot = () => {
 
   const clearHistory = () => {
     setMessages([])
+    resetChatSession() // Resetear el ID de sesión para comenzar conversación nueva
     toast.success("Historial borrado")
   }
 
@@ -135,6 +176,19 @@ export const Chatbot = () => {
             </div>
           </div>
         ))}
+        
+        {/* Typing indicator */}
+        {isTyping && (
+          <div className="flex justify-start mb-4">
+            <div className="max-w-[80%] p-3 rounded-lg bg-secondary text-secondary-foreground">
+              <span className="typing-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-none p-4 border-t border-border bg-card">

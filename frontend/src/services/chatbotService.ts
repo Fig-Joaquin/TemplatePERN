@@ -20,6 +20,24 @@ export const sendChatFeedback = async (query: string, response: string, wasCorre
   return feedback.data;
 };
 
+export const resetChatSession = async (): Promise<void> => {
+  // Generate a new session ID
+  const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  
+  // Tell the backend to reset the previous session (if any)
+  const oldSessionId = localStorage.getItem('chatbot_session_id');
+  if (oldSessionId) {
+    try {
+      await api.post(`${API_URL}/reset`, { sessionId: oldSessionId });
+    } catch (error) {
+      console.error('Failed to reset chat session:', error);
+    }
+  }
+  
+  // Update to the new session ID
+  localStorage.setItem('chatbot_session_id', newSessionId);
+};
+
 // Helper to get or create a session ID
 const getSessionId = (): string => {
   let sessionId = localStorage.getItem('chatbot_session_id');
