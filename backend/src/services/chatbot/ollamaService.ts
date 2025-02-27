@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { sanitizeResponse } from "../../utils/chatResponseFilter";
 
-const OLLAMA_API_URL = 'http://localhost:11434/api';
-
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
 export interface OllamaResponse {
   model: string;
   created_at: string;
