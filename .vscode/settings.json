@@ -1,8 +1,0 @@
-{
-    "appService.zipIgnorePattern": [
-        "node_modules{,/**}",
-        ".vscode{,/**}"
-    ],
-    "appService.defaultWebAppToDeploy": "/subscriptions/4179eb27-a41b-4a8a-8767-dd64d8a6d4a6/resourceGroups/TallerMecanico_group/providers/Microsoft.Web/sites/TallerMecanico",
-    "appService.deploySubpath": "."
-}
