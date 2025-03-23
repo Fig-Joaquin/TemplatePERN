@@ -18,6 +18,7 @@ import Supplier  from "./work/supliersRoutes";
 import  StockProduct  from "./products/stock_productsController";
 import Companies from "./work/companiesRoutes";
 import chatbotRoute from "./chatbotRoutes";
+import workOrderTechnicianRoutes from "./work/workOrderTechnician";
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.use("/suppliers", Supplier);
 router.use("/stockProducts", StockProduct);
 router.use("/companies", Companies);
 router.use("/chatbot", chatbotRoute);
+router.use("/workOrderTechnicians", workOrderTechnicianRoutes);
 
 export default router;

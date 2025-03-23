@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from "typeorm";
 import { IsString, IsNumber, Min } from "class-validator";
 import { Vehicle, Quotation, Debtor, WorkProductDetail } from "..";
+import { WorkOrderTechnician } from "./workOrderTechnician";
 
 @Entity("work_orders")
 export class WorkOrder {
@@ -20,6 +21,9 @@ export class WorkOrder {
     @ManyToOne(() => Quotation, { nullable: true })
     @JoinColumn({ name: "quotation_id" })
     quotation!: Quotation;
+
+    @OneToMany(() => WorkOrderTechnician, (wot) => wot.workOrder)
+    technicians!: WorkOrderTechnician[];
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
     @IsNumber()
