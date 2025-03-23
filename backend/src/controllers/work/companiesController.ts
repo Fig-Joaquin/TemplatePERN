@@ -69,11 +69,13 @@ export const createCompany = async (req: Request, res: Response, _next: NextFunc
             return;
         }
 
-        // Verificar si el email ya existe
-        const existingCompanyByEmail = await companyRepository.findOneBy({ email });
-        if (existingCompanyByEmail) {
-            res.status(409).json({ message: `El email '${email}' ya está registrado en el sistema.` });
-            return;
+        // Verificar unicidad de email SOLO si fue enviado
+        if (email !== undefined) {
+            const existingCompanyByEmail = await companyRepository.findOneBy({ email });
+            if (existingCompanyByEmail) {
+                res.status(409).json({ message: `El email '${email}' ya está registrado en el sistema.` });
+                return;
+            }
         }
 
         // Crear empresa

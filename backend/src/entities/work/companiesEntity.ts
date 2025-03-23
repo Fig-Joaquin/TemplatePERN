@@ -17,7 +17,7 @@ export class Company {
     @Length(2, 100, { message: "El nombre debe tener entre 2 y 100 caracteres" })
     name!: string;
 
-    @Column({ length: 100 })
+    @Column({ length: 100, nullable: true })
     @IsString()
     @IsEmail({}, { message: "Email inválido" })
     email!: string;

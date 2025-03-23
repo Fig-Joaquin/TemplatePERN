@@ -10,18 +10,17 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="rut">RUT</Label>
+        <Label htmlFor="rut">RUT (opcional)</Label>
         <RutInput
           id="rut"
           name="rut"
-          value={formData.rut}
+          value={formData.rut ?? ""}
           onChange={handleInputChange}
-          required
           className="w-full"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre</Label>
+        <Label htmlFor="name">Nombre *</Label>
         <Input
           id="name"
           name="name"
@@ -34,7 +33,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="first_surname">Primer Apellido</Label>
+        <Label htmlFor="first_surname">Primer Apellido *</Label>
         <Input
           id="first_surname"
           name="first_surname"
@@ -59,20 +58,19 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Email (opcional)</Label>
         <Input
           id="email"
           type="email"
           name="email"
           value={formData.email}
           onChange={handleInputChange}
-          required
           placeholder="ejemplo@correo.com"
           className="w-full"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="number_phone">Teléfono</Label>
+        <Label htmlFor="number_phone">Teléfono *</Label>
         <Input
           id="number_phone"
           name="number_phone"

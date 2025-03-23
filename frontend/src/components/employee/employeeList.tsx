@@ -41,7 +41,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ persons, handleEdit, handle
           {persons.map((person) => (
             <tr key={person.person_id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <RutFormatter rut={person.rut} />
+                <RutFormatter rut={person.rut || "No hay información"} />
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {person.name}
@@ -50,10 +50,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ persons, handleEdit, handle
                 {person.first_surname}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {person.email || "Información no proporcionada"}
+                {person.email || "No hay información"}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {person.number_phone || "Información no proporcionada"}
+                +{person.number_phone || "No hay información"}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                 <Button variant="outline" onClick={() => handleEdit(person)}>
