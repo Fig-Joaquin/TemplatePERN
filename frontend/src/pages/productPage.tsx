@@ -13,7 +13,6 @@ import { formatDate } from "@/utils/formDate"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { formatQuantity } from "@/utils/formatQuantity"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { toast } from "react-toastify"
@@ -77,12 +76,12 @@ const ProductPage = () => {
     setModalType(type)
     setSelectedProduct(product)
     if (type === "edit") {
-      setEditProductName(product.product_name)
+      setEditProductName(product.product_name || "")
       setEditSalePrice(Number(product.sale_price))
       setEditStockQuantity(Number(product.stock?.quantity) || 0)
       setEditDescription(product.description || "")
       setEditSelectedProductType(product.type.product_type_id.toString())
-      setEditSelectedSupplier(product.supplier.supplier_id.toString())
+      setEditSelectedSupplier(product.supplier?.supplier_id ? product.supplier.supplier_id.toString() : "none")
       setEditProfitMargin(product.profit_margin?.toString() || "")
       setEditLastPurchasePrice(Number(product.last_purchase_price) || 0)
     }
@@ -103,13 +102,18 @@ const ProductPage = () => {
         product_id: selectedProduct.product_id,
         product_name: editProductName,
         product_type_id: Number(editSelectedProductType),
-        supplier_id: Number(editSelectedSupplier),
         profit_margin: Number(editProfitMargin),
         last_purchase_price: Number(editLastPurchasePrice),
         sale_price: Number(editSalePrice),
         description: editDescription,
         product_quantity: Number(editStockQuantity),
       }
+      
+      // Only add supplier_id if a valid supplier is selected
+      if (editSelectedSupplier && editSelectedSupplier !== "none") {
+        Object.assign(updatedProduct, { supplier_id: Number(editSelectedSupplier) });
+      }
+      
       await updateProduct(selectedProduct.product_id, updatedProduct)
       toast.success("Producto actualizado correctamente")
       const updatedProducts = await fetchProducts()
@@ -215,11 +219,14 @@ const ProductPage = () => {
                       <p className="text-muted-foreground">Información de stock no disponible</p>
                     )}
                     <p className="text-foreground">
-                      <span className="font-medium text-foreground">Proveedor:</span> {product.supplier.name}
+                      <span className="font-medium text-foreground">Proveedor:</span>{" "}
+                      {product.supplier ? product.supplier.name : "No disponible"}
                     </p>
                     <div className="flex gap-2 pt-2">
-                      <Badge variant="secondary">{product.type.type_name}</Badge>
-                      <Badge variant="outline">{product.type.category?.category_name || "N/A"}</Badge>
+                      <Badge variant="secondary">{product.type ? product.type.type_name : "Sin tipo"}</Badge>
+                      <Badge variant="outline">
+                        {product.type && product.type.category ? product.type.category.category_name : "Sin categoría"}
+                      </Badge>
                     </div>
                     {product.description && (
                       <p className="text-sm text-muted-foreground border-t pt-3">{product.description}</p>
@@ -301,9 +308,8 @@ const ProductPage = () => {
                   value={editSelectedSupplier}
                   onChange={(e) => setEditSelectedSupplier(e.target.value)}
                   className="w-full p-2 border border-input bg-background text-sm rounded-md"
-                  required
                 >
-                  <option value="">Seleccione un proveedor</option>
+                  <option value="none">Sin proveedor</option>
                   {suppliers.map((supplier) => (
                     <option key={supplier.id} value={supplier.supplier_id}>
                       {supplier.name}

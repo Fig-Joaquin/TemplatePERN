@@ -77,16 +77,24 @@ const ProductCreatePage = () => {
     }
 
     try {
+      console.log("Creating product"+ selectedSupplier)
+
       const newProduct = {
         product_name: productName,
         product_type_id: Number(selectedProductType),
-        supplier_id: Number(selectedSupplier),
         profit_margin: Number(profitMargin),
         last_purchase_price: Number(lastPurchasePrice),
         sale_price: Number(salePrice),
         description,
         product_quantity: Number(stockQuantity),
       }
+      
+      // Only add supplier_id if one is selected and not "none"
+      if (selectedSupplier && selectedSupplier !== "none") {
+        Object.assign(newProduct, { supplier_id: Number(selectedSupplier) });
+      }
+      // No need to explicitly set supplier_id to null, just omit it
+      
       await createProduct(newProduct)
       toast.success("Producto creado exitosamente")
       navigate("/admin/productos")
@@ -188,15 +196,16 @@ const ProductCreatePage = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="supplier">Proveedor</Label>
+                    <Label htmlFor="supplier">Proveedor (Opcional)</Label>
                     <Select
                       value={selectedSupplier}
                       onValueChange={setSelectedSupplier}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccione un proveedor" />
+                        <SelectValue placeholder="Seleccione un proveedor (opcional)" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Sin proveedor</SelectItem>
                         {suppliers.map((supplier) => (
                           <SelectItem
                             key={supplier.supplier_id}

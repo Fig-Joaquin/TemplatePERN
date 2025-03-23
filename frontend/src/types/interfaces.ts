@@ -124,7 +124,7 @@ export interface Product {
   description: string
   product_quantity: number
   type: type
-  supplier: Supplier
+  supplier?: Supplier
   stock: StockProduct
 }
 
