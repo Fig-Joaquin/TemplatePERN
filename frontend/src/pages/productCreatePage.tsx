@@ -225,7 +225,7 @@ const ProductCreatePage = () => {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="lastPurchasePrice">
-                      Último precio de compra
+                      Precio compra de producto
                     </Label>
                     <NumberInput
                       id="lastPurchasePrice"
@@ -252,7 +252,7 @@ const ProductCreatePage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="salePrice">Precio de venta</Label>
+                    <Label htmlFor="salePrice">Precio neto</Label>
                     <NumberInput
                       id="salePrice"
                       value={Number(salePrice)}
