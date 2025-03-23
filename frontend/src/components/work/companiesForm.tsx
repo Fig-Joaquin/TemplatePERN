@@ -20,7 +20,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ formData, handleInputChange, 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">RUT</label>
+        <label className="block text-sm font-medium text-gray-700">Rut *</label>
         <RutInput
           name="rut"
           value={formData.rut}
@@ -28,7 +28,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ formData, handleInputChange, 
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Nombre de la empresa</label>
+        <label className="block text-sm font-medium text-gray-700">Nombre de la empresa *</label>
         <Input
           type="text"
           name="name"
@@ -48,7 +48,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ formData, handleInputChange, 
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+        <label className="block text-sm font-medium text-gray-700">Teléfono *</label>
         <Input
           type="text"
           name="phone"
