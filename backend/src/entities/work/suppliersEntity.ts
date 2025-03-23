@@ -12,7 +12,7 @@ export class Supplier {
     @IsString()
     name!: string;
 
-    @Column({ length: 255 })
+    @Column({ length: 255 , nullable: true})
     @IsString()
     address!: string;
 
@@ -20,7 +20,7 @@ export class Supplier {
     @IsString()
     city!: string;
 
-    @Column({ length: 500 })
+    @Column({ length: 500, nullable: true })
     @IsString()
     description!: string;
 
