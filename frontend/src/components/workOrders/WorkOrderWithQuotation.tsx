@@ -66,8 +66,11 @@ const WorkOrderWithQuotation = () => {
             return qVehicleId === selectedVehicle.vehicle_id;
           });
           filtered.sort(
-            (a, b) =>
-              new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
+            (a, b) => {
+              const dateA = a.entry_date ? new Date(a.entry_date).getTime() : 0;
+              const dateB = b.entry_date ? new Date(b.entry_date).getTime() : 0;
+              return dateB - dateA;
+            }
           );
           setVehicleQuotations(filtered);
         })
@@ -234,7 +237,7 @@ const WorkOrderWithQuotation = () => {
                       <strong>Descripción:</strong> {q.description}
                     </p>
                     <p className="mt-1 text-sm">
-                      <strong>Estado:</strong> {q.quotation_Status}
+                      <strong>Estado:</strong> {q.quotation_status}
                     </p>
                     <p className="mt-1 text-sm">
                       <strong>Total:</strong> {formatPriceCLP(q.total_price)}
@@ -265,7 +268,7 @@ const WorkOrderWithQuotation = () => {
                   <strong>Descripción:</strong> {selectedQuotation.description}
                 </p>
                 <p>
-                  <strong>Estado:</strong> {selectedQuotation.quotation_Status}
+                  <strong>Estado:</strong> {selectedQuotation.quotation_status}
                 </p>
                 {/* Ahora el total final de la cotización se muestra con tax */}
                 <p>
@@ -300,7 +303,7 @@ const WorkOrderWithQuotation = () => {
                             Number(detail.sale_price) * detail.quantity +
                             Number(detail.labor_price);
                           return (
-                            <tr key={detail.id} className="hover:bg-gray-50">
+                            <tr key={detail.work_product_detail_id} className="hover:bg-gray-50">
                               <td className="border px-4 py-2">{detail.product?.product_name || "N/A"}</td>
                               <td className="border px-4 py-2">{detail.product?.description || "-"}</td>
                               <td className="border px-4 py-2 text-right">

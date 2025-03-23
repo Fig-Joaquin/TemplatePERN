@@ -84,8 +84,9 @@ export interface Quotation {
   quotation_id?: number
   vehicle_id: number
   description: string
-  quotation_Status: "approved" | "rejected" | "pending"
+  quotation_status: "approved" | "rejected" | "pending"
   total_price: number
+  details?: WorkProductDetail[];
   // Agrega otras propiedades relevantes si es necesario
 }
 

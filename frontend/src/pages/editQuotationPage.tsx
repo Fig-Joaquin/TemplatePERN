@@ -75,7 +75,7 @@ export default function EditQuotationPage() {
 
                 // Set form fields
                 setDescription(quotationData.description)
-                setStatus(quotationData.quotation_Status as "pending" | "approved" | "rejected")
+                setStatus(quotationData.quotation_status as "pending" | "approved" | "rejected")
 
                 const vehicleId = quotationData.vehicle_id ||
                     (quotationData.vehicle && quotationData.vehicle.vehicle_id);
@@ -233,7 +233,7 @@ export default function EditQuotationPage() {
             })
             const updatedQuotation: Partial<Quotation> = {
                 description,
-                quotation_Status: status,
+                quotation_status: status,
                 vehicle_id: selectedVehicleId,
                 total_price: Math.trunc(totalPrice)
             }

@@ -104,7 +104,7 @@ export default function QuotationPage() {
                       <h4 className="font-bold mb-2">Información de la cotización</h4>
                       <p>ID: {quotation.quotation_id}</p>
                       <p>Descripción: {quotation.description}</p>
-                      <p>Estado: {quotation.quotation_Status}</p>
+                      <p>Estado: {quotation.quotation_status}</p>
                       <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
                       <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
                     </div>

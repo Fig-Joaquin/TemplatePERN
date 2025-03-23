@@ -146,7 +146,7 @@ const QuotationCreatePage = () => {
       const newQuotation: Quotation = {
         vehicle_id: selectedVehicle.vehicle_id,
         description,
-        quotation_Status: "pending",
+        quotation_status: "pending",
         total_price: Math.trunc(totalPrice),
       }
 

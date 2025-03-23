@@ -17,8 +17,7 @@ import { toast } from "react-toastify";
 import { deleteWorkOrder } from "@/services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
 import { getTaxById } from "@/services/taxService";
-import { ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 
 interface WorkOrderCardProps {
   workOrder: any; // Ajusta según tu interfaz WorkOrder con las relaciones necesarias.

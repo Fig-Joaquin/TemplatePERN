@@ -130,7 +130,7 @@ const WorkOrderWithoutQuotation = () => {
 
       const createdWorkOrderResponse = await createWorkOrder(workOrderPayload);
       console.log("Created Work Order Response:", createdWorkOrderResponse);
-      const workOrderId = createdWorkOrderResponse.workOrder?.work_order_id;
+      const workOrderId = createdWorkOrderResponse.work_order_id;
       if (!workOrderId) {
         throw new Error("No se recibió un ID válido para la orden de trabajo");
       }
@@ -155,7 +155,7 @@ const WorkOrderWithoutQuotation = () => {
       );
 
       console.log("Work Product Details:", workProductDetails);
-      await Promise.all(workProductDetails.map((detail) => createWorkProductDetail(detail)));
+      await Promise.all(workProductDetails.map((detail) => createWorkProductDetail(detail as WorkProductDetail)));
 
       toast.success("Orden de trabajo creada sin cotización exitosamente");
       navigate("/admin/orden-trabajo");

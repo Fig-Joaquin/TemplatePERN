@@ -22,7 +22,7 @@ export class Quotation {
         enum: ["approved", "rejected", "pending"],
         default: "pending"
     })
-    quotation_Status!: string;
+    quotation_status!: string;
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
     total_price!: number;   

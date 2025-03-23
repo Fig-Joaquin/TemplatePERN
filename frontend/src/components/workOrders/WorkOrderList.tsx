@@ -15,9 +15,11 @@ interface WorkOrderListProps {
 }
 
 const WorkOrderList = ({ workOrders, onEdit, onDelete }: WorkOrderListProps) => {
-  // Mapear datos (puedes inyectar callbacks si el DataTable lo permite)
+  // Mapear datos y añadir callbacks
   const data = workOrders.map((order) => ({
     ...order,
+    onEdit: () => onEdit(order),
+    onDelete: () => onDelete(order.work_order_id),
   }));
 
   const navigate = useNavigate();
@@ -46,9 +48,11 @@ const WorkOrderList = ({ workOrders, onEdit, onDelete }: WorkOrderListProps) => 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
         >
-          <DataTable columns={workOrderColumns} data={data} />
+          <DataTable 
+            columns={workOrderColumns} 
+            data={data} 
+          />
         </motion.div>
       </motion.div>
     </div>

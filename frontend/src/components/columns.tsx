@@ -19,11 +19,11 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
     header: "Descripción",
   },
   {
-    accessorKey: "quotation_Status",
+    accessorKey: "quotation_status",
     header: "Estado",
     cell: ({ row }) => {
-      const status = row.getValue("quotation_Status") as string
-      return <Badge variant={status === "Aprobada" ? "default" : "secondary"}>{status}</Badge>
+      const status = row.getValue("quotation_status") as string
+      return <Badge variant={status === "approved" ? "default" : "secondary"}>{status}</Badge>
     },
   },
   {
@@ -75,7 +75,7 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
                 <h4 className="font-bold mb-2">Información de la cotización</h4>
                 <p>ID: {quotation.quotation_id}</p>
                 <p>Descripción: {quotation.description}</p>
-                <p>Estado: {quotation.quotation_Status}</p>
+                <p>Estado: {quotation.quotation_status}</p>
                 <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
                 <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
               </div>
