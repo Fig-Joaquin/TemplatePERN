@@ -1,146 +1,129 @@
-import { Request, Response } from "express";
-import { ChatContextManager } from '../../services/chatbot/contextManager';
-import handleIntent from '../../services/chatbot/intentHandler';
-import { AppDataSource } from "../../config/ormconfig";
-import { Quotation } from "../../entities";
+import { Request, Response } from 'express';
+import { generateSQL, generateResponse, resetOllamaContext } from '../../services/ollama/ollamaService';
+import { executeQuery, validateSQL } from '../../services/db/dbService';
 
-export const handleChatQuery = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { query, sessionId = 'default' } = req.body;
-        console.log('Received query:', query);
-        
-        if (!query) {
-            res.status(400).json({ message: "Query is required" });
-            return;
-        }
+// Store chat sessions
+const chatSessions: Record<string, any[]> = {};
 
-        const context = ChatContextManager.getContext(sessionId);
-        
-        // Create a simple input object for Ollama
-        const input = { utterance: query };
-        
-        // Special case for common queries that need direct database access
-        const lowerQuery = query.toLowerCase();
-        if (lowerQuery.includes("pendiente") && (lowerQuery.includes("cotizacion") || lowerQuery.includes("cotización"))) {
-            const pendingQuotations = await AppDataSource.getRepository(Quotation).find({
-                where: { quotation_Status: 'pending' },
-                relations: ["vehicle", "vehicle.owner", "vehicle.company"]
-            });
-            
-            if (pendingQuotations.length === 0) {
-                res.json({
-                    response: "No hay cotizaciones pendientes en el sistema actualmente.",
-                    intent: 'database_direct',
-                    score: 1.0
-                });
-                return;
-            }
-            
-            let response = `Hay ${pendingQuotations.length} cotización(es) pendiente(s):\n\n`;
-            pendingQuotations.forEach(quotation => {
-                const clientName = quotation.vehicle?.owner?.name || quotation.vehicle?.company?.name || "No especificado";
-                response += `- Cotización #${quotation.quotation_id}: Cliente ${clientName}\n`;
-            });
-            
-            // Save conversation history
-            context.conversationHistory.push(JSON.stringify({
-                query,
-                response,
-                timestamp: new Date()
-            }));
-            
-            res.json({
-                response,
-                intent: 'database_direct',
-                score: 1.0
-            });
-            return;
-        }
-        
-        // Process with Ollama for other queries
-        const response = await handleIntent(input, context, sessionId);
-
-        // Save conversation history
-        context.conversationHistory.push(JSON.stringify({
-            query,
-            response,
-            timestamp: new Date()
-        }));
-
-        console.log('Final response:', response);
-        res.json({ 
-            response,
-            intent: 'chatbot',
-            score: 1.0
-        });
-    } catch (error) {
-        console.error("Error in handleChatQuery:", error);
-        res.status(500).json({ 
-            message: "Error processing query", 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-        });
+export async function handleChatQuery(req: Request, res: Response): Promise<void> {
+  try {
+    const { question, sessionId } = req.body;
+    
+    if (!question) {
+      res.status(400).json({ error: 'Question is required' });
+      return;
     }
-};
-
-export const handleChatFeedback = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { query, wasCorrect, sessionId = 'default' } = req.body;
-        
-        if (!query || wasCorrect === undefined) {
-            res.status(400).json({ message: "Query and feedback status are required" });
-            return;
-        }
-
-        console.log(`Received feedback for query: "${query}" - Was correct: ${wasCorrect}`);
-        
-        // Update context with feedback information
-        const context = ChatContextManager.getContext(sessionId);
-        if (context.conversationHistory.length > 0) {
-            // Find the relevant conversation entry and update it with feedback
-            const updatedHistory = context.conversationHistory.map(entry => {
-                try {
-                    const parsed = JSON.parse(entry);
-                    if (parsed.query === query) {
-                        return JSON.stringify({
-                            ...parsed,
-                            feedback: wasCorrect ? 'positive' : 'negative',
-                            feedbackTimestamp: new Date()
-                        });
-                    }
-                    return entry;
-                } catch (e) {
-                    return entry;
-                }
-            });
-            
-            ChatContextManager.updateContext(sessionId, { 
-                conversationHistory: updatedHistory 
-            });
-        }
-        
-        res.json({ success: true, message: "Feedback recorded" });
-    } catch (error) {
-        console.error("Error in handleChatFeedback:", error);
-        res.status(500).json({ 
-            message: "Error processing feedback", 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-        });
+    
+    console.log('Received question:', question);
+    
+    // Store the question in session history if sessionId is provided
+    if (sessionId) {
+      if (!chatSessions[sessionId]) {
+        chatSessions[sessionId] = [];
+      }
+      chatSessions[sessionId].push({ question, timestamp: new Date() });
     }
-};
-
-export const resetChatSession = async (req: Request, res: Response): Promise<void> => {
+    
+    // Generate SQL from the question
+    const sqlQuery = await generateSQL(question);
+    
+    console.log('Generated SQL:', sqlQuery);
+    
+    // Validate SQL before execution
+    const validation = validateSQL(sqlQuery);
+    if (!validation.valid) {
+      res.status(400).json({ 
+        error: validation.error,
+        generatedSQL: sqlQuery,
+        response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}`
+      });
+      return;
+    }
+    
     try {
-      const { sessionId } = req.body;
+      // Execute the query
+      const queryResult = await executeQuery(sqlQuery);
+      console.log('Query result:', queryResult);
       
-      // Force a new context for this session ID by deleting the old one
-      ChatContextManager.deleteContext(sessionId);
+      // Generate a natural language response
+      const answer = await generateResponse(question, queryResult);
       
-      res.json({ success: true, message: "Chat session reset successfully" });
-    } catch (error) {
-      console.error("Error in resetChatSession:", error);
-      res.status(500).json({ 
-        message: "Error resetting chat session", 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      // Store the response in session history
+      if (sessionId && chatSessions[sessionId]) {
+        chatSessions[sessionId][chatSessions[sessionId].length - 1].answer = answer;
+        chatSessions[sessionId][chatSessions[sessionId].length - 1].sql = sqlQuery;
+      }
+      
+      res.json({
+        question,
+        sql: sqlQuery,
+        result: queryResult,
+        answer,
+        response: answer // Add response field to match frontend expectation
+      });
+    } catch (dbError: any) {
+      // If database execution fails, return the error with the generated SQL
+      console.error('Database error:', dbError);
+      res.status(400).json({
+        error: `Error executing SQL query: ${dbError.message}`,
+        generatedSQL: sqlQuery,
+        response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}`
       });
     }
-};
+  } catch (error: any) {
+    console.error('Error in chatbot controller:', error);
+    res.status(500).json({ 
+      error: error.message,
+      response: "Lo siento, ocurrió un error al procesar tu consulta."
+    });
+  }
+}
+
+export async function handleChatFeedback(req: Request, res: Response) {
+  try {
+    const { sessionId, feedback } = req.body;
+    
+    if (!sessionId || !feedback) {
+      return res.status(400).json({ error: 'SessionId and feedback are required' });
+    }
+    
+    // Store feedback (could be expanded to use for fine-tuning)
+    if (!chatSessions[sessionId]) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    // Add feedback to the specific message or session
+    // This is a simple implementation - could be enhanced
+    
+    return res.status(200).json({ message: 'Feedback received' });
+  } catch (error) {
+    console.error('Error handling chat feedback:', error);
+    return res.status(500).json({ error: 'Failed to process feedback' });
+  }
+}
+
+export async function resetChatSession(req: Request, res: Response) {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'SessionId is required' });
+    }
+    
+    // Reset the session history
+    if (chatSessions[sessionId]) {
+      delete chatSessions[sessionId];
+    }
+    
+    // Reset the Ollama model context for this session
+    const ollamaReset = await resetOllamaContext(sessionId);
+    
+    return res.status(200).json({ 
+      message: 'Session reset successfully', 
+      ollamaReset: ollamaReset 
+    });
+  } catch (error) {
+    console.error('Error resetting chat session:', error);
+    return res.status(500).json({ error: 'Failed to reset session' });
+  }
+}

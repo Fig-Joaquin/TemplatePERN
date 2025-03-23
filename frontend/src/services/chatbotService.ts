@@ -2,17 +2,25 @@ import api from "../utils/axiosConfig"
 
 const API_URL = '/chatbot';
 
-export const sendChatQuery = async (query: string) => {
+export const sendChatQuery = async (question: string) => {
   const response = await api.post(`${API_URL}/query`, { 
-    query,
+    question,
     sessionId: getSessionId() 
   });
-  return response.data;
+  
+  // Handle the response format from backend (returns answer, not response)
+  if (response.data && response.data.answer) {
+    return { response: response.data.answer };
+  } else {
+    // If the expected structure is not found, return the raw response data
+    // or create a formatted error message
+    return { response: response.data.answer || "No se pudo procesar la respuesta" };
+  }
 };
 
-export const sendChatFeedback = async (query: string, response: string, wasCorrect: boolean) => {
+export const sendChatFeedback = async (question: string, response: string, wasCorrect: boolean) => {
   const feedback = await api.post(`${API_URL}/feedback`, {
-    query,
+    question,
     response,
     wasCorrect,
     sessionId: getSessionId()
@@ -28,7 +36,12 @@ export const resetChatSession = async (): Promise<void> => {
   const oldSessionId = localStorage.getItem('chatbot_session_id');
   if (oldSessionId) {
     try {
-      await api.post(`${API_URL}/reset`, { sessionId: oldSessionId });
+      const resetResponse = await api.post(`${API_URL}/reset`, { sessionId: oldSessionId });
+      if (resetResponse.data.ollamaReset === false) {
+        console.warn('Ollama context reset was not successful, but session was cleared locally');
+      } else {
+        console.log('Session reset successfully, including Ollama context');
+      }
     } catch (error) {
       console.error('Failed to reset chat session:', error);
     }
