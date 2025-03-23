@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
 import api from "../utils/axiosConfig"
 import { toast } from "react-toastify"
-import { Plus } from "lucide-react"
+import { Plus, Users } from "lucide-react"
 import type { Person, Vehicle } from "../types/interfaces"
 import { createPerson, updatePerson, fetchPersonsEmployee } from "../services/personService"
 import { fetchVehicles, fetchVehiclesByPersonId } from "../services/vehicleService"
@@ -165,14 +165,16 @@ const EmployeePage = () => {
   )
 
   return (
-    <motion.div 
+    <motion.div
       className="p-6 space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Lista de trabajadores</h1>
+        <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+          <Users className="w-8 h-8" />
+          Lista de trabajadores</h1>
         <Button onClick={() => setAddModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Trabajador
@@ -187,7 +189,7 @@ const EmployeePage = () => {
           <p className="mt-4 text-lg text-muted-foreground">Cargando empleados...</p>
         </div>
       ) : (
-        <motion.div 
+        <motion.div
           className="bg-card/30 backdrop-blur-md rounded-lg shadow p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -196,7 +198,6 @@ const EmployeePage = () => {
           <AnimatePresence>
             <EmployeeList
               persons={filteredPersons}
-              getVehiclesByPersonId={fetchVehiclesByPersonId}
               handleEdit={handleEdit}
               handleDelete={handleDelete}
             />

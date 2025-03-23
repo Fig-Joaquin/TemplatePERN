@@ -7,7 +7,8 @@ export class Person {
     @PrimaryGeneratedColumn()
     person_id!: number;
 
-    @Column({ length: 9, unique: true })
+    @Column({ length: 9, unique: true, nullable: true })
+    @IsOptional()
     @IsString()
     @Length(8, 9, { message: "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión" })
     @Matches(/^[0-9kK]{8,9}$/, { message: "Formato de RUT inválido" })

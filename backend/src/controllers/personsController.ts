@@ -58,11 +58,13 @@ export const createPerson = async (req: Request, res: Response, _next: NextFunct
 
         const { rut, email, number_phone } = validationResult.data;
 
-        // Verificar si el RUT ya existe antes de intentar guardarlo
-        const existingPersonByRut = await personRepository.findOneBy({ rut });
-        if (existingPersonByRut) {
-            res.status(409).json({ message: `El RUT '${rut}' ya está registrado en el sistema.` });
-            return;
+         // Verificar unicidad de RUT solo si fue enviado
+       if (rut !== undefined) {
+            const existingPersonByRut = await personRepository.findOneBy({ rut });
+            if (existingPersonByRut) {
+                res.status(409).json({ message: `El RUT '${rut}' ya está registrado en el sistema.` });
+                return;
+            }
         }
             
         // Verificar si el email ya está registrado SOLO si existe

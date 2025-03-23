@@ -3,11 +3,17 @@ import { z } from "zod";
 export const PersonSchema = z.object({
     person_id: z.number().int().positive().optional(),
     rut: z
-        .string()
-        .min(8, "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión")
-        .max(9, "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión")
-        .regex(/^[0-9kK]{8,9}$/, "Formato de RUT inválido"),
-
+    .string()
+    .trim()
+    .optional()
+    .transform(val => (val === "" ? undefined : val))
+    .refine(val => val === undefined || /^[0-9kK]{8,9}$/.test(val), {
+      message: "Formato de RUT inválido",
+    })
+    .refine(val => val === undefined || (val.length >= 8 && val.length <= 9), {
+      message: "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión",
+    }),
+    
     name: z
         .string()
         .min(2, "Nombre debe tener entre 2 y 50 caracteres")

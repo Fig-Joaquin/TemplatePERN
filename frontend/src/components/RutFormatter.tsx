@@ -1,7 +1,7 @@
 import type React from "react"
 
 interface RutFormatterProps {
-  rut: string
+  rut: string | null
 }
 
 // Función para formatear el RUT, e.g. "202121211" => "20.212.121-1"
@@ -26,7 +26,7 @@ export const formatRut = (rut: string): string => {
 }
 
 const RutFormatter: React.FC<RutFormatterProps> = ({ rut }) => {
-  return <span>{formatRut(rut)}</span>
+  return <span>{formatRut(rut ?? "")}</span>
 }
 
 export default RutFormatter

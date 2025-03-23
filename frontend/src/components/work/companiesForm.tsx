@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import RutInput from "../RutInput";
 
 interface CompanyFormProps {
   formData: {
@@ -20,16 +21,14 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ formData, handleInputChange, 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">RUT</label>
-        <Input
-          type="text"
+        <RutInput
           name="rut"
           value={formData.rut}
           onChange={handleInputChange}
-          placeholder="Ingrese el RUT"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Nombre</label>
+        <label className="block text-sm font-medium text-gray-700">Nombre de la empresa</label>
         <Input
           type="text"
           name="name"
@@ -39,7 +38,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ formData, handleInputChange, 
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
+        <label className="block text-sm font-medium text-gray-700">Email (opcional) </label>
         <Input
           type="email"
           name="email"
@@ -55,7 +54,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ formData, handleInputChange, 
           name="phone"
           value={formData.phone}
           onChange={handleInputChange}
-          placeholder="Ingrese el teléfono"
+          placeholder="56912345678"
         />
       </div>
       <div className="flex justify-end gap-2">

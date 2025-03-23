@@ -27,7 +27,7 @@ const sidebarStructure = [
     icon: UsersIcon,
     title: "Personas y Empresas ",
     items: [
-      { name: "Personas", path: "/admin/clientes" },
+      { name: "Clientes", path: "/admin/clientes" },
       { name: "Trabajadores", path: "/admin/trabajadores" },
       { name: "Empresas", path: "/admin/empresas" },
     ],
@@ -49,8 +49,8 @@ const sidebarStructure = [
     icon: DocumentTextIcon,
     title: "Cotizaciones",
     items: [
-      { name: "Lista de cotizaciones", path: "/admin/cotizaciones" },
       { name: "Nueva cotización", path: "/admin/cotizaciones/nuevo" },
+      { name: "Lista de cotizaciones", path: "/admin/cotizaciones" },
     ],
   },
   {
@@ -58,8 +58,8 @@ const sidebarStructure = [
     icon: WrenchIcon,
     title: "Órdenes de Trabajo",
     items: [
-      { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
       { name: "Nueva Orden de Trabajo", path: "/admin/nueva-orden-trabajo" },
+      { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
       // { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
     ],
   },

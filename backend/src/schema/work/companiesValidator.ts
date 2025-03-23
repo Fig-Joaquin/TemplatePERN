@@ -10,10 +10,20 @@ export const companiesSchema = z.object({
     name: z.string()
         .min(2, { message: "El nombre debe tener al menos 2 caracteres" })
         .max(100, { message: "El nombre no puede superar los 100 caracteres" }),
-
-    email: z.string()
-        .email({ message: "Formato de email inválido" })
-        .max(100, { message: "El email no puede superar los 100 caracteres" }),
+    
+    email: z.preprocess(
+        (val) => {
+            if (typeof val === "string" && val.trim() === "") {
+            return undefined;
+            }
+            return val;
+        },
+        z.string()
+            .email({ message: "Formato de email inválido" })
+            .max(100, { message: "El email no puede superar los 100 caracteres" })
+            .optional()
+        ),
+          
 
     phone: z.string()
         .min(7, { message: "El teléfono debe tener al menos 7 caracteres" })

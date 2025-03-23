@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 
 interface RutInputProps {
   name: string
-  value: string // Valor sin formatear (ej: "12234123k" o "122341231")
+  value: string | null// Valor sin formatear (ej: "12234123k" o "122341231")
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   id?: string
   required?: boolean
@@ -41,10 +41,10 @@ const RutInput: React.FC<RutInputProps> = ({ name, value, onChange, id, required
   const maxLength = 9
 
   // Estado local para mostrar el valor formateado en tiempo real.
-  const [displayValue, setDisplayValue] = useState(formatRut(value))
+  const [displayValue, setDisplayValue] = useState(formatRut(value ?? ""))
 
   useEffect(() => {
-    setDisplayValue(formatRut(value))
+    setDisplayValue(formatRut(value ?? ""))
   }, [value])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

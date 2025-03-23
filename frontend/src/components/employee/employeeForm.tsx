@@ -11,25 +11,25 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
     <form onSubmit={handleSubmit}>
       <div className="mb-4">
         <Label htmlFor="rut" className="block text-sm mb-1">
-          RUT
+          RUT (opcional)
         </Label>
         <RutInput
           id="rut"
           name="rut"
           value={formData.rut}
           onChange={handleInputChange}
-          required
           className="w-full border rounded p-2 bg-white text-gray-900"
         />
       </div>
       <div className="mb-4">
         <Label htmlFor="name" className="block text-sm mb-1">
-          Nombre
+          Nombre *
         </Label>
         <Input
           id="name"
           type="text"
           name="name"
+          placeholder="Juan"
           value={formData.name}
           onChange={handleInputChange}
           required
@@ -39,12 +39,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
       </div>
       <div className="mb-4">
         <Label htmlFor="first_surname" className="block text-sm mb-1">
-          Apellido
+          Apellido *
         </Label>
         <Input
           id="first_surname"
           type="text"
           name="first_surname"
+          placeholder="Pérez"
           value={formData.first_surname}
           onChange={handleInputChange}
           required
@@ -60,6 +61,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           id="second_surname"
           type="text"
           name="second_surname"
+          placeholder="González"
           value={formData.second_surname}
           onChange={handleInputChange}
           className="w-full border rounded p-2 bg-white text-gray-900"
@@ -74,6 +76,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           id="email"
           type="email"
           name="email"
+          placeholder="usuario@gmail.com"
           value={formData.email}
           onChange={handleInputChange}
           className="w-full border rounded p-2 bg-white text-gray-900"
@@ -81,7 +84,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
       </div>
       <div className="mb-4">
         <Label htmlFor="number_phone" className="block text-sm mb-1">
-          Número de teléfono
+          Número de teléfono *
         </Label>
         <Input
           id="number_phone"
@@ -97,14 +100,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
       {/* Campo oculto para mantener el rol */}
       <input type="hidden" name="person_type" value="employee" />
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onCancel} className="px-4 py-2 border rounded">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button
-          type="submit"
-          variant="default"
-          className="px-4 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700 transition"
-        >
+        <Button type="submit" variant="default">
           {formData.person_type === "employee" ? "Actualizar" : "Registrar"}
         </Button>
       </div>
