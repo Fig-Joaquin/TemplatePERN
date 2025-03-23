@@ -99,6 +99,7 @@ export interface WorkOrder {
 }
 
 export interface WorkProductDetail {
+  work_product_detail_id?: number
   work_order_id?: number
   work_order?: WorkOrder
   product?: Product
@@ -170,6 +171,7 @@ export interface NumberInputProps {
   id?: string
   isPrice?: boolean
   required?: boolean
+  disabled?: boolean
 }
 
 export interface EmployeeFormProps {

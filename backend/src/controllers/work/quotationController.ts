@@ -83,6 +83,7 @@ export const createQuotation = async (req: Request, res: Response, _next: NextFu
 
 export const updateQuotation = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        console.log(req.body);
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });

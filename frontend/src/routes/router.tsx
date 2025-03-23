@@ -8,6 +8,7 @@ import VehiclesPage from "@/pages/vehiclesPage";
 import ClientPage from "@/pages/clientPage";
 import QuotationPage from "@/pages/quotationPage";
 import QuotationCreatePage from "@/pages/quotationCreatePage";
+import EditQuotationPage from "@/pages/editQuotationPage";
 import ProductPage from "@/pages/productPage";
 import ProductCreatePage from "@/pages/productCreatePage";
 import ProductCategoryPage from "@/pages/ProductCategoryPage";
@@ -18,6 +19,7 @@ import EmployeePage from "@/pages/employeePage";
 import WorkOrdersPage from "@/pages/WorkOrderPage";
 import WorkOrderCreatePage from "@/pages/WorkOrderCreatePage";
 import CompaniesPage from "@/pages/work/CompaniesPage";
+
 
 const router = createBrowserRouter([
   {
@@ -37,6 +39,7 @@ const router = createBrowserRouter([
       { path: "clientes", element: <ClientPage />, handle: { title: "Clientes" } },
       { path: "cotizaciones", element: <QuotationPage />, handle: { title: "Cotizaciones" } },
       { path: "cotizaciones/nuevo", element: <QuotationCreatePage />, handle: { title: "Nueva Cotización" } },
+      { path: "cotizaciones/editar/:id", element: <EditQuotationPage />, handle: { title: "Editar Cotización" } },
       { path: "productos", element: <ProductPage />, handle: { title: "Productos" } },
       { path: "productos/nuevo", element: <ProductCreatePage />, handle: { title: "Nuevo Producto" } },
       { path: "categorias-productos", element: <ProductCategoryPage />, handle: { title: "Categorías de Productos" } },

@@ -294,6 +294,7 @@ const QuotationCreatePage = () => {
                   Repuestos Seleccionados
                 </Label>
                 <Button
+                  type="button"
                   onClick={() => setShowProductModal(true)}
                   variant="outline"
                   className="hover:bg-primary hover:text-primary-foreground transition-colors"
