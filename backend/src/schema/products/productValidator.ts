@@ -7,7 +7,7 @@ import { ProductTypeSchema } from "./productTypeValidator";
 export const ProductSchema = z.object({
     product_id: z.number().optional(),
     product_type_id: z.number(),
-    supplier_id: z.number(),
+    supplier_id: z.number().optional(),
     type: ProductTypeSchema.optional(),
     supplier: SupplierSchema.optional(),
     product_name: z.string()
