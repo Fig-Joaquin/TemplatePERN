@@ -298,7 +298,7 @@ const WorkOrderEditPage = () => {
         setTechnicians(employees);
       } catch (error) {
         console.error("Error loading technicians:", error);
-        toast.error("Error al cargar técnicos disponibles");
+        toast.error("Error al cargar Mécanicos disponibles");
       }
     };
     fetchTechnicians();
@@ -314,7 +314,7 @@ const WorkOrderEditPage = () => {
           setAssignedTechnicians(assignedTechs);
         } catch (error) {
           console.error("Error loading assigned technicians:", error);
-          toast.error("Error al cargar técnicos asignados");
+          toast.error("Error al cargar Mécanicos asignados");
         }
       };
       fetchAssignedTechnicians();
@@ -324,7 +324,7 @@ const WorkOrderEditPage = () => {
   // Handle technician assignment
   const handleAssignTechnician = async () => {
     if (!selectedTechnicianId || !id) {
-      toast.error("Por favor seleccione un técnico");
+      toast.error("Por favor seleccione un Mécanico");
       return;
     }
 
@@ -340,9 +340,9 @@ const WorkOrderEditPage = () => {
       const assignedTech = await getWorkOrderTechnicians(workOrderId);
       setAssignedTechnicians(assignedTech);
       setSelectedTechnicianId(null);
-      toast.success("Técnico asignado correctamente");
+      toast.success("Mécanico asignado correctamente");
     } catch (error: any) {
-      toast.error(error.message || "Error al asignar técnico");
+      toast.error(error.message || "Error al asignar Mécanico");
     } finally {
       setLoadingTechnicians(false);
     }
@@ -355,9 +355,9 @@ const WorkOrderEditPage = () => {
     try {
       await deleteWorkOrderTechnician(assignmentId);
       setAssignedTechnicians(prev => prev.filter(tech => tech.id !== assignmentId));
-      toast.success("Técnico removido correctamente");
+      toast.success("Mécanico removido correctamente");
     } catch (error) {
-      toast.error("Error al remover técnico");
+      toast.error("Error al remover Mécanico");
     }
   };
 
@@ -559,7 +559,7 @@ const WorkOrderEditPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
-                Asignación de Técnicos
+                Asignación de Mécanico
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -567,7 +567,7 @@ const WorkOrderEditPage = () => {
                 <div className="flex gap-2">
                   <Select value={selectedTechnicianId?.toString() || ""} onValueChange={(value) => setSelectedTechnicianId(Number(value))}>
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Seleccionar técnico" />
+                      <SelectValue placeholder="Seleccionar Mécanico" />
                     </SelectTrigger>
                     <SelectContent>
                       {technicians.map((tech) => (
@@ -589,7 +589,7 @@ const WorkOrderEditPage = () => {
                 </div>
 
                 <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-2">Técnicos Asignados</h4>
+                  <h4 className="text-sm font-medium mb-2">Mécanicos Asignados</h4>
                   {assignedTechnicians.length > 0 ? (
                     <div className="space-y-2">
                       {assignedTechnicians.map((assignment) => (
@@ -608,7 +608,7 @@ const WorkOrderEditPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No hay técnicos asignados</p>
+                    <p className="text-sm text-muted-foreground">No hay Mécanicos asignados</p>
                   )}
                 </div>
               </div>

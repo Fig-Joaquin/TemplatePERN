@@ -200,7 +200,7 @@ const WorkOrdersPage = () => {
                     <th className="border px-4 py-2 text-left">Dueño</th>
                     <th className="border px-4 py-2 text-left">Teléfono</th>
                     <th className="border px-4 py-2 text-left">Cotización</th>
-                    <th className="border px-4 py-2 text-left">Técnicos</th>
+                    <th className="border px-4 py-2 text-left">Mécanico</th>
                     <th className="border px-4 py-2 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -228,7 +228,7 @@ const WorkOrdersPage = () => {
                     if (assignedTechnicians.length > 0) {
                       technicianNames = assignedTechnicians
                         .map(tech => {
-                          if (!tech || !tech.technician) return "Técnico sin datos";
+                          if (!tech || !tech.technician) return "Mécanico sin datos";
                           return `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
                         })
                         .join(', ');

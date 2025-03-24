@@ -179,9 +179,9 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
           </p>
           {assignedTechnicians.length > 0 && (
             <p className="mt-2">
-              <strong>Técnicos:</strong>{" "}
+              <strong>Mécanico:</strong>{" "}
               {assignedTechnicians.map(tech => {
-                if (!tech || !tech.technician) return "Técnico sin datos";
+                if (!tech || !tech.technician) return "Mécanico sin datos";
                 return `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
               }).join(', ')}
             </p>
@@ -315,19 +315,19 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
 
             {/* Assigned Technicians */}
             <div>
-              <h3 className="font-bold mb-1">Técnicos Asignados</h3>
+              <h3 className="font-bold mb-1">Mécanico Asignados</h3>
               {assignedTechnicians.length > 0 ? (
                 <ul className="list-disc list-inside">
                   {assignedTechnicians.map(tech => (
                     <li key={tech.id}>
                       {!tech || !tech.technician
-                        ? "Técnico sin datos"
+                        ? "Mécanico sin datos"
                         : `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p>No hay técnicos asignados.</p>
+                <p>No hay Mécanico asignados.</p>
               )}
             </div>
           </div>
