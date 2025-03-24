@@ -19,6 +19,7 @@ import  StockProduct  from "./products/stock_productsController";
 import Companies from "./work/companiesRoutes";
 import chatbotRoute from "./chatbotRoutes";
 import workOrderTechnicianRoutes from "./work/workOrderTechnician";
+import notificationRoutes from "./notificationRoutes";
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use("/stockProducts", StockProduct);
 router.use("/companies", Companies);
 router.use("/chatbot", chatbotRoute);
 router.use("/workOrderTechnicians", workOrderTechnicianRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

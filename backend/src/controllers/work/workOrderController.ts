@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { WorkOrderSchema } from "../../schema/work/workOrderValidator";
 import { DeepPartial } from "typeorm";
-import { WorkOrder, Vehicle, Quotation } from "../../entities";
+import { WorkOrder, Vehicle, Quotation, Notification } from "../../entities";
 
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 const vehicleRepository = AppDataSource.getRepository(Vehicle);
 const quotationRepository = AppDataSource.getRepository(Quotation);
+const notifRepo = AppDataSource.getRepository(Notification);
 
 export const getAllWorkOrders = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -118,39 +119,45 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
 
 export const updateWorkOrder = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = Number(req.params.id);
-        if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
-            return;
-        }
-
-        const workOrder = await workOrderRepository.findOneBy({ work_order_id: id });
-        if (!workOrder) {
-            res.status(404).json({ message: "Orden de trabajo no encontrada" });
-            return;
-        }
-
-        const updateSchema = WorkOrderSchema.partial();
-        const validationResult = updateSchema.safeParse(req.body);
-        if (!validationResult.success) {
-            res.status(400).json({
-                message: "Error de validación",
-                errors: validationResult.error.errors.map(err => ({
-                    field: err.path.join("."),
-                    message: err.message
-                }))
-            });
-            return;
-        }
-
-        workOrderRepository.merge(workOrder, validationResult.data as DeepPartial<WorkOrder>);
-        await workOrderRepository.save(workOrder);
-        res.json({ message: "Orden de trabajo actualizada exitosamente", workOrder });
+      const id = Number(req.params.id);
+      if (isNaN(id)) {
+        res.status(400).json({ message: "ID inválido" });
+        return;
+      }
+  
+      const workOrder = await workOrderRepository.findOneBy({ work_order_id: id });
+      if (!workOrder) {
+        res.status(404).json({ message: "Orden de trabajo no encontrada" });
+        return;
+      }
+  
+      const updateSchema = WorkOrderSchema.partial();
+      const validationResult = updateSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        res.status(400).json({
+          message: "Error de validación",
+          errors: validationResult.error.errors.map(err => ({
+            field: err.path.join("."),
+            message: err.message
+          }))
+        });
+        return;
+      }
+  
+      workOrderRepository.merge(workOrder, validationResult.data as DeepPartial<WorkOrder>);
+      await workOrderRepository.save(workOrder);
+  
+      // Si cambia de estado y ya no está "not_started", eliminar su notificación
+      if (workOrder.order_status !== "not_started") {
+        await notifRepo.delete({ work_order_id: workOrder.work_order_id });
+      }
+  
+      res.json({ message: "Orden de trabajo actualizada exitosamente", workOrder });
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar la orden de trabajo", error });
+      console.error("Error al actualizar la orden de trabajo:", error);
+      res.status(500).json({ message: "Error al actualizar la orden de trabajo", error });
     }
-};
-
+  };
 export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const id = Number(req.params.id);

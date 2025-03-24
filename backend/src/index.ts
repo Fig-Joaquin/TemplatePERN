@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import { AppDataSource } from "./config/ormconfig";
 import routes from "./routes";
 import cors from "cors";
-
+import { startNotificationCron } from "./utils/notificationScheduler";
 
 
 // Imports de rutas
@@ -54,6 +54,8 @@ const startServer = async () => {
     try {
         await AppDataSource.initialize();
         console.log("Database connected");
+
+        startNotificationCron(); // Iniciar cron de notificaciones
 
         // Iniciar el servidor
         const PORT = process.env.PORT || 5000;
