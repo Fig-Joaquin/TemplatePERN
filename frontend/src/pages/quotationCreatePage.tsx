@@ -297,9 +297,9 @@ const QuotationCreatePage = () => {
                   type="button"
                   onClick={() => setShowProductModal(true)}
                   variant="outline"
-                  className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="hover:accent hover:text-primary-foreground transition-colors"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 mr-2 " />
                   Añadir Repuesto
                 </Button>
               </div>

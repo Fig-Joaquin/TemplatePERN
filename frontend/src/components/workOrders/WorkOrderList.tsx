@@ -20,6 +20,7 @@ const WorkOrderList = ({ workOrders, onEdit, onDelete }: WorkOrderListProps) => 
     ...order,
     onEdit: () => onEdit(order),
     onDelete: () => onDelete(order.work_order_id),
+    hasQuotation: !!order.quotation || !!order.quotation_id,
   }));
 
   const navigate = useNavigate();
@@ -49,9 +50,9 @@ const WorkOrderList = ({ workOrders, onEdit, onDelete }: WorkOrderListProps) => 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <DataTable 
-            columns={workOrderColumns} 
-            data={data} 
+          <DataTable
+            columns={workOrderColumns}
+            data={data}
           />
         </motion.div>
       </motion.div>

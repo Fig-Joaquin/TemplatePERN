@@ -188,6 +188,7 @@ export interface EmployeeFormProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: React.FormEvent) => void
   onCancel: () => void
+  isEditing?: boolean; // New optional prop
 }
 export type WorkOrderStatus = "approved" | "rejected" | "pending";
 
@@ -202,11 +203,13 @@ export interface WorkOrder {
 
 export interface WorkOrderInput {
   description: string;
-  work_order_status: WorkOrderStatus;
+  work_order_status: "finished" | "in_progress" | "not_started";
   vehicle_id: number;
   quotation_id?: number;
   entry_date?: string;
   total_amount: number;
+  order_date?: string;
+  technician_id?: number;
 }
 
 export interface WorkOrderUpdateInput {
@@ -214,36 +217,42 @@ export interface WorkOrderUpdateInput {
   total_amount?: number;
 }
 
-  
-  export interface WorkOrderUpdateInput {
-    work_order_status?: "approved" | "rejected" | "pending";
-  }
-  
+export interface WorkOrderUpdateInput {
+  work_order_status?: "approved" | "rejected" | "pending";
+}
 
-  export interface WorkOrderFormProps {
-    initialData?: WorkOrder | null;
-    onSuccess: () => void;
-    onClose: () => void;
-  }
+export interface WorkOrderFormProps {
+  initialData?: WorkOrder | null;
+  onSuccess: () => void;
+  onClose: () => void;
+}
 
-  export interface WorkOrderListProps {
-    workOrders: WorkOrder[];
-    onEdit: (workOrder: WorkOrder) => void;
-    onDelete: (workOrderId: number) => void;
-    loading: boolean;
-  }
+export interface WorkOrderListProps {
+  workOrders: WorkOrder[];
+  onEdit: (workOrder: WorkOrder) => void;
+  onDelete: (workOrderId: number) => void;
+  loading: boolean;
+}
 
-  export interface WorkOrderCardProps {
-    workOrder: WorkOrder;
-    onEdit: (workOrder: WorkOrder) => void;
-    onDelete: (workOrderId: number) => void;
-  }
+export interface WorkOrderCardProps {
+  workOrder: WorkOrder;
+  onEdit: (workOrder: WorkOrder) => void;
+  onDelete: (workOrderId: number) => void;
+}
 
-  export interface QuotationInput {
-    vehicle_id: number;
-    description: string;
-    quotation_Status: "approved" | "rejected" | "pending";
-    total_price: number;
-  }
-  
+export interface QuotationInput {
+  vehicle_id: number;
+  description: string;
+  quotation_Status: "approved" | "rejected" | "pending";
+  total_price: number;
+}
+
+export interface WorkOrderTechnician {
+  id?: number;
+  workOrder?: WorkOrder;
+  technician?: Person;
+  status: string;
+  assigned_at?: Date;
+}
+
 

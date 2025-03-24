@@ -9,6 +9,20 @@ import { VehicleCard } from "@/components/VehicleCard"
 import { Badge } from "@/components/ui/badge"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 
+// Function to translate status to Spanish
+const translateStatus = (status: string): string => {
+  const translations: Record<string, string> = {
+    "approved": "Aprobado",
+    "pending": "Pendiente",
+    "rejected": "Rechazado",
+    "completed": "Completado",
+    "in_progress": "En Progreso",
+    // Add more translations as needed
+  }
+
+  return translations[status] || status
+}
+
 export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkProductDetail[] }>[] = [
   {
     accessorKey: "quotation_id",
@@ -23,7 +37,7 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
     header: "Estado",
     cell: ({ row }) => {
       const status = row.getValue("quotation_status") as string
-      return <Badge variant={status === "approved" ? "default" : "secondary"}>{status}</Badge>
+      return <Badge variant={status === "approved" ? "default" : "secondary"}>{translateStatus(status)}</Badge>
     },
   },
   {
@@ -75,7 +89,7 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
                 <h4 className="font-bold mb-2">Información de la cotización</h4>
                 <p>ID: {quotation.quotation_id}</p>
                 <p>Descripción: {quotation.description}</p>
-                <p>Estado: {quotation.quotation_status}</p>
+                <p>Estado: {translateStatus(quotation.quotation_status)}</p>
                 <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
                 <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
               </div>

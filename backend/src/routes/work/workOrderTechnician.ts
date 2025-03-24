@@ -1,4 +1,4 @@
-import { createWorkOrderTechnician, deleteWorkOrderTechnician, getAllWorkOrderTechnicians, getWorkOrderTechnicianById, updateWorkOrderTechnician } from "../../controllers/workOrderTechnicianController";
+import { createWorkOrderTechnician, deleteWorkOrderTechnician, getAllWorkOrderTechnicians, getWorkOrderTechnicianById, updateWorkOrderTechnician } from "../../controllers/work/workOrderTechnicianController";
 import { Router } from "express";
 
 

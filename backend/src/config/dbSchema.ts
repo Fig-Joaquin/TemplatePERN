@@ -169,7 +169,7 @@ export let dbRelationships: DatabaseRelationships = {};
     dbRelationships = await getDatabaseRelationships();
     console.log('Database schema loaded successfully');
     console.log('Database schema:', dbSchema);
-    console.log('Database relationships:', dbRelationships);
+    // console.log('Database relationships:', dbRelationships);
   } catch (error) {
     console.error('Failed to initialize database schema:', error);
   }

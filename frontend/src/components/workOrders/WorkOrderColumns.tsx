@@ -28,6 +28,14 @@ export const workOrderColumns: ColumnDef<WorkOrder>[] = [
     },
   },
   {
+    id: "has_quotation",
+    header: "Con Cotización",
+    cell: ({ row }) => {
+      const workOrder = row.original;
+      return workOrder.quotation ? "Sí" : "No";
+    },
+  },
+  {
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {

@@ -242,6 +242,7 @@ const EmployeePage = () => {
               setEditModalOpen(false)
               setSelectedPerson(null)
             }}
+            isEditing={true}
           />
         </DialogContent>
       </Dialog>

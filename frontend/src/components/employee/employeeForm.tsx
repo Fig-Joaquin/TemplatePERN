@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import type { EmployeeFormProps } from "../../types/interfaces"
 import RutInput from "../RutInput"
 
-const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange, handleSubmit, onCancel }) => {
+const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange, handleSubmit, onCancel, isEditing = false }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-4">
@@ -104,7 +104,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           Cancelar
         </Button>
         <Button type="submit" variant="default">
-          {formData.person_type === "employee" ? "Actualizar" : "Registrar"}
+          {isEditing ? "Actualizar" : "Registrar"}
         </Button>
       </div>
     </form>

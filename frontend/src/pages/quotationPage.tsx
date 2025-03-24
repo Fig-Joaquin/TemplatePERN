@@ -29,6 +29,20 @@ export default function QuotationPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [quotationToDelete, setQuotationToDelete] = useState<number | null>(null)
 
+  // Helper function to translate status
+  const translateStatus = (status: string): string => {
+    switch (status) {
+      case 'approved':
+        return 'Aprobada';
+      case 'rejected':
+        return 'Rechazada';
+      case 'pending':
+        return 'Pendiente';
+      default:
+        return status;
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -104,7 +118,7 @@ export default function QuotationPage() {
                       <h4 className="font-bold mb-2">Información de la cotización</h4>
                       <p>ID: {quotation.quotation_id}</p>
                       <p>Descripción: {quotation.description}</p>
-                      <p>Estado: {quotation.quotation_status}</p>
+                      <p>Estado: {translateStatus(quotation.quotation_status)}</p>
                       <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
                       <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
                     </div>
@@ -195,8 +209,8 @@ export default function QuotationPage() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex items-center"
                 onClick={() => navigate(`/admin/cotizaciones/editar/${quotation.quotation_id}`)}
               >

@@ -184,6 +184,7 @@ const WorkOrdersPage = () => {
                     <th className="border px-4 py-2 text-left">Patente</th>
                     <th className="border px-4 py-2 text-left">Dueño</th>
                     <th className="border px-4 py-2 text-left">Teléfono</th>
+                    <th className="border px-4 py-2 text-left">Cotización</th>
                     <th className="border px-4 py-2 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -212,6 +213,7 @@ const WorkOrdersPage = () => {
                         <td className="border px-4 py-2">{plate}</td>
                         <td className="border px-4 py-2">{ownerName}</td>
                         <td className="border px-4 py-2">+{ownerPhone}</td>
+                        <td className="border px-4 py-2">{wo.quotation ? "Sí" : "No"}</td>
                         <td className="border px-4 py-2 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <Button

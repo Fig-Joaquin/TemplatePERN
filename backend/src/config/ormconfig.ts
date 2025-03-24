@@ -19,7 +19,7 @@ export const AppDataSource = new DataSource({
     entities: Object.values(entities), // Carga todas las entidades automáticamente
 });
 
-console.log("📌 Entidades registradas en TypeORM:", AppDataSource.options.entities);
+// console.log("📌 Entidades registradas en TypeORM:", AppDataSource.options.entities);
 
 AppDataSource.initialize()
   .then(() => console.log("📦 Base de datos conectada"))

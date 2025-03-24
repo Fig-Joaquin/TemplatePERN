@@ -14,6 +14,7 @@ import { createWorkOrder } from "../../services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "../../services/workProductDetail";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { getTaxById } from "@/services/taxService";
+import { getChileanISOString, formatChileanDate, formatChileanShortDate } from "@/utils/dateUtils";
 import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput } from "../../types/interfaces";
 
 const WorkOrderWithQuotation = () => {
@@ -126,7 +127,10 @@ const WorkOrderWithQuotation = () => {
         quotation_id: selectedQuotation.quotation_id,
         total_amount: Math.trunc(finalTotal),
         description,
+        order_date: getChileanISOString(), // Usar formato ISO con hora chilena preservada
       };
+
+      console.log("Enviando orden con fecha chilena:", workOrderPayload.order_date);
       await createWorkOrder(workOrderPayload);
       toast.success("Orden de trabajo creada exitosamente");
       navigate("/admin/orden-trabajo");
@@ -153,6 +157,13 @@ const WorkOrderWithQuotation = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <Button
+        onClick={() => window.location.reload()}
+        variant="outline"
+        className="mb-8"
+      >
+        Volver
+      </Button>
       <h2 className="text-2xl font-bold mb-6 text-center">
         Crear Orden de Trabajo con Cotización
       </h2>
@@ -260,7 +271,7 @@ const WorkOrderWithQuotation = () => {
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">Cotización #{selectedQuotation.quotation_id}</span>
                 <span className="text-sm text-gray-600">
-                  {selectedQuotation.entry_date ? new Date(selectedQuotation.entry_date).toLocaleDateString() : "-"}
+                  {selectedQuotation.entry_date ? formatChileanDate(selectedQuotation.entry_date) : "-"}
                 </span>
               </div>
               <div>
@@ -394,7 +405,7 @@ const WorkOrderWithQuotation = () => {
                         <ul className="list-disc list-inside">
                           {selectedQuotation.vehicle.mileage_history.map((mileage) => (
                             <li key={mileage.mileage_history_id}>
-                              {new Date(mileage.registration_date).toLocaleDateString()}: {mileage.current_mileage.toLocaleString("es-CL")} km
+                              {formatChileanDate(mileage.registration_date)}: {mileage.current_mileage.toLocaleString("es-CL")} km
                             </li>
 
                           ))}

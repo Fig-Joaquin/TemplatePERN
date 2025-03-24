@@ -20,3 +20,18 @@ export const fetchPersonsEmployee = async () => {
   return data
 }
 
+export const getAllPersons = async (): Promise<Person[]> => {
+  const response = await api.get("/persons");
+  return response.data;
+};
+
+export const getTechnicians = async (): Promise<Person[]> => {
+  const persons = await getAllPersons();
+  return persons.filter(person => person.person_type === "trabajador");
+};
+
+export const getPersonById = async (id: number): Promise<Person> => {
+  const response = await api.get(`/persons/${id}`);
+  return response.data;
+};
+

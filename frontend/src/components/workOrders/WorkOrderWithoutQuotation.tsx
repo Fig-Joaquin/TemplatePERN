@@ -15,6 +15,7 @@ import { fetchProducts } from "../../services/productService";
 import { getStockProducts } from "../../services/stockProductService";
 import { createWorkOrder } from "../../services/workOrderService";
 import { createWorkProductDetail } from "../../services/workProductDetail";
+import { getTaxById } from "@/services/taxService"; // Add import for getTaxById
 import type { Vehicle, Product, StockProduct, WorkOrderInput, WorkProductDetail } from "../../types/interfaces";
 
 // Eliminamos el campo "margin" en el SelectedProduct, ya que se usará el margen del producto
@@ -38,6 +39,7 @@ const WorkOrderWithoutQuotation = () => {
 
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [taxRate, setTaxRate] = useState<number>(0); // Add taxRate state
 
   // Estado para el tab (0 = Personas, 1 = Empresas)
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
@@ -52,6 +54,10 @@ const WorkOrderWithoutQuotation = () => {
         setProducts(productsData);
         const stockData = await getStockProducts();
         setStockProducts(stockData);
+
+        // Fetch tax rate
+        const tax = await getTaxById(1); // IVA standard tax
+        setTaxRate(tax.tax_rate / 100);
       } catch (error) {
         toast.error("Error al cargar los datos iniciales");
       }
@@ -72,7 +78,13 @@ const WorkOrderWithoutQuotation = () => {
   }, 0);
 
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0);
-  const totalFinal = totalProductPrice + totalLaborPrice;
+
+  // Calculate subtotal (products + labor), tax amount, and final total including tax
+  const subtotalBeforeTax = totalProductPrice + totalLaborPrice;
+  // Round the tax amount according to the rule (if decimals ≥ 0.5, round up; if < 0.5, round down)
+  const taxAmount = Math.round(subtotalBeforeTax * taxRate);
+  // Add the rounded tax amount to the subtotal to get the final total
+  const totalFinal = subtotalBeforeTax + taxAmount;
 
   // Filtrado avanzado de vehículos según patente, teléfono o nombre (de dueño o empresa)
   const filteredVehicles = vehicles.filter((v) => {
@@ -124,44 +136,54 @@ const WorkOrderWithoutQuotation = () => {
       // 1. Crear la orden de trabajo
       const workOrderPayload: Partial<WorkOrderInput> = {
         vehicle_id: selectedVehicle.vehicle_id,
-        total_amount: totalFinal,
         description,
+        work_order_status: "not_started", // Asegurarse que coincida con el enum en el backend
+        total_amount: totalFinal, // Este valor ya incluye impuestos
+        order_date: new Date().toISOString(), // Asegurar que se envía una fecha válida
       };
 
+      console.log("Creating work order with payload:", workOrderPayload);
       const createdWorkOrderResponse = await createWorkOrder(workOrderPayload);
       console.log("Created Work Order Response:", createdWorkOrderResponse);
-      const workOrderId = createdWorkOrderResponse.work_order_id;
+
+      // Corregir cómo accedemos al ID de la orden de trabajo
+      // La respuesta tiene la estructura: { message: "...", workOrder: { work_order_id: ... } }
+      const workOrderId = createdWorkOrderResponse.workOrder?.work_order_id;
       if (!workOrderId) {
         throw new Error("No se recibió un ID válido para la orden de trabajo");
       }
 
-      // 2. Crear los detalles de producto (sin cotización, omitiendo quotation_id)
+      // 2. Crear los detalles de producto vinculados a la orden (sin cotización)
       const workProductDetails: Partial<WorkProductDetail>[] = selectedProducts.map(
         ({ productId, quantity, laborPrice }) => {
           const product = products.find((p) => p.product_id === productId);
-          // Se utiliza el profit_margin del producto
           const profitMargin = product ? Number(product.profit_margin) : 0;
           const finalPrice = product ? Number(product.sale_price) * (1 + profitMargin / 100) : 0;
+
           return {
             work_order_id: workOrderId,
             product_id: productId,
             quantity,
             labor_price: laborPrice,
-            tax_id: 1, // Valor por defecto (ajustar si es necesario)
+            tax_id: 1, // Asumimos impuesto estándar
             sale_price: finalPrice,
             discount: 0,
           };
         }
       );
 
-      console.log("Work Product Details:", workProductDetails);
-      await Promise.all(workProductDetails.map((detail) => createWorkProductDetail(detail as WorkProductDetail)));
+      console.log("Creating work product details:", workProductDetails);
+
+      // Crear los detalles uno por uno para evitar problemas de concurrencia
+      for (const detail of workProductDetails) {
+        await createWorkProductDetail(detail as WorkProductDetail);
+      }
 
       toast.success("Orden de trabajo creada sin cotización exitosamente");
       navigate("/admin/orden-trabajo");
     } catch (error: any) {
       console.error("Error al crear la orden de trabajo:", error);
-      toast.error("Error al crear la orden de trabajo");
+      toast.error(`Error al crear la orden de trabajo: ${error.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
     }
@@ -169,6 +191,13 @@ const WorkOrderWithoutQuotation = () => {
 
   return (
     <div className="container mx-auto p-6">
+      <Button
+        onClick={() => window.location.reload()}
+        variant="outline"
+        className="mb-8"
+      >
+        Volver
+      </Button>
       <h2 className="text-xl font-bold mb-4">Crear Orden de Trabajo sin Cotización</h2>
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 shadow rounded">
         {/* SECCIÓN VEHÍCULO */}
@@ -238,7 +267,6 @@ const WorkOrderWithoutQuotation = () => {
 
         {/* SECCIÓN REPUESTOS */}
         <div className="space-y-2">
-          <Label>Productos (Repuestos)</Label>
           <Popover open={openProductPopover} onOpenChange={setOpenProductPopover}>
             <PopoverTrigger asChild>
               <Button variant="outline">Añadir Producto</Button>
@@ -332,6 +360,8 @@ const WorkOrderWithoutQuotation = () => {
           <div className="text-right space-y-1">
             <p>Total Productos: {formatPriceCLP(totalProductPrice)}</p>
             <p>Total Mano de Obra: {formatPriceCLP(totalLaborPrice)}</p>
+            <p>Subtotal: {formatPriceCLP(subtotalBeforeTax)}</p>
+            <p>IVA (19%): {formatPriceCLP(taxAmount)}</p>
             <p className="font-bold">Total Final: {formatPriceCLP(totalFinal)}</p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import api from "../utils/axiosConfig";
 import { WorkOrder, WorkOrderInput } from "../types/interfaces";
+import { getWorkProductDetailsByQuotationId, getWorkProductDetailsByWorkOrderId } from "./workProductDetail";
 
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   const response = await api.get("/workOrders");
@@ -11,14 +12,62 @@ export const getWorkOrderById = async (id: number): Promise<WorkOrder> => {
   return response.data;
 };
 
+// Nueva función para obtener orden de trabajo con todos los detalles
+export const getCompleteWorkOrderById = async (id: number): Promise<WorkOrder> => {
+  try {
+    // Obtenemos la orden de trabajo básica - Aseguramos que se incluyan todas las relaciones necesarias
+    const response = await api.get(`/workOrders/${id}`);
+    const workOrder = response.data;
+    
+    console.log("API response for work order:", workOrder);
+    
+    // Si el vehículo no tiene las relaciones completas, podríamos cargarlas por separado
+    if (workOrder.vehicle && (!workOrder.vehicle.model?.brand || !workOrder.vehicle.owner)) {
+      try {
+        // Intentar obtener información completa del vehículo si es necesario
+        const vehicleResponse = await api.get(`/vehicles/${workOrder.vehicle.vehicle_id}`);
+        workOrder.vehicle = vehicleResponse.data;
+        console.log("Loaded complete vehicle data:", workOrder.vehicle);
+      } catch (vehicleError) {
+        console.error("Error loading complete vehicle:", vehicleError);
+      }
+    }
+    
+    // Continuamos con la carga de detalles de productos
+    if (!workOrder.productDetails || workOrder.productDetails.length === 0) {
+      try {
+        // Primero intentamos obtener por work_order_id
+        const productDetails = await getWorkProductDetailsByWorkOrderId(id);
+        if (productDetails && productDetails.length > 0) {
+          workOrder.productDetails = productDetails;
+        } 
+        // Si no hay detalles directos y hay una cotización, intentamos por ahí
+        else if (workOrder.quotation?.quotation_id) {
+          const quotationDetails = await getWorkProductDetailsByQuotationId(workOrder.quotation.quotation_id);
+          if (quotationDetails && quotationDetails.length > 0) {
+            workOrder.productDetails = quotationDetails;
+          }
+        }
+      } catch (error) {
+        console.error("Error loading product details:", error);
+      }
+    }
+    
+    return workOrder;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
   const { data } = await api.get<WorkOrder[]>("/workOrders");
   return data;
 };
 
-export const createWorkOrder = async (workOrderData: Partial<WorkOrderInput>): Promise<WorkOrder> => {
-  const { data } = await api.post<WorkOrder>("/workorders", workOrderData);
-  return data;
+export const createWorkOrder = async (workOrderData: Partial<WorkOrderInput>): Promise<any> => {
+  // Modificamos el tipo de retorno a 'any' para manejar la respuesta exacta del servidor
+  const { data } = await api.post("/workOrders", workOrderData);
+  return data; // Ahora devuelve el objeto completo { message, workOrder }
 };
 
 export const updateWorkOrder = async (workOrderId: number, workOrderData: Partial<WorkOrderInput>): Promise<WorkOrder> => {
