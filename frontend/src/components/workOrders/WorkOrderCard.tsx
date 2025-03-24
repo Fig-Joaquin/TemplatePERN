@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import { deleteWorkOrder } from "@/services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
 import { getTaxById } from "@/services/taxService";
-
+import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 
 interface WorkOrderCardProps {
   workOrder: any; // Ajusta según tu interfaz WorkOrder con las relaciones necesarias.
@@ -41,6 +41,7 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [loadedDetails, setLoadedDetails] = useState<any[]>([]);
   const [taxRate, setTaxRate] = useState<number>(0);
+  const [assignedTechnicians, setAssignedTechnicians] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const {
@@ -92,6 +93,19 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
     };
     fetchTax();
   }, []);
+
+  // Fetch assigned technicians
+  useEffect(() => {
+    const fetchAssignedTechnicians = async () => {
+      try {
+        const techs = await getWorkOrderTechnicians(work_order_id);
+        setAssignedTechnicians(techs);
+      } catch (error) {
+        console.error("Error loading assigned technicians:", error);
+      }
+    };
+    fetchAssignedTechnicians();
+  }, [work_order_id]);
 
   // Calcular el subtotal a partir de los detalles cargados
   const subtotal =
@@ -163,6 +177,15 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
             <strong>{displayVehicle?.owner ? "Dueño:" : "Empresa:"}</strong>{" "}
             {renderOwnerOrCompany()}
           </p>
+          {assignedTechnicians.length > 0 && (
+            <p className="mt-2">
+              <strong>Técnicos:</strong>{" "}
+              {assignedTechnicians.map(tech => {
+                if (!tech || !tech.technician) return "Técnico sin datos";
+                return `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
+              }).join(', ')}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -287,6 +310,24 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
                 </ScrollArea>
               ) : (
                 <p>No hay productos asociados</p>
+              )}
+            </div>
+
+            {/* Assigned Technicians */}
+            <div>
+              <h3 className="font-bold mb-1">Técnicos Asignados</h3>
+              {assignedTechnicians.length > 0 ? (
+                <ul className="list-disc list-inside">
+                  {assignedTechnicians.map(tech => (
+                    <li key={tech.id}>
+                      {!tech || !tech.technician
+                        ? "Técnico sin datos"
+                        : `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No hay técnicos asignados.</p>
               )}
             </div>
           </div>

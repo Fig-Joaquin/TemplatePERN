@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 
 const WorkOrdersPage = () => {
   const [workOrders, setWorkOrders] = useState<any[]>([]);
@@ -28,6 +29,8 @@ const WorkOrdersPage = () => {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   // Estado para el modal de detalle (en tabla)
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<any>(null);
+  // Nuevo estado para almacenar técnicos por orden de trabajo
+  const [techniciansByOrderId, setTechniciansByOrderId] = useState<{ [key: number]: any[] }>({});
 
   const navigate = useNavigate();
 
@@ -40,7 +43,6 @@ const WorkOrdersPage = () => {
     return statusMap[status] || status; // Retorna el valor original si no coincide
   };
 
-
   useEffect(() => {
     loadWorkOrders();
   }, []);
@@ -50,6 +52,19 @@ const WorkOrdersPage = () => {
     try {
       const data = await getAllWorkOrders();
       setWorkOrders(data);
+
+      // Fetch technicians for each work order
+      const techsObj: { [key: number]: any[] } = {};
+      for (const order of data) {
+        try {
+          const techs = await getWorkOrderTechnicians(order.work_order_id);
+          techsObj[order.work_order_id] = techs;
+        } catch (error) {
+          console.error(`Error loading technicians for order #${order.work_order_id}:`, error);
+          techsObj[order.work_order_id] = [];
+        }
+      }
+      setTechniciansByOrderId(techsObj);
     } catch (error) {
       toast.error("Error al cargar órdenes de trabajo");
     } finally {
@@ -185,6 +200,7 @@ const WorkOrdersPage = () => {
                     <th className="border px-4 py-2 text-left">Dueño</th>
                     <th className="border px-4 py-2 text-left">Teléfono</th>
                     <th className="border px-4 py-2 text-left">Cotización</th>
+                    <th className="border px-4 py-2 text-left">Técnicos</th>
                     <th className="border px-4 py-2 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -204,6 +220,20 @@ const WorkOrdersPage = () => {
                       : vehicle?.company
                         ? vehicle.company.phone || "No especificado"
                         : "No especificado";
+
+                    // Nueva implementación para mostrar técnicos igual que en WorkOrderCard
+                    const assignedTechnicians = techniciansByOrderId[wo.work_order_id] || [];
+                    let technicianNames = "No asignado";
+
+                    if (assignedTechnicians.length > 0) {
+                      technicianNames = assignedTechnicians
+                        .map(tech => {
+                          if (!tech || !tech.technician) return "Técnico sin datos";
+                          return `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
+                        })
+                        .join(', ');
+                    }
+
                     return (
                       <tr key={wo.work_order_id} className="hover:bg-gray-50">
                         <td className="border px-4 py-2">{wo.work_order_id}</td>
@@ -214,6 +244,7 @@ const WorkOrdersPage = () => {
                         <td className="border px-4 py-2">{ownerName}</td>
                         <td className="border px-4 py-2">+{ownerPhone}</td>
                         <td className="border px-4 py-2">{wo.quotation ? "Sí" : "No"}</td>
+                        <td className="border px-4 py-2">{technicianNames}</td>
                         <td className="border px-4 py-2 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <Button

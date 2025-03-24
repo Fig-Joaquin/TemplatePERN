@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, Car, Wrench, FileText, AlertCircle, Plus, Trash2, Info } from "lucide-react";
+import { ArrowLeft, Save, Car, Wrench, FileText, AlertCircle, Plus, Trash2, Info, User, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
@@ -23,6 +23,9 @@ import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { fetchPersonsEmployee } from "@/services/personService";
+import { createWorkOrderTechnician, getWorkOrderTechnicians, deleteWorkOrderTechnician } from "@/services/workOrderTechnicianService";
+import { Person, WorkOrderTechnician } from "@/types/interfaces";
 
 const WorkOrderEditPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +46,10 @@ const WorkOrderEditPage = () => {
   // New state to track if the order is quotation-based
   const [isQuotationBased, setIsQuotationBased] = useState<boolean>(false);
   const [quotationProducts, setQuotationProducts] = useState<any[]>([]);
+  const [technicians, setTechnicians] = useState<Person[]>([]);
+  const [assignedTechnicians, setAssignedTechnicians] = useState<WorkOrderTechnician[]>([]);
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<number | null>(null);
+  const [loadingTechnicians, setLoadingTechnicians] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -283,6 +290,77 @@ const WorkOrderEditPage = () => {
     return statusMap[status] || status;
   };
 
+  // Load technicians (employees with trabajador role)
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      try {
+        const employees = await fetchPersonsEmployee();
+        setTechnicians(employees);
+      } catch (error) {
+        console.error("Error loading technicians:", error);
+        toast.error("Error al cargar técnicos disponibles");
+      }
+    };
+    fetchTechnicians();
+  }, []);
+
+  // Load assigned technicians whenever work order ID changes
+  useEffect(() => {
+    if (id) {
+      const fetchAssignedTechnicians = async () => {
+        try {
+          const workOrderId = Number(id);
+          const assignedTechs = await getWorkOrderTechnicians(workOrderId);
+          setAssignedTechnicians(assignedTechs);
+        } catch (error) {
+          console.error("Error loading assigned technicians:", error);
+          toast.error("Error al cargar técnicos asignados");
+        }
+      };
+      fetchAssignedTechnicians();
+    }
+  }, [id]);
+
+  // Handle technician assignment
+  const handleAssignTechnician = async () => {
+    if (!selectedTechnicianId || !id) {
+      toast.error("Por favor seleccione un técnico");
+      return;
+    }
+
+    setLoadingTechnicians(true);
+    try {
+      const workOrderId = Number(id);
+      const newAssignment = await createWorkOrderTechnician({
+        work_order_id: workOrderId,
+        technician_id: selectedTechnicianId
+      });
+
+      // Add the new assignment to the list
+      const assignedTech = await getWorkOrderTechnicians(workOrderId);
+      setAssignedTechnicians(assignedTech);
+      setSelectedTechnicianId(null);
+      toast.success("Técnico asignado correctamente");
+    } catch (error: any) {
+      toast.error(error.message || "Error al asignar técnico");
+    } finally {
+      setLoadingTechnicians(false);
+    }
+  };
+
+  // Handle removing technician assignment
+  const handleRemoveTechnician = async (assignmentId: number) => {
+    if (!id) return;
+
+    try {
+      await deleteWorkOrderTechnician(assignmentId);
+      setAssignedTechnicians(prev => prev.filter(tech => tech.id !== assignmentId));
+      toast.success("Técnico removido correctamente");
+    } catch (error) {
+      toast.error("Error al remover técnico");
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-10">
@@ -475,6 +553,67 @@ const WorkOrderEditPage = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Technician Assignment Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Asignación de Técnicos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex gap-2">
+                  <Select value={selectedTechnicianId?.toString() || ""} onValueChange={(value) => setSelectedTechnicianId(Number(value))}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Seleccionar técnico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {technicians.map((tech) => (
+                        <SelectItem key={tech.person_id} value={tech.person_id.toString()}>
+                          {tech.name} {tech.first_surname}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={handleAssignTechnician}
+                    disabled={!selectedTechnicianId || loadingTechnicians}
+                  >
+                    {loadingTechnicians ? (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent"></span>
+                    ) : "Asignar"}
+                  </Button>
+                </div>
+
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-2">Técnicos Asignados</h4>
+                  {assignedTechnicians.length > 0 ? (
+                    <div className="space-y-2">
+                      {assignedTechnicians.map((assignment) => (
+                        <div key={assignment.id} className="flex justify-between items-center p-2 bg-secondary/20 rounded-md">
+                          <span>
+                            {assignment.technician?.name} {assignment.technician?.first_surname}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveTechnician(assignment.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No hay técnicos asignados</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Detalles de Productos */}
@@ -587,37 +726,36 @@ const WorkOrderEditPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm mt-6">
                   <div className="space-y-2">
-                    <div className="p-3 rounded bg-accent/5">
-                      <div className="flex justify-between">
-                        <span>Subtotal Productos:</span>
-                        <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
-                      </div>
-                    </div>
-                    <div className="p-3 rounded bg-accent/5">
-                      <div className="flex justify-between">
-                        <span>Total Mano de Obra:</span>
-                        <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
-                      </div>
+                    <div className="p-3 rounded bg-accent/5"></div>
+                    <div className="flex justify-between">
+                      <span>Subtotal Productos:</span>
+                      <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="p-3 rounded bg-accent/5">
-                      <div className="flex justify-between">
-                        <span>Subtotal Neto:</span>
-                        <span className="font-medium">{formatPriceCLP(subtotal)}</span>
-                      </div>
+                  <div className="p-3 rounded bg-accent/5">
+                    <div className="flex justify-between">
+                      <span>Total Mano de Obra:</span>
+                      <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
                     </div>
-                    <div className="p-3 rounded bg-accent/5">
-                      <div className="flex justify-between">
-                        <span>IVA (19%):</span>
-                        <span className="font-medium">{formatPriceCLP(ivaAmount)}</span>
-                      </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="p-3 rounded bg-accent/5">
+                    <div className="flex justify-between">
+                      <span>Subtotal Neto:</span>
+                      <span className="font-medium">{formatPriceCLP(subtotal)}</span>
                     </div>
-                    <div className="p-3 rounded bg-primary/10 font-bold">
-                      <div className="flex justify-between">
-                        <span>TOTAL CON IVA:</span>
-                        <span>{formatPriceCLP(totalAmount)}</span>
-                      </div>
+                  </div>
+                  <div className="p-3 rounded bg-accent/5">
+                    <div className="flex justify-between">
+                      <span>IVA (19%):</span>
+                      <span className="font-medium">{formatPriceCLP(ivaAmount)}</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded bg-primary/10 font-bold">
+                    <div className="flex justify-between">
+                      <span>TOTAL CON IVA:</span>
+                      <span>{formatPriceCLP(totalAmount)}</span>
                     </div>
                   </div>
                 </div>

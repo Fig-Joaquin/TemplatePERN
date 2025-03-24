@@ -22,7 +22,8 @@ export const getAllWorkOrders = async (_req: Request, res: Response, _next: Next
               "productDetails",              // Detalles de productos asociados a la orden
               "productDetails.product",      // Producto de cada detalle
               "productDetails.quotation",    // Cotización asociada al detalle (si existe)
-              "productDetails.tax"           // Impuesto asociado al detalle
+              "productDetails.tax",       // Impuesto asociado al detalle
+              "technicians"              
             ]
           });
       res.json(workOrders);
@@ -40,7 +41,20 @@ export const getWorkOrderById = async (req: Request, res: Response, _next: NextF
 
         const workOrder = await workOrderRepository.findOne({
             where: { work_order_id: id },
-            relations: ["vehicle", "quotation"]
+            relations: [
+                "vehicle",
+                "vehicle.model",
+                "vehicle.model.brand",
+                "vehicle.owner",
+                "vehicle.company",
+                "quotation",
+                "debtors",
+                "productDetails",              // Detalles de productos asociados a la orden
+                "productDetails.product",      // Producto de cada detalle
+                "productDetails.quotation",    // Cotización asociada al detalle (si existe)
+                "productDetails.tax",       // Impuesto asociado al detalle
+                "technicians"                 // Detalles de productos asociados a la orden
+            ]
         });
 
         if (!workOrder) {
