@@ -6,7 +6,7 @@ import { fetchQuotationById, updateQuotation } from "@/services/quotationService
 import { getWorkProductDetailsByQuotationId, createWorkProductDetail, deleteWorkProductDetail } from "@/services/workProductDetail"
 import { fetchVehicles } from "@/services/vehicleService"
 import { fetchProducts } from "@/services/productService"
-import { getStockProducts } from "@/services/stockProductService"
+import { getStockProducts, updateStockProduct } from "@/services/stockProductService"
 import { getTaxById } from "@/services/taxService"
 import { Button } from "@/components/ui/button"
 import { NumberInput } from "@/components/numberInput"
@@ -133,8 +133,18 @@ export default function EditQuotationPage() {
         fetchData()
     }, [id])
 
-    // Product management functions
+    // Product management functions updated for stock handling
     const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
+        const stockProduct = stockProducts.find(
+            sp => sp.product?.product_id === Number(productId)
+        );
+
+        // Validate stock quantity
+        if (stockProduct && quantity > stockProduct.quantity) {
+            toast.error("No hay suficiente stock disponible");
+            return;
+        }
+
         setSelectedProducts(prevSelectedProducts => {
             const existingProduct = prevSelectedProducts.find(p => p.productId === productId)
             if (existingProduct) {
@@ -168,27 +178,27 @@ export default function EditQuotationPage() {
     // Cálculo optimizado del precio total de productos
     const totalProductPrice = selectedProducts.reduce((total, selectedProduct) => {
         const { productId, quantity, originalSalePrice } = selectedProduct
-        
+
         // Usar precio original si está disponible (para productos existentes)
         if (originalSalePrice) {
             return total + (originalSalePrice * quantity);
         }
-        
+
         // Buscar el producto en la lista de productos
         const product = products.find(p => p.product_id === Number(productId))
         if (!product) return total;
-        
+
         // Calcular precio con margen para productos nuevos
         const priceWithMargin = calculateTotalWithMargin(
-            Number(product.sale_price), 
-            quantity, 
+            Number(product.sale_price),
+            quantity,
             Number(product.profit_margin)
         )
-        
+
         return total + priceWithMargin
     }, 0)
 
-    const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => 
+    const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) =>
         total + Number(laborPrice), 0)
 
 
@@ -207,8 +217,21 @@ export default function EditQuotationPage() {
         totalPrice
     })
 
+    // Check stock availability before submitting
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        // Validate stock for all selected products
+        for (const selectedProduct of selectedProducts) {
+            const stockProduct = stockProducts.find(
+                sp => sp.product?.product_id === Number(selectedProduct.productId)
+            );
+
+            if (!stockProduct || selectedProduct.quantity > stockProduct.quantity) {
+                toast.error("No hay suficiente stock para uno o más productos");
+                return;
+            }
+        }
 
         if (!originalQuotation || !id || !selectedVehicleId) {
             toast.error("Faltan datos requeridos")
@@ -231,6 +254,21 @@ export default function EditQuotationPage() {
                 vehicle_id: selectedVehicleId,
                 total_price: Math.trunc(totalPrice)
             }
+
+            const updatedStockProducts = selectedProducts.map(({ productId, quantity }) => {
+                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === productId)
+                return {
+                    ...stockProduct,
+                    quantity: stockProduct?.quantity ? stockProduct.quantity - quantity : 0,
+                }
+            }
+            )
+            await Promise.all(updatedStockProducts.map((stockProduct) => {
+                if (stockProduct.stock_product_id !== undefined) {
+                    return updateStockProduct(stockProduct.stock_product_id.toString(), stockProduct);
+                }
+                return Promise.resolve(); // Skip if stock_product_id is undefined
+            }))
 
             // Update the quotation
             await updateQuotation(parseInt(id), updatedQuotation)
@@ -323,8 +361,18 @@ export default function EditQuotationPage() {
         setShowProductModal(true)
     }
 
-    // Función para manejar cambios temporales de productos en el modal
+    // Update temp product management with stock validation
     const handleTempProductChange = (productId: number, quantity: number, laborPrice: number) => {
+        const stockProduct = stockProducts.find(
+            sp => sp.product?.product_id === Number(productId)
+        );
+
+        // Validate stock quantity
+        if (stockProduct && quantity > stockProduct.quantity) {
+            toast.error("No hay suficiente stock disponible");
+            return;
+        }
+
         setTempSelectedProducts(prevSelectedProducts => {
             const existingProduct = prevSelectedProducts.find(p => p.productId === productId)
             if (existingProduct) {
@@ -342,13 +390,24 @@ export default function EditQuotationPage() {
         setTempSelectedProducts(prev => prev.filter(p => p.productId !== productId))
     }
 
-    // Función para aplicar cambios cuando se cierra el modal
+    // Update modal close handler to validate stock before applying changes
     const handleModalClose = (save: boolean) => {
         if (save) {
-            // Actualizar los productos seleccionados con los temporales
+            // Validate stock for all temp selected products
+            const hasInvalidStock = tempSelectedProducts.some(selectedProduct => {
+                const stockProduct = stockProducts.find(
+                    sp => sp.product?.product_id === Number(selectedProduct.productId)
+                );
+                return !stockProduct || selectedProduct.quantity > stockProduct.quantity;
+            });
+
+            if (hasInvalidStock) {
+                toast.error("No hay suficiente stock para uno o más productos");
+                return;
+            }
+
             setSelectedProducts(tempSelectedProducts)
         }
-        // Cerrar el modal
         setShowProductModal(false)
     }
 
@@ -429,10 +488,10 @@ export default function EditQuotationPage() {
                                         <SelectValue placeholder="Seleccionar estado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                                <SelectItem value="pending">Pendiente</SelectItem>
-                                                <SelectItem value="approved">Aprobada</SelectItem>
-                                                <SelectItem value="rejected">Rechazada</SelectItem>
-                                            </SelectContent>
+                                        <SelectItem value="pending">Pendiente</SelectItem>
+                                        <SelectItem value="approved">Aprobada</SelectItem>
+                                        <SelectItem value="rejected">Rechazada</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
 
@@ -476,14 +535,14 @@ export default function EditQuotationPage() {
                                         const stockProduct = stockProducts.find(
                                             sp => sp.product?.product_id === Number(productId)
                                         )
-                                        
+
                                         // Use originalSalePrice if available, otherwise calculate with margin
 
                                         // Calculate the unit price for display
-                                        const unitPrice = originalSalePrice || (product 
+                                        const unitPrice = originalSalePrice || (product
                                             ? calculateTotalWithMargin(Number(product.sale_price), 1, Number(product.profit_margin))
                                             : 0)
-                                            
+
                                         return (
                                             <li
                                                 key={productId}
@@ -494,6 +553,11 @@ export default function EditQuotationPage() {
                                                     <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                                                     <p className="text-sm text-muted-foreground">
                                                         Precio: {formatPriceCLP(unitPrice)} - Stock: {stockProduct?.quantity}
+                                                        {stockProduct && (
+                                                            <span className="text-xs ml-1 text-green-600">
+                                                                (Restante: {stockProduct.quantity - quantity})
+                                                            </span>
+                                                        )}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center space-x-4">
@@ -610,8 +674,8 @@ export default function EditQuotationPage() {
             </form>
 
             {/* Product selection dialog - modificado para usar estado temporal */}
-            <Dialog 
-                open={showProductModal} 
+            <Dialog
+                open={showProductModal}
                 onOpenChange={(open) => {
                     if (!open) handleModalClose(false)
                 }}
@@ -628,7 +692,7 @@ export default function EditQuotationPage() {
                             <CommandInput placeholder="Buscar repuestos..." className="h-9" />
                             <CommandList>
                                 <CommandEmpty>No se encontraron repuestos.</CommandEmpty>
-                                
+
                                 {/* Available products section */}
                                 <CommandGroup heading="Productos disponibles">
                                     <ScrollArea className="h-[200px]">
@@ -678,6 +742,11 @@ export default function EditQuotationPage() {
                                                                 <p className="text-sm text-muted-foreground">
                                                                     Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
                                                                     {stockProduct?.quantity || 0}
+                                                                    {isSelected && stockProduct && (
+                                                                        <span className="text-xs ml-1 text-green-600">
+                                                                            (Restante: {stockProduct.quantity - (selectedProduct?.quantity || 0)})
+                                                                        </span>
+                                                                    )}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -686,7 +755,7 @@ export default function EditQuotationPage() {
                                             })}
                                     </ScrollArea>
                                 </CommandGroup>
-                                
+
                                 {/* Unavailable products section */}
                                 <CommandGroup heading="Productos sin stock">
                                     <ScrollArea className="h-[200px]">

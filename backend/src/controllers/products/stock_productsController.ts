@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { StockProduct, Product } from "../../entities";
 import { StockProductSchema } from "../../schema/products/stock_productsValidator";
-import { DeepPartial } from "typeorm";
+
 
 const stockProductRepository = AppDataSource.getRepository(StockProduct);
 const productRepository = AppDataSource.getRepository(Product); // <-- nuevo repositorio
@@ -78,25 +78,25 @@ export const updateStockProduct = async (req: Request, res: Response, _next: Nex
             res.status(400).json({ message: "ID inválido" });
             return;
         }
+        
         const stockProduct = await stockProductRepository.findOneBy({ stock_product_id: id });
         if (!stockProduct) {
             res.status(404).json({ message: "Producto en stock no encontrado" });
             return;
         }
-        const updateData = (await StockProductSchema.partial().safeParse(req.body)).data as DeepPartial<StockProduct>;
-        // Verificar si se provee product_id directamente en la actualización
-        if (typeof updateData === 'object' && updateData !== null && 'product_id' in updateData) {
-            const product = await productRepository.findOneBy({ product_id: (updateData as { product_id: number }).product_id });
-            if (!product) {
-                res.status(404).json({ message: "Producto no encontrado" });
-                return;
-            }
-            (updateData as DeepPartial<StockProduct>).product = product;
-            delete updateData.product_id;
+        
+        // Extract only the quantity from the request body
+        // This simplifies handling complex nested objects
+        const { quantity } = req.body;
+        
+        if (quantity !== undefined) {
+            // Update only the quantity field
+            stockProduct.quantity = quantity;
+            await stockProductRepository.save(stockProduct);
+            res.json({ message: "Producto en stock actualizado exitosamente", stockProduct });
+        } else {
+            res.status(400).json({ message: "Se requiere el campo 'quantity' para actualizar el stock" });
         }
-        stockProductRepository.merge(stockProduct, updateData as DeepPartial<StockProduct>);
-        await stockProductRepository.save(stockProduct);
-        res.json({ message: "Producto en stock actualizado exitosamente", stockProduct });
     } catch (error) {
         res.status(500).json({ message: "Error al actualizar el producto en stock", error });
     }
