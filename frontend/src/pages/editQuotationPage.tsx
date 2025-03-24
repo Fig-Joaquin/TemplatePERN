@@ -102,13 +102,7 @@ export default function EditQuotationPage() {
                 setProductDetails(details)
 
                 // Map product details to selected products format
-                const initialSelectedProducts = details.map((detail: { 
-                    product_id: any; 
-                    quantity: any; 
-                    labor_price: any; 
-                    work_product_detail_id: any;
-                    sale_price: any; // Add this to capture the original sale price
-                }) => ({
+                const initialSelectedProducts = details.map((detail: WorkProductDetail) => ({
                     productId: detail.product_id || 0,
                     quantity: detail.quantity,
                     laborPrice: detail.labor_price || 0,
