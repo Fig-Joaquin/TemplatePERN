@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Table as TableIcon, LayoutGrid } from "lucide-react";
+import { Search, Table as TableIcon, LayoutGrid, FileText } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllWorkOrders, deleteWorkOrder } from "@/services/workOrderService";
 import WorkOrderCard from "@/components/workOrders/WorkOrderCard";
@@ -132,9 +132,13 @@ const WorkOrdersPage = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+
       {/* Encabezado: título, buscador, selector de ordenación, toggle de vista y botón "Nueva Orden" */}
+      <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+        <FileText className="w-8 h-8" />
+        Órdenes de Trabajo
+      </h1>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h1 className="text-2xl font-bold">Órdenes de Trabajo</h1>
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative w-72">
             <Input
@@ -173,7 +177,7 @@ const WorkOrdersPage = () => {
               Tarjetas
             </Button>
           </div>
-          <Button onClick={() => navigate("/admin/orden-trabajo/nuevo")}>
+          <Button onClick={() => navigate("/admin/nueva-orden-trabajo")}>
             Nueva Orden
           </Button>
         </div>

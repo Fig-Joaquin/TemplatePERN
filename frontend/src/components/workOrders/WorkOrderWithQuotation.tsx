@@ -30,6 +30,9 @@ const WorkOrderWithQuotation = () => {
   const [productDetails, setProductDetails] = useState<WorkProductDetail[]>([]);
   const [taxRate, setTaxRate] = useState<number>(0);
 
+  // Nuevo estado para filtrar el tipo: "all", "person" o "company"
+  const [selectedType, setSelectedType] = useState<"all" | "person" | "company">("all");
+
   // Carga inicial de vehículos
   useEffect(() => {
     const fetchData = async () => {
@@ -126,6 +129,8 @@ const WorkOrderWithQuotation = () => {
         vehicle_id: selectedVehicle.vehicle_id,
         quotation_id: selectedQuotation.quotation_id,
         total_amount: Math.trunc(finalTotal),
+
+
         description,
         order_date: getChileanISOString(), // Usar formato ISO con hora chilena preservada
       };
@@ -143,9 +148,26 @@ const WorkOrderWithQuotation = () => {
   };
 
   const filteredVehicles = vehicles.filter((v) => {
-    const fullName = `${v.license_plate} - ${v.model?.brand?.brand_name || ""} ${v.model?.model_name || ""} - ${v.owner ? v.owner.name : v.company?.name || ""
-      }`.toLowerCase();
-    return fullName.includes(vehicleQuery.toLowerCase());
+    const searchValue = vehicleQuery.toLowerCase();
+    const vehicleInfo = [
+      v.license_plate,
+      v.model?.brand?.brand_name,
+      v.model?.model_name,
+      v.owner?.name,
+      v.owner?.number_phone,
+      v.company?.name,
+      v.company?.phone,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    let matchesType = true;
+    if (selectedType === "person") {
+      matchesType = !!v.owner;
+    } else if (selectedType === "company") {
+      matchesType = !!v.company;
+    }
+    return vehicleInfo.includes(searchValue) && matchesType;
   });
 
   // Obtener el kilometraje actual del vehículo, a partir del registro más reciente
@@ -168,6 +190,31 @@ const WorkOrderWithQuotation = () => {
         Crear Orden de Trabajo con Cotización
       </h2>
       <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 shadow rounded">
+        {/* Filtro de tipo de vehículo según propietario */}
+        <div className="flex gap-2 mb-2">
+          <Button
+            variant={selectedType === "all" ? "default" : "outline"}
+            onClick={() => setSelectedType("all")}
+            type="button"
+          >
+            Todos
+          </Button>
+          <Button
+            variant={selectedType === "person" ? "default" : "outline"}
+            onClick={() => setSelectedType("person")}
+            type="button"
+          >
+            Personas
+          </Button>
+          <Button
+            variant={selectedType === "company" ? "default" : "outline"}
+            onClick={() => setSelectedType("company")}
+            type="button"
+          >
+            Empresas
+          </Button>
+        </div>
+
         {/* Selección de vehículo */}
         <section>
           <Label className="mb-2 block">Vehículo</Label>
