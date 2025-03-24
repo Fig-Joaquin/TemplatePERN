@@ -20,7 +20,11 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   }, [])
 
   if (isAuthenticated === null) {
-    return <p className="text-center mt-10">Verificando sesión...</p>
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="w-10 h-10 border-4 border-gray-300 rounded-full border-t-blue-600 animate-spin"></div>
+      </div>
+    )
   }
 
   return isAuthenticated ? children : <Navigate to="/" />
