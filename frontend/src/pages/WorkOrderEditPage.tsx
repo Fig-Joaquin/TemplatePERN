@@ -252,7 +252,11 @@ const WorkOrderEditPage = () => {
       }
 
       toast.success("Orden de trabajo y detalles actualizados exitosamente");
+      // Navigate first, then reload the page after a short delay to ensure navigation completes
       navigate("/admin/orden-trabajo");
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     } catch (error) {
       console.error("Error updating work order:", error);
       toast.error("Error al actualizar la orden de trabajo");

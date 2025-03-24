@@ -9,14 +9,31 @@ import { checkUserSession, userLogout } from "../services/userService"
 import { useNavigate, useMatches } from "react-router-dom"
 import DarkModeToggle from "@/components/darkModeToggle"
 import { cn } from "@/lib/utils"
+import Notifications from "./notification/Notification"
+import { fetchNotifications } from "@/services/notification/notificationService"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface NavbarProps {
   onLogout?: () => void
   isSidebarOpen: boolean
 }
 
+interface Notification {
+  notification_id: number;
+  message: string;
+  created_at: string;
+  type?: "success" | "warning" | "info";
+  read?: boolean;
+}
+
 const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [showNotifications, setShowNotifications] = useState(false)
   const navigate = useNavigate()
   const matches = useMatches()
   const currentMatch = matches.find((match) => (match.handle as { title?: string })?.title)
@@ -32,6 +49,21 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
       })
   }, [])
 
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const notesData = await fetchNotifications();
+        setNotifications(notesData || []);
+      } catch (error) {
+        console.error("Error loading notifications:", error);
+      }
+    };
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = () => {
     userLogout()
     if (onLogout) onLogout()
@@ -46,7 +78,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
         "fixed top-0 bg-sidebar border-b border-border",
         "px-6 h-16 flex items-center justify-between z-30", // Cambiado z-50 a z-30
         "transition-all duration-300 shadow-sm",
-        isSidebarOpen 
+        isSidebarOpen
           ? "left-72 w-[calc(100%-18rem)]" // Ajustado left-72 en lugar de left-64
           : "left-25 w-[calc(100%-6rem)]"  // Ajustado left-20 en lugar de left-16
       )}
@@ -54,12 +86,25 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
       <h1 className="text-xl font-bold text-foreground">{title}</h1>
 
       <div className="flex items-center space-x-6">
-        <button className="relative hover:text-primary transition-colors">
-          <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
-          <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
-            3
-          </span>
-        </button>
+        <Popover open={showNotifications} onOpenChange={setShowNotifications}>
+          <PopoverTrigger asChild>
+            <button className="relative hover:text-primary transition-colors">
+              <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0">
+            <Notifications
+              notifications={notifications}
+              setNotifications={setNotifications}
+              onClose={() => setShowNotifications(false)}
+            />
+          </PopoverContent>
+        </Popover>
         <DarkModeToggle />
         <img src="/OR_LOGO A&M.png" alt="Logo" className="h-10 w-auto center" />
         {user && (
@@ -68,8 +113,8 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
           </span>
         )}
         {user && (
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className="text-primary hover:text-hover-primary transition-colors hover:underline"
           >
             Logout
