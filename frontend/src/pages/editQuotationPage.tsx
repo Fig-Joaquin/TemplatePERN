@@ -429,10 +429,10 @@ export default function EditQuotationPage() {
                                         <SelectValue placeholder="Seleccionar estado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                            <SelectItem value="pending">Pendiente</SelectItem>
-                                            <SelectItem value="approved">Aprobada</SelectItem>
-                                            <SelectItem value="rejected">Rechazada</SelectItem>
-                                        </SelectContent>
+                                                <SelectItem value="pending">Pendiente</SelectItem>
+                                                <SelectItem value="approved">Aprobada</SelectItem>
+                                                <SelectItem value="rejected">Rechazada</SelectItem>
+                                            </SelectContent>
                                 </Select>
                             </div>
 
@@ -628,51 +628,97 @@ export default function EditQuotationPage() {
                             <CommandInput placeholder="Buscar repuestos..." className="h-9" />
                             <CommandList>
                                 <CommandEmpty>No se encontraron repuestos.</CommandEmpty>
-                                <CommandGroup>
-                                    <ScrollArea className="h-[400px]">
-                                        {products.map((product) => {
-                                            const stockProduct = stockProducts.find(
-                                                sp => sp.product?.product_id === product.product_id
-                                            )
-                                            const selectedProduct = tempSelectedProducts.find(
-                                                sp => sp.productId === product.product_id
-                                            )
-                                            const isSelected = !!selectedProduct
+                                
+                                {/* Available products section */}
+                                <CommandGroup heading="Productos disponibles">
+                                    <ScrollArea className="h-[200px]">
+                                        {products
+                                            .filter(product => {
+                                                // Find the stock for this product
+                                                const stockProduct = stockProducts.find(
+                                                    sp => sp.product?.product_id === product.product_id
+                                                );
+                                                // Only include products with stock quantity > 0
+                                                return stockProduct && stockProduct.quantity > 0;
+                                            })
+                                            .map((product) => {
+                                                const stockProduct = stockProducts.find(
+                                                    sp => sp.product?.product_id === product.product_id
+                                                )
+                                                const selectedProduct = tempSelectedProducts.find(
+                                                    sp => sp.productId === product.product_id
+                                                )
+                                                const isSelected = !!selectedProduct
 
-                                            return (
-                                                <CommandItem
-                                                    key={product.product_id}
-                                                    className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent/5"
-                                                    onSelect={() => {
-                                                        // onSelect receives the value, not an event object
-                                                        if (!isSelected) {
-                                                            handleTempProductChange(product.product_id, 1, 0)
-                                                        }
-                                                    }}
-                                                >
-                                                    <div className="flex items-center space-x-4 flex-1">
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    handleTempProductChange(product.product_id, 1, 0)
-                                                                } else {
-                                                                    handleTempRemoveProduct(product.product_id)
-                                                                }
-                                                            }}
-                                                        />
-                                                        <div className="flex-1">
-                                                            <p className="font-medium">{product.product_name}</p>
-                                                            <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
-                                                                {stockProduct?.quantity || 0}
-                                                            </p>
+                                                return (
+                                                    <CommandItem
+                                                        key={product.product_id}
+                                                        className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent/5"
+                                                        onSelect={() => {
+                                                            // onSelect receives the value, not an event object
+                                                            if (!isSelected) {
+                                                                handleTempProductChange(product.product_id, 1, 0)
+                                                            }
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center space-x-4 flex-1">
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                onCheckedChange={(checked) => {
+                                                                    if (checked) {
+                                                                        handleTempProductChange(product.product_id, 1, 0)
+                                                                    } else {
+                                                                        handleTempRemoveProduct(product.product_id)
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <p className="font-medium">{product.product_name}</p>
+                                                                <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
+                                                                    {stockProduct?.quantity || 0}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </CommandItem>
-                                            )
-                                        })}
+                                                    </CommandItem>
+                                                )
+                                            })}
+                                    </ScrollArea>
+                                </CommandGroup>
+                                
+                                {/* Unavailable products section */}
+                                <CommandGroup heading="Productos sin stock">
+                                    <ScrollArea className="h-[200px]">
+                                        {products
+                                            .filter(product => {
+                                                // Find the stock for this product
+                                                const stockProduct = stockProducts.find(
+                                                    sp => sp.product?.product_id === product.product_id
+                                                );
+                                                // Only include products with stock quantity = 0
+                                                return !stockProduct || stockProduct.quantity <= 0;
+                                            })
+                                            .map((product) => {
+                                                return (
+                                                    <CommandItem
+                                                        key={product.product_id}
+                                                        className="flex items-center justify-between p-2 cursor-not-allowed opacity-50"
+                                                        disabled={true}
+                                                    >
+                                                        <div className="flex items-center space-x-4 flex-1">
+                                                            <Checkbox disabled checked={false} />
+                                                            <div className="flex-1">
+                                                                <p className="font-medium">{product.product_name}</p>
+                                                                <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    Precio: {formatPriceCLP(Number(product.sale_price))} - Stock: 0
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </CommandItem>
+                                                )
+                                            })}
                                     </ScrollArea>
                                 </CommandGroup>
                             </CommandList>
