@@ -15,7 +15,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME,
     // synchronize: process.env.NODE_ENV !== "production", // Desactivar en producción
     synchronize: true, //! Comentar cuando esté en producción
-    logging: process.env.NODE_ENV !== "production", // No loggear en producción
+    // logging: process.env.NODE_ENV !== "production", // No loggear en producción
     entities: Object.values(entities), // Carga todas las entidades automáticamente
 });
 

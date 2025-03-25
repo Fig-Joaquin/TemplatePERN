@@ -703,7 +703,7 @@ const WorkOrderEditPage = () => {
                             <td className="px-4 py-2">
                               <Input
                                 type="number"
-                                value={product.labor_price || 0}
+                                value={product.labor_price || 0} y
                                 onChange={(e) => handleProductLaborPriceChange(index, Number(e.target.value))}
                                 className="w-24 ml-auto text-right"
                                 disabled={submitting}

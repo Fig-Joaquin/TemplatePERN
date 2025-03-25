@@ -13,9 +13,10 @@ export class WorkProductDetail {
     @PrimaryGeneratedColumn()
     work_product_detail_id!: number;
 
-    @ManyToOne(() => WorkOrder, { nullable: true, cascade: true })
+    @ManyToOne(() => WorkOrder, { nullable: true })
     @JoinColumn({ name: "work_order_id" })
-    work_order!: WorkOrder;
+    work_order!: WorkOrder | null;
+    
 
     @RelationId((detail: WorkProductDetail) => detail.work_order)
     work_order_id!: number;

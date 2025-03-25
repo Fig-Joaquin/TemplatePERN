@@ -12,10 +12,11 @@ import { fetchVehicles } from "../../services/vehicleService";
 import { fetchQuotations } from "../../services/quotationService";
 import { createWorkOrder } from "../../services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "../../services/workProductDetail";
+import { getStockProducts, updateStockProduct } from "../../services/stockProductService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { getTaxById } from "@/services/taxService";
 import { getChileanISOString, formatChileanDate, formatChileanShortDate } from "@/utils/dateUtils";
-import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput } from "../../types/interfaces";
+import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput, StockProduct } from "../../types/interfaces";
 
 const WorkOrderWithQuotation = () => {
   const navigate = useNavigate();
@@ -29,18 +30,23 @@ const WorkOrderWithQuotation = () => {
   const [loading, setLoading] = useState(false);
   const [productDetails, setProductDetails] = useState<WorkProductDetail[]>([]);
   const [taxRate, setTaxRate] = useState<number>(0);
+  const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
 
   // Nuevo estado para filtrar el tipo: "all", "person" o "company"
   const [selectedType, setSelectedType] = useState<"all" | "person" | "company">("all");
 
-  // Carga inicial de vehículos
+  // Carga inicial de vehículos y stock products
   useEffect(() => {
     const fetchData = async () => {
       try {
         const vehiclesData = await fetchVehicles();
         setVehicles(vehiclesData);
+
+        // Fetch stock products as well
+        const stockData = await getStockProducts();
+        setStockProducts(stockData);
       } catch (error) {
-        toast.error("Error al cargar vehículos");
+        toast.error("Error al cargar datos iniciales");
       }
     };
     fetchData();
@@ -117,26 +123,57 @@ const WorkOrderWithQuotation = () => {
   const taxAmount = subtotal * taxRate;
   const finalTotal = subtotal + taxAmount;
 
+  // Verifica si hay suficiente stock para todos los productos en la cotización
+  const verifyStockAvailability = (): boolean => {
+    if (!productDetails.length) return true;
+
+    let hasEnoughStock = true;
+
+    // Check each product in the quotation details
+    for (const detail of productDetails) {
+      const stockProduct = stockProducts.find(sp =>
+        sp.product?.product_id === detail.product_id
+      );
+
+      if (!stockProduct || stockProduct.quantity < detail.quantity) {
+        const productName = detail.product?.product_name || `ID: ${detail.product_id}`;
+        toast.error(`No hay suficiente stock para el producto: ${productName}`);
+        hasEnoughStock = false;
+        break;
+      }
+    }
+
+    return hasEnoughStock;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicle || !description || !selectedQuotation) {
       toast.error("El vehículo, la descripción y la cotización son obligatorios");
       return;
     }
+
+    // Verify if there's enough stock for all products
+    if (!verifyStockAvailability()) {
+      return;
+    }
+
     setLoading(true);
     try {
       const workOrderPayload: Partial<WorkOrderInput> = {
         vehicle_id: selectedVehicle.vehicle_id,
         quotation_id: selectedQuotation.quotation_id,
         total_amount: Math.trunc(finalTotal),
-
-
         description,
         order_date: getChileanISOString(), // Usar formato ISO con hora chilena preservada
       };
 
       console.log("Enviando orden con fecha chilena:", workOrderPayload.order_date);
-      await createWorkOrder(workOrderPayload);
+      const response = await createWorkOrder(workOrderPayload);
+
+      // Update stock for each product in the quotation
+      await updateProductStock();
+
       toast.success("Orden de trabajo creada exitosamente");
       navigate("/admin/orden-trabajo");
     } catch (error: any) {
@@ -144,6 +181,32 @@ const WorkOrderWithQuotation = () => {
       toast.error("Error al crear la orden de trabajo");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to update stock quantities
+  const updateProductStock = async () => {
+    try {
+      // For each product in the quotation, reduce its stock quantity
+      for (const detail of productDetails) {
+        const stockProduct = stockProducts.find(sp =>
+          sp.product?.product_id === detail.product_id
+        );
+
+        if (stockProduct && stockProduct.stock_product_id !== undefined) {
+          const updatedStock = {
+            ...stockProduct,
+            quantity: Math.max(0, stockProduct.quantity - detail.quantity)
+          };
+
+          // Update the stock in the database
+          await updateStockProduct(stockProduct.stock_product_id.toString(), updatedStock);
+          console.log(`Stock updated for product ID: ${detail.product_id}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating product stock:", error);
+      toast.error("Error al actualizar el inventario");
     }
   };
 

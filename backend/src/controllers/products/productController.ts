@@ -54,6 +54,7 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         // Extraer los datos validados
         const productData = validationResult.data;
         const { supplier_id, product_type_id, product_quantity, ...restData } = productData;
+        
 
         let supplierEntity = null;
         if (supplier_id) {
@@ -78,7 +79,7 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         let product = productRepository.create({
             ...restData,
             supplier: supplierEntity || undefined,
-            type: productTypeEntity
+            type: productTypeEntity, product_quantity
         });
 
         product = await productRepository.save(product); // Guardar producto y obtener su ID

@@ -167,11 +167,11 @@ export let dbRelationships: DatabaseRelationships = {};
   try {
     dbSchema = await getDatabaseSchema();
     dbRelationships = await getDatabaseRelationships();
-    console.log('Database schema loaded successfully');
-    console.log('Database schema:', dbSchema);
+    // console.log('Database schema loaded successfully');
+    // console.log('Database schema:', dbSchema);
     // console.log('Database relationships:', dbRelationships);
   } catch (error) {
-    console.error('Failed to initialize database schema:', error);
+    // console.error('Failed to initialize database schema:', error);
   }
 })();
 
@@ -180,7 +180,7 @@ export async function refreshSchema(): Promise<void> {
   try {
     dbSchema = await getDatabaseSchema();
     dbRelationships = await getDatabaseRelationships();
-    console.log('Database schema refreshed successfully');
+    // console.log('Database schema refreshed successfully');
   } catch (error) {
     console.error('Failed to refresh database schema:', error);
     throw error;

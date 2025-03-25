@@ -8,21 +8,21 @@ export class WorkOrder {
     @PrimaryGeneratedColumn()
     work_order_id!: number;
 
-    @OneToMany(() => Debtor, (debtor) => debtor.workOrder)
+    @OneToMany(() => Debtor, (debtor) => debtor.workOrder, { cascade: true, onDelete: "CASCADE" })
     debtors!: Debtor[];
 
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })
     vehicle!: Vehicle;
     
-    @OneToMany(() => WorkProductDetail, (detail) => detail.work_order)
-    productDetails!: WorkProductDetail[];
+    @OneToMany(() => WorkProductDetail, (detail) => detail.work_order, { cascade: true })
+    productDetails!: WorkProductDetail[];    
 
     @ManyToOne(() => Quotation, { nullable: true })
     @JoinColumn({ name: "quotation_id" })
     quotation!: Quotation;
 
-    @OneToMany(() => WorkOrderTechnician, (wot) => wot.workOrder)
+    @OneToMany(() => WorkOrderTechnician, (wot) => wot.workOrder, { cascade: true, onDelete: "CASCADE" })
     technicians!: WorkOrderTechnician[];
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
@@ -43,5 +43,5 @@ export class WorkOrder {
     description!: string;
 
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-        order_date!: Date;
+    order_date!: Date;
 }
