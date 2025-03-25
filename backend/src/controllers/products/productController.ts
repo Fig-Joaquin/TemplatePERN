@@ -55,11 +55,13 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         const productData = validationResult.data;
         const { supplier_id, product_type_id, product_quantity, ...restData } = productData;
 
-        // Verificar proveedor
-        const supplierEntity = await supplierRepository.findOneBy({ supplier_id });
-        if (!supplierEntity) {
+        let supplierEntity = null;
+        if (supplier_id) {
+            supplierEntity = await supplierRepository.findOneBy({ supplier_id });
+            if (!supplierEntity) {
             res.status(404).json({ message: "Proveedor no encontrado" });
             return;
+            }
         }
 
         // Verificar tipo de producto
@@ -75,8 +77,7 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         // **Paso 1: Insertar el producto SIN el stock aún**
         let product = productRepository.create({
             ...restData,
-            product_quantity: product_quantity ?? 0,
-            supplier: supplierEntity,
+            supplier: supplierEntity || undefined,
             type: productTypeEntity
         });
 
