@@ -2,11 +2,11 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMan
 import { IsString, Length, IsInt, Min, Max } from "class-validator";
 import { VehicleModel, Person, MileageHistory, Company} from "../";
 
+
 @Entity("vehicles")
 export class Vehicle {
     @PrimaryGeneratedColumn()
     vehicle_id!: number;
-
 
     @ManyToOne(() => VehicleModel, { nullable: false })
     @JoinColumn({ name: "vehicle_model_id" })
@@ -14,12 +14,11 @@ export class Vehicle {
 
     @ManyToOne(() => Person, { nullable: true })
     @JoinColumn({ name: "person_id" })
-    owner!: Person;
+    owner!: Person | null;
 
     @ManyToOne(() => Company, { nullable: true })
     @JoinColumn({ name: "company_id" })
-    company!: Company;
-
+    company!: Company | null;
 
     @OneToMany(() => MileageHistory, mileageHistory => mileageHistory.vehicle, { cascade: true })
     mileage_history!: MileageHistory[];
@@ -36,14 +35,14 @@ export class Vehicle {
     })
     vehicle_status!: string;
 
-    @Column()
+    @Column({ nullable: true })
     @IsInt()
     @Min(1900, { message: "El año no puede ser menor a 1900" })
     @Max(new Date().getFullYear() + 1, { message: "El año no puede ser mayor al próximo año" })
-    year!: number;
+    year?: number;
 
-    @Column({ length: 30 })
+    @Column({ length: 30 , nullable: true })
     @IsString()
     @Length(3, 30, { message: "El color debe tener entre 3 y 30 caracteres" })
-    color!: string;
+    color?: string;
 }

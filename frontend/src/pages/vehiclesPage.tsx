@@ -43,7 +43,7 @@ const VehiclesPage = () => {
   const [modalType, setModalType] = useState<ModalType>("create");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [licensePlate, setLicensePlate] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year, setYear] = useState<number | undefined>(undefined);
   const [color, setColor] = useState("");
   const [mileage, setMileage] = useState(0);
   const [selectedBrand, setSelectedBrand] = useState<brand | null>(null);
@@ -51,7 +51,6 @@ const VehiclesPage = () => {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [vehicleStatus, setVehicleStatus] = useState("running");
-  // Nuevo estado para tipo de propietario: "person" o "company"
   const [ownerType, setOwnerType] = useState<"person" | "company">("person");
 
   const vehicleStatusOptions = [
@@ -86,22 +85,23 @@ const VehiclesPage = () => {
   }, [fetchData]);
 
   const filteredVehicles = vehicles.filter((vehicle) =>
-    vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase()),
+    vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Al abrir el modal, se inicializa el formulario. Se determina el ownerType según si el vehículo tiene owner o company.
+  // Al abrir el modal, se inicializa el formulario.
   const openModal = (type: ModalType, vehicle?: Vehicle) => {
     setModalType(type);
     setSelectedVehicle(vehicle || null);
     setLicensePlate(vehicle?.license_plate || "");
-    setYear(vehicle?.year || new Date().getFullYear());
+    // Si vehicle?.year es null, asigna undefined para evitar enviar null en el PUT
+    setYear(vehicle?.year ?? undefined);
     setColor(vehicle?.color || "");
     setMileage(vehicle?.mileage_history?.[vehicle.mileage_history.length - 1]?.current_mileage || 0);
     setSelectedBrand(
-      brands.find((b) => b.vehicle_brand_id === vehicle?.model.brand.vehicle_brand_id) || null,
+      brands.find((b) => b.vehicle_brand_id === vehicle?.model.brand.vehicle_brand_id) || null
     );
     setSelectedModel(
-      models.find((m) => m.vehicle_model_id === vehicle?.model.vehicle_model_id) || null,
+      models.find((m) => m.vehicle_model_id === vehicle?.model.vehicle_model_id) || null
     );
     if (vehicle) {
       if (vehicle.owner) {
@@ -114,7 +114,6 @@ const VehiclesPage = () => {
         setSelectedPerson(null);
       }
     } else {
-      // En modo creación, por defecto dejamos "person"
       setOwnerType("person");
       setSelectedPerson(null);
       setSelectedCompany(null);
@@ -127,7 +126,7 @@ const VehiclesPage = () => {
     setModalOpen(false);
     setSelectedVehicle(null);
     setLicensePlate("");
-    setYear(new Date().getFullYear());
+    setYear(undefined); // Reset to undefined
     setColor("");
     setMileage(0);
     setSelectedBrand(null);
@@ -140,7 +139,6 @@ const VehiclesPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validar que se haya seleccionado el propietario correcto según ownerType
     if (ownerType === "person" && !selectedPerson) {
       toast.error("Por favor, seleccione un propietario (persona)");
       return;
@@ -152,28 +150,36 @@ const VehiclesPage = () => {
     if (!selectedBrand || !selectedModel) {
       toast.error("Por favor, complete los campos de marca y modelo");
       return;
-
-    }
-
-    // Armar el objeto de datos a enviar
-    const vehicleData: any = {
-      license_plate: licensePlate,
-      year,
-      color,
-      mileageHistory: mileage,
-      vehicle_brand_id: selectedBrand.vehicle_brand_id,
-      vehicle_model_id: selectedModel.vehicle_model_id,
-      vehicle_status: vehicleStatus as "running" | "not_running",
-    };
-
-    // Según el ownerType, se asigna la propiedad correspondiente
-    if (ownerType === "person") {
-      vehicleData.person_id = selectedPerson!.person_id;
-    } else {
-      vehicleData.company_id = selectedCompany!.company_id;
     }
 
     try {
+      const vehicleData: any = {
+        license_plate: licensePlate,
+        vehicle_status: vehicleStatus as "running" | "not_running",
+        vehicle_model_id: selectedModel.vehicle_model_id,
+      };
+
+      // Incluir el año solo si tiene valor (no undefined)
+      if (year !== undefined && year !== null) {
+        vehicleData.year = year;
+      }
+
+      if (color) {
+        vehicleData.color = color;
+      }
+
+      // Según el ownerType, asignar la propiedad correspondiente sin enviar null
+      if (ownerType === "person") {
+        vehicleData.person_id = selectedPerson!.person_id;
+      } else {
+        vehicleData.company_id = selectedCompany!.company_id;
+      }
+
+      // Incluir mileageHistory solo si se ingresó un nuevo valor
+      if (modalType === "create" || (modalType === "edit" && mileage > 0)) {
+        vehicleData.mileageHistory = mileage;
+      }
+
       if (modalType === "create") {
         await createVehicle(vehicleData);
         toast.success("Vehículo creado exitosamente");
@@ -184,6 +190,7 @@ const VehiclesPage = () => {
       fetchData();
       closeModal();
     } catch (error: any) {
+      console.error("Error saving vehicle:", error);
       toast.error(error.response?.data?.message || "Error al guardar el vehículo");
     }
   };
@@ -199,6 +206,11 @@ const VehiclesPage = () => {
         toast.error(error.response?.data?.message || "Error al eliminar el vehículo");
       }
     }
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setYear(value === "" ? undefined : Number(value));
   };
 
   return (
@@ -285,25 +297,38 @@ const VehiclesPage = () => {
             </>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Campo para la placa */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Placa</label>
-                <Input type="text" value={licensePlate} onChange={(e) => setLicensePlate(e.target.value)} required />
-              </div>
-              {/* Año, color y kilometraje */}
-              <div>
-                <label className="block text-sm mb-1">Año</label>
-                <Input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} required />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Color</label>
-                <Input type="text" value={color} onChange={(e) => setColor(e.target.value)} pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$" />
+                <label className="text-sm font-medium">Patente *</label>
+                <Input
+                  type="text"
+                  value={licensePlate}
+                  placeholder="AABB10"
+                  onChange={(e) => setLicensePlate(e.target.value)}
+                  required
+                />
               </div>
               <div>
-                <label className="block text-sm mb-1">Kilometraje</label>
+                <label className="block text-sm mb-1">Año (Opcional)</label>
+                <Input
+                  type="number"
+                  value={year === undefined ? "" : year}
+                  onChange={handleYearChange}
+                  placeholder="No especificado"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Color (Opcional)</label>
+                <Input
+                  type="text"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Kilometraje *</label>
                 <NumberInput value={mileage} onChange={(value) => setMileage(value)} min={0} />
               </div>
-              {/* Estado del vehículo */}
               <div>
                 <label className="block text-sm mb-1">Estado del vehículo</label>
                 <Select value={vehicleStatus} onValueChange={setVehicleStatus}>
@@ -319,7 +344,6 @@ const VehiclesPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Nuevo control: Tipo de propietario */}
               <div>
                 <label className="block text-sm mb-1">Tipo de propietario</label>
                 <Select value={ownerType} onValueChange={(value) => setOwnerType(value as "person" | "company")}>
@@ -332,7 +356,6 @@ const VehiclesPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Según el tipo, se muestra el selector correspondiente */}
               {ownerType === "person" ? (
                 <div>
                   <label className="block text-sm mb-1">Propietario (Persona)</label>
@@ -376,7 +399,6 @@ const VehiclesPage = () => {
                   </Select>
                 </div>
               )}
-              {/* Selección de marca y modelo */}
               <div>
                 <label className="block text-sm mb-1">Marca</label>
                 <Select
@@ -420,7 +442,6 @@ const VehiclesPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Dialog Footer */}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeModal}>
                   Cancelar

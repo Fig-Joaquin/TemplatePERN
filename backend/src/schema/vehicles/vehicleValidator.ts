@@ -17,10 +17,15 @@ export const vehicleSchema = z.object({
     year: z.number()
         .int()
         .min(1900, "El año no puede ser menor a 1900")
-        .max(new Date().getFullYear() + 1, "El año no puede ser mayor al próximo año"),
-    color: z.string()
-        .min(3, "El color debe tener entre 3 y 30 caracteres")
-        .max(30, "El color debe tener entre 3 y 30 caracteres")
+        .max(new Date().getFullYear() + 1, "El año no puede ser mayor al próximo año")
+        .optional(),
+
+        color: z.union([
+            z.literal(""),
+            z.string()
+              .min(3, "El color debe tener entre 3 y 30 caracteres")
+              .max(30, "El color debe tener entre 3 y 30 caracteres")
+          ]).optional()          
 });
 
 export type VehicleInput = z.infer<typeof vehicleSchema>;
