@@ -8,7 +8,7 @@ import VehiclesPage from "@/pages/vehiclesPage";
 import ClientPage from "@/pages/clientPage";
 import QuotationPage from "@/pages/quotationPage";
 import QuotationCreatePage from "@/pages/quotationCreatePage";
-import EditQuotationPage from "@/pages/editQuotationPage";
+import EditQuotationPage from "@/pages/QuotationEditPage";
 import ProductPage from "@/pages/productPage";
 import ProductCreatePage from "@/pages/productCreatePage";
 import ProductCategoryPage from "@/pages/ProductCategoryPage";
