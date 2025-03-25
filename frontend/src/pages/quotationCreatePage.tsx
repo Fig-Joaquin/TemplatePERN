@@ -213,7 +213,9 @@ const QuotationCreatePage = () => {
     return total + (product ? calculateTotalWithMargin(Number(product.sale_price), quantity, Number(product.profit_margin)) : 0)
   }, 0)
 
-  const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0)
+  const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => {
+    return total + (Number(laborPrice) || 0)  // Convertir a número y usar 0 si es inválido
+}, 0)
 
   const subtotalWithoutTax = totalProductPrice + totalLaborPrice
   const taxAmount = subtotalWithoutTax * taxRate

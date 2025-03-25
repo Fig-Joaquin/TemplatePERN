@@ -1,9 +1,15 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { fetchQuotationById, updateQuotation } from "@/services/quotationService"
-import { getWorkProductDetailsByQuotationId, createWorkProductDetail, deleteWorkProductDetail } from "@/services/workProductDetail"
+import {
+    getWorkProductDetailsByQuotationId,
+    createWorkProductDetail,
+    deleteWorkProductDetail,
+} from "@/services/workProductDetail"
 import { fetchVehicles } from "@/services/vehicleService"
 import { fetchProducts } from "@/services/productService"
 import { getStockProducts, updateStockProduct } from "@/services/stockProductService"
@@ -22,15 +28,26 @@ import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
 import { Save, ArrowLeft, FileText, Plus, Package } from "lucide-react"
-import { type Vehicle, type Quotation, type WorkProductDetail, type Product, type StockProduct } from "@/types/interfaces"
+import type { Vehicle, Quotation, WorkProductDetail, Product, StockProduct } from "@/types/interfaces"
 
 // Interface for selected products (similar to quotationCreatePage)
 interface SelectedProduct {
     productId: number
     quantity: number
     laborPrice: number
-    workProductDetailId?: number // For tracking existing details that might need to be deleted
-    originalSalePrice?: number // Add this field to store the original price
+    workProductDetailId?: number
+    originalSalePrice?: number
+    originalQuantity?: number // Añadimos esta propiedad
+}
+
+const fetchTax = async () => {
+    try {
+        const res = await getTaxById(1)
+        const TAX_RATE = res.tax_rate / 100
+        return TAX_RATE
+    } catch (error) {
+        toast.error("Error al cargar stock de productos")
+    }
 }
 
 export default function EditQuotationPage() {
@@ -45,7 +62,7 @@ export default function EditQuotationPage() {
     const [status, setStatus] = useState<"pending" | "approved" | "rejected">("pending")
     const [vehicles, setVehicles] = useState<Vehicle[]>([])
     const [productDetails, setProductDetails] = useState<WorkProductDetail[]>([])
-    const [originalQuotation, setOriginalQuotation] = useState<Quotation | null>(null)
+    const [, setOriginalQuotation] = useState<Quotation | null>(null)
     const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null)
 
     // New states for product management
@@ -70,15 +87,14 @@ export default function EditQuotationPage() {
                 setLoading(true)
 
                 // Fetch the quotation first to get vehicle_id
-                const quotationData = await fetchQuotationById(parseInt(id))
+                const quotationData = await fetchQuotationById(Number.parseInt(id))
                 setOriginalQuotation(quotationData)
 
                 // Set form fields
                 setDescription(quotationData.description)
                 setStatus(quotationData.quotation_status as "pending" | "approved" | "rejected")
 
-                const vehicleId = quotationData.vehicle_id ||
-                    (quotationData.vehicle && quotationData.vehicle.vehicle_id);
+                const vehicleId = quotationData.vehicle_id || (quotationData.vehicle && quotationData.vehicle.vehicle_id)
 
                 if (!vehicleId) {
                     toast.error("No se encontró un vehículo asociado a esta cotización")
@@ -92,13 +108,13 @@ export default function EditQuotationPage() {
                 setVehicles(vehiclesData)
 
                 // Find current vehicle in the vehicles list
-                const vehicle = vehiclesData.find(v => v.vehicle_id === vehicleId)
+                const vehicle = vehiclesData.find((v) => v.vehicle_id === vehicleId)
                 if (vehicle) {
                     setCurrentVehicle(vehicle)
                 }
 
                 // Fetch product details
-                const details = await getWorkProductDetailsByQuotationId(parseInt(id))
+                const details = await getWorkProductDetailsByQuotationId(Number.parseInt(id))
                 setProductDetails(details)
 
                 // Map product details to selected products format
@@ -107,7 +123,8 @@ export default function EditQuotationPage() {
                     quantity: detail.quantity,
                     laborPrice: detail.labor_price || 0,
                     workProductDetailId: detail.work_product_detail_id,
-                    originalSalePrice: detail.sale_price || 0 // Store the original sale price
+                    originalSalePrice: detail.product?.sale_price || 0,
+                    originalQuantity: detail.quantity, // Guardamos la cantidad original
                 }))
                 setSelectedProducts(initialSelectedProducts)
 
@@ -118,10 +135,14 @@ export default function EditQuotationPage() {
                 const stockData = await getStockProducts()
                 setStockProducts(stockData)
 
-                // Get tax rate
-                const taxData = await getTaxById(1)
-                setTaxRate(taxData.tax_rate / 100)
+                console.log("Stock products:", stockData)
+                console.log("Product details:", details)
 
+                fetchTax().then((rate) => {
+                    if (rate !== undefined) {
+                        setTaxRate(rate)
+                    }
+                })
             } catch (error) {
                 console.error("Error loading quotation:", error)
                 toast.error("Error al cargar la cotización")
@@ -135,22 +156,18 @@ export default function EditQuotationPage() {
 
     // Product management functions updated for stock handling
     const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
-        const stockProduct = stockProducts.find(
-            sp => sp.product?.product_id === Number(productId)
-        );
+        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
 
         // Validate stock quantity
         if (stockProduct && quantity > stockProduct.quantity) {
-            toast.error("No hay suficiente stock disponible");
-            return;
+            toast.error("No hay suficiente stock disponible")
+            return
         }
 
-        setSelectedProducts(prevSelectedProducts => {
-            const existingProduct = prevSelectedProducts.find(p => p.productId === productId)
+        setSelectedProducts((prevSelectedProducts) => {
+            const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
             if (existingProduct) {
-                return prevSelectedProducts.map(p =>
-                    p.productId === productId ? { ...p, quantity, laborPrice } : p
-                )
+                return prevSelectedProducts.map((p) => (p.productId === productId ? { ...p, quantity, laborPrice } : p))
             } else {
                 return [...prevSelectedProducts, { productId, quantity, laborPrice }]
             }
@@ -159,52 +176,36 @@ export default function EditQuotationPage() {
 
     // Función mejorada para eliminar productos
     const handleRemoveProduct = (productId: number) => {
-        const productToRemove = selectedProducts.find(p => p.productId === productId)
+        const productToRemove = selectedProducts.find((p) => p.productId === productId)
 
         // Si el producto tiene un ID de detalle existente, marcarlo para eliminación
         if (productToRemove?.workProductDetailId) {
-            setDetailsToDelete(prev => [...prev, productToRemove.workProductDetailId!])
+            setDetailsToDelete((prev) => [...prev, productToRemove.workProductDetailId!])
         }
 
         // Eliminar el producto de la lista de seleccionados
-        setSelectedProducts(prev => prev.filter(p => p.productId !== productId))
+        setSelectedProducts((prev) => prev.filter((p) => p.productId !== productId))
     }
 
-    // Función utilitaria para calcular precio con margen de ganancia
-    const calculateTotalWithMargin = (basePrice: number, quantity: number, profitMargin: number) => {
-        return basePrice * quantity * (1 + profitMargin / 100)
+    // Función que utiliza el margen del producto (profit_margin) en los cálculos
+    const calculateTotalWithMargin = (price: number, quantity: number, profitMargin: number) => {
+        return price * quantity * (1 + profitMargin / 100)
     }
 
-    // Cálculo optimizado del precio total de productos
-    const totalProductPrice = selectedProducts.reduce((total, selectedProduct) => {
-        const { productId, quantity, originalSalePrice } = selectedProduct
-
-        // Usar precio original si está disponible (para productos existentes)
-        if (originalSalePrice) {
-            return total + (originalSalePrice * quantity);
-        }
-
-        // Buscar el producto en la lista de productos
-        const product = products.find(p => p.product_id === Number(productId))
-        if (!product) return total;
-
-        // Calcular precio con margen para productos nuevos
-        const priceWithMargin = calculateTotalWithMargin(
-            Number(product.sale_price),
-            quantity,
-            Number(product.profit_margin)
+    const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
+        const product = products.find((p) => p.product_id === Number(productId))
+        return (
+            total +
+            (product ? calculateTotalWithMargin(Number(product.sale_price), quantity, Number(product.profit_margin)) : 0)
         )
-
-        return total + priceWithMargin
     }, 0)
 
-    const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) =>
-        total + Number(laborPrice), 0)
+    const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => {
+        return total + (Number(laborPrice) || 0) // Convertir a número y usar 0 si es inválido
+    }, 0)
 
-
-    // Ensure all values are proper numbers
-    const subtotalWithoutTax = Number(totalProductPrice) + Number(totalLaborPrice)
-    const taxAmount = subtotalWithoutTax * Number(taxRate)
+    const subtotalWithoutTax = totalProductPrice + totalLaborPrice
+    const taxAmount = subtotalWithoutTax * taxRate
     const totalPrice = subtotalWithoutTax + taxAmount
 
     // Add debugging to inspect values
@@ -214,7 +215,7 @@ export default function EditQuotationPage() {
         subtotalWithoutTax,
         taxRate,
         taxAmount,
-        totalPrice
+        totalPrice,
     })
 
     // Check stock availability before submitting
@@ -223,21 +224,28 @@ export default function EditQuotationPage() {
 
         // Validate stock for all selected products
         for (const selectedProduct of selectedProducts) {
-            const stockProduct = stockProducts.find(
-                sp => sp.product?.product_id === Number(selectedProduct.productId)
-            );
+            const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(selectedProduct.productId))
+            if (!stockProduct) continue
 
-            if (!stockProduct || selectedProduct.quantity > stockProduct.quantity) {
-                toast.error("No hay suficiente stock para uno o más productos");
-                return;
+            if (selectedProduct.workProductDetailId) {
+                // Para productos existentes, validar solo la diferencia
+                const originalQuantity = selectedProduct.originalQuantity || 0
+                const quantityChange = selectedProduct.quantity - originalQuantity
+                
+                // Solo validamos si hay un incremento en la cantidad
+                if (quantityChange > 0 && quantityChange > stockProduct.quantity) {
+                    toast.error(`No hay suficiente stock para el producto ${products.find(p => p.product_id === selectedProduct.productId)?.product_name}`)
+                    return
+                }
+            } else {
+                // Para productos nuevos, validar la cantidad total
+                if (selectedProduct.quantity > stockProduct.quantity) {
+                    toast.error(`No hay suficiente stock para el producto ${products.find(p => p.product_id === selectedProduct.productId)?.product_name}`)
+                    return
+                }
             }
         }
-
-        if (!originalQuotation || !id || !selectedVehicleId) {
-            toast.error("Faltan datos requeridos")
-            return
-        }
-
+        
         try {
             setSubmitting(true)
 
@@ -246,46 +254,74 @@ export default function EditQuotationPage() {
                 description,
                 status,
                 selectedVehicleId,
-                totalPrice
+                totalPrice,
             })
             const updatedQuotation: Partial<Quotation> = {
                 description,
                 quotation_status: status,
-                vehicle_id: selectedVehicleId,
-                total_price: Math.trunc(totalPrice)
+                vehicle_id: selectedVehicleId || undefined,
+                total_price: Math.trunc(totalPrice),
             }
 
-            const updatedStockProducts = selectedProducts.map(({ productId, quantity }) => {
-                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === productId)
-                return {
-                    ...stockProduct,
-                    quantity: stockProduct?.quantity ? stockProduct.quantity - quantity : 0,
-                }
-            }
+            const updatedStockProducts = selectedProducts
+                .map(({ productId, quantity, originalQuantity = 0, workProductDetailId }) => {
+                    const stockProduct = stockProducts.find((sp) => sp.product?.product_id === productId)
+                    if (!stockProduct) return null
+
+                    // Solo modificamos el stock si es un producto existente con cantidad modificada
+                    // O si es un producto nuevo
+                    let newQuantity = stockProduct.quantity
+                    
+                    if (workProductDetailId) {
+                        // Es un producto existente - solo afectar el stock por la diferencia
+                        if (quantity !== originalQuantity) {
+                            const difference = quantity - originalQuantity
+                            newQuantity = stockProduct.quantity - difference
+                        }
+                    } else {
+                        // Es un producto nuevo - afectar el stock por la cantidad total
+                        newQuantity = stockProduct.quantity - quantity
+                    }
+
+                    // Solo retornamos si hay cambios en el stock
+                    if (newQuantity !== stockProduct.quantity) {
+                        return {
+                            ...stockProduct,
+                            quantity: newQuantity,
+                        }
+                    }
+                    return null
+                })
+                .filter(Boolean) // Filtramos los null
+
+            // Actualizamos el stock solo para los productos que tienen cambios
+            await Promise.all(
+                updatedStockProducts.map((stockProduct) => {
+                    if (stockProduct?.stock_product_id !== undefined) {
+                        return updateStockProduct(stockProduct.stock_product_id.toString(), stockProduct)
+                    }
+                    return Promise.resolve()
+                }),
             )
-            await Promise.all(updatedStockProducts.map((stockProduct) => {
-                if (stockProduct.stock_product_id !== undefined) {
-                    return updateStockProduct(stockProduct.stock_product_id.toString(), stockProduct);
-                }
-                return Promise.resolve(); // Skip if stock_product_id is undefined
-            }))
 
             // Update the quotation
-            await updateQuotation(parseInt(id), updatedQuotation)
+            if (!id) {
+                toast.error("ID de cotización no encontrado")
+                return
+            }
+            await updateQuotation(Number.parseInt(id), updatedQuotation)
 
             // Handle product details changes
 
             // 1. Delete details that were removed
             if (detailsToDelete.length > 0) {
-                await Promise.all(detailsToDelete.map(detailId =>
-                    deleteWorkProductDetail(detailId)
-                ))
+                await Promise.all(detailsToDelete.map((detailId) => deleteWorkProductDetail(detailId)))
             }
 
             // 2. Update or create product details
             for (const selectedProduct of selectedProducts) {
                 const { productId, quantity, laborPrice, workProductDetailId } = selectedProduct
-                const product = products.find(p => p.product_id === Number(productId))
+                const product = products.find((p) => p.product_id === Number(productId))
 
                 if (!product) continue
 
@@ -293,18 +329,15 @@ export default function EditQuotationPage() {
                 // Otherwise, it's a new detail that needs to be created
                 if (workProductDetailId) {
                     // Find the original detail
-                    const originalDetail = productDetails.find(d => d.work_product_detail_id === workProductDetailId)
+                    const originalDetail = productDetails.find((d) => d.work_product_detail_id === workProductDetailId)
 
                     // If quantity or laborPrice changed, update the detail
-                    if (originalDetail && (
-                        originalDetail.quantity !== quantity ||
-                        originalDetail.labor_price !== laborPrice
-                    )) {
+                    if (originalDetail && (originalDetail.quantity !== quantity || originalDetail.labor_price !== laborPrice)) {
                         await deleteWorkProductDetail(workProductDetailId)
 
                         // Create a new detail with updated values - FIX: Just store base sale price
                         await createWorkProductDetail({
-                            quotation_id: parseInt(id),
+                            quotation_id: Number.parseInt(id),
                             product_id: productId,
                             quantity,
                             labor_price: laborPrice,
@@ -312,15 +345,15 @@ export default function EditQuotationPage() {
                             sale_price: calculateTotalWithMargin(
                                 Number(product.sale_price),
                                 1, // Use 1 for quantity here as the quantity is separate
-                                Number(product.profit_margin)
+                                Number(product.profit_margin),
                             ), // Apply the profit margin to sale_price
-                            discount: 0
+                            discount: 0,
                         })
                     }
                 } else {
                     // Create a new detail - FIX: Just store base sale price
                     await createWorkProductDetail({
-                        quotation_id: parseInt(id),
+                        quotation_id: Number.parseInt(id),
                         product_id: productId,
                         quantity,
                         labor_price: laborPrice,
@@ -328,9 +361,9 @@ export default function EditQuotationPage() {
                         sale_price: calculateTotalWithMargin(
                             Number(product.sale_price),
                             1, // Use 1 for quantity here as the quantity is separate
-                            Number(product.profit_margin)
+                            Number(product.profit_margin),
                         ), // Apply the profit margin to sale_price
-                        discount: 0
+                        discount: 0,
                     })
                 }
             }
@@ -363,22 +396,18 @@ export default function EditQuotationPage() {
 
     // Update temp product management with stock validation
     const handleTempProductChange = (productId: number, quantity: number, laborPrice: number) => {
-        const stockProduct = stockProducts.find(
-            sp => sp.product?.product_id === Number(productId)
-        );
+        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
 
         // Validate stock quantity
         if (stockProduct && quantity > stockProduct.quantity) {
-            toast.error("No hay suficiente stock disponible");
-            return;
+            toast.error("No hay suficiente stock disponible")
+            return
         }
 
-        setTempSelectedProducts(prevSelectedProducts => {
-            const existingProduct = prevSelectedProducts.find(p => p.productId === productId)
+        setTempSelectedProducts((prevSelectedProducts) => {
+            const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
             if (existingProduct) {
-                return prevSelectedProducts.map(p =>
-                    p.productId === productId ? { ...p, quantity, laborPrice } : p
-                )
+                return prevSelectedProducts.map((p) => (p.productId === productId ? { ...p, quantity, laborPrice } : p))
             } else {
                 return [...prevSelectedProducts, { productId, quantity, laborPrice }]
             }
@@ -387,23 +416,21 @@ export default function EditQuotationPage() {
 
     // Función para eliminar productos temporalmente en el modal
     const handleTempRemoveProduct = (productId: number) => {
-        setTempSelectedProducts(prev => prev.filter(p => p.productId !== productId))
+        setTempSelectedProducts((prev) => prev.filter((p) => p.productId !== productId))
     }
 
     // Update modal close handler to validate stock before applying changes
     const handleModalClose = (save: boolean) => {
         if (save) {
             // Validate stock for all temp selected products
-            const hasInvalidStock = tempSelectedProducts.some(selectedProduct => {
-                const stockProduct = stockProducts.find(
-                    sp => sp.product?.product_id === Number(selectedProduct.productId)
-                );
-                return !stockProduct || selectedProduct.quantity > stockProduct.quantity;
-            });
+            const hasInvalidStock = tempSelectedProducts.some((selectedProduct) => {
+                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(selectedProduct.productId))
+                return !stockProduct || selectedProduct.quantity > stockProduct.quantity
+            })
 
             if (hasInvalidStock) {
-                toast.error("No hay suficiente stock para uno o más productos");
-                return;
+                toast.error("No hay suficiente stock para uno o más productos")
+                return
             }
 
             setSelectedProducts(tempSelectedProducts)
@@ -412,19 +439,10 @@ export default function EditQuotationPage() {
     }
 
     return (
-        <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-        >
+        <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => navigate("/admin/cotizaciones")}
-                    >
+                    <Button variant="outline" size="icon" onClick={() => navigate("/admin/cotizaciones")}>
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
@@ -447,7 +465,8 @@ export default function EditQuotationPage() {
                                     <div className="mb-2 p-3 bg-muted rounded-md">
                                         <p className="font-medium">Vehículo actual:</p>
                                         <p>
-                                            {currentVehicle.license_plate} - {currentVehicle.model?.brand?.brand_name} {currentVehicle.model?.model_name}
+                                            {currentVehicle.license_plate} - {currentVehicle.model?.brand?.brand_name}{" "}
+                                            {currentVehicle.model?.model_name}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
                                             {currentVehicle.owner ? currentVehicle.owner.name : currentVehicle.company?.name}
@@ -456,7 +475,7 @@ export default function EditQuotationPage() {
                                 )}
                                 <Select
                                     value={selectedVehicleId ? selectedVehicleId.toString() : ""}
-                                    onValueChange={(value) => setSelectedVehicleId(parseInt(value))}
+                                    onValueChange={(value) => setSelectedVehicleId(Number.parseInt(value))}
                                     disabled={submitting}
                                 >
                                     <SelectTrigger>
@@ -464,12 +483,9 @@ export default function EditQuotationPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {vehicles
-                                            .filter(vehicle => vehicle.vehicle_id !== undefined)
+                                            .filter((vehicle) => vehicle.vehicle_id !== undefined)
                                             .map((vehicle) => (
-                                                <SelectItem
-                                                    key={vehicle.vehicle_id}
-                                                    value={vehicle.vehicle_id!.toString()}
-                                                >
+                                                <SelectItem key={vehicle.vehicle_id} value={vehicle.vehicle_id!.toString()}>
                                                     {vehicle.license_plate} - {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
                                                 </SelectItem>
                                             ))}
@@ -488,10 +504,10 @@ export default function EditQuotationPage() {
                                         <SelectValue placeholder="Seleccionar estado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="pending">Pendiente</SelectItem>
-                                        <SelectItem value="approved">Aprobada</SelectItem>
-                                        <SelectItem value="rejected">Rechazada</SelectItem>
-                                    </SelectContent>
+                                            <SelectItem value="pending">Pendiente</SelectItem>
+                                            <SelectItem value="approved">Aprobada</SelectItem>
+                                            <SelectItem value="rejected">Rechazada</SelectItem>
+                                        </SelectContent>
                                 </Select>
                             </div>
 
@@ -530,32 +546,54 @@ export default function EditQuotationPage() {
                         <CardContent>
                             <ScrollArea className="h-[300px] pr-4">
                                 <ul className="space-y-3">
-                                    {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice }) => {
-                                        const product = products.find(p => p.product_id === Number(productId))
-                                        const stockProduct = stockProducts.find(
-                                            sp => sp.product?.product_id === Number(productId)
-                                        )
-
-                                        // Use originalSalePrice if available, otherwise calculate with margin
-
+                                    {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice, originalQuantity, workProductDetailId }) => {
+                                        const product = products.find((p) => p.product_id === Number(productId))
+                                        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
+                                        
                                         // Calculate the unit price for display
-                                        const unitPrice = originalSalePrice || (product
-                                            ? calculateTotalWithMargin(Number(product.sale_price), 1, Number(product.profit_margin))
-                                            : 0)
+                                        const unitPrice =
+                                            originalSalePrice ||
+                                            (product
+                                                ? calculateTotalWithMargin(Number(product.sale_price), 1, Number(product.profit_margin))
+                                                : 0)
+                                        
+                                        // Calculate the stock difference correctly
+                                        const isExistingProduct = workProductDetailId !== undefined
+                                        const originalQty = originalQuantity || 0
+                                        const quantityDifference = quantity - originalQty
+                                        
+                                        // For UI display, calculate remaining stock based on the difference, not the total
+                                        const displayedRemainingStock = stockProduct 
+                                            ? stockProduct.quantity - (isExistingProduct ? quantityDifference : quantity)
+                                            : 0
 
                                         return (
                                             <li
                                                 key={productId}
-                                                className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors"
+                                                className={`flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors ${
+                                                    isExistingProduct ? "border-primary/20" : ""
+                                                }`}
                                             >
                                                 <div className="flex-1">
-                                                    <p className="font-medium">{product?.product_name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium">{product?.product_name}</p>
+                                                        {isExistingProduct && (
+                                                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                                                Existente
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                                                     <p className="text-sm text-muted-foreground">
                                                         Precio: {formatPriceCLP(unitPrice)} - Stock: {stockProduct?.quantity}
                                                         {stockProduct && (
-                                                            <span className="text-xs ml-1 text-green-600">
-                                                                (Restante: {stockProduct.quantity - quantity})
+                                                            <span className={`text-xs ml-1 ${
+                                                                quantityDifference > 0 ? "text-amber-600" : "text-green-600"
+                                                            }`}>
+                                                                (Restante: {displayedRemainingStock})
+                                                                {isExistingProduct && quantityDifference !== 0 && (
+                                                                    <span> | Δ: {quantityDifference > 0 ? "-" : "+"}{Math.abs(quantityDifference)}</span>
+                                                                )}
                                                             </span>
                                                         )}
                                                     </p>
@@ -570,7 +608,9 @@ export default function EditQuotationPage() {
                                                             value={quantity}
                                                             onChange={(newValue) => handleProductChange(productId, newValue, laborPrice)}
                                                             min={1}
-                                                            max={stockProduct?.quantity}
+                                                            max={isExistingProduct 
+                                                                ? (stockProduct?.quantity ?? 0) + originalQty // Para productos existentes, permito hasta stock actual + original
+                                                                : (stockProduct?.quantity ?? 0)} // Para nuevos, solo hasta el stock disponible
                                                             className="w-20"
                                                             disabled={submitting}
                                                         />
@@ -585,32 +625,33 @@ export default function EditQuotationPage() {
                                                             onChange={(newValue) => handleProductChange(productId, quantity, newValue)}
                                                             min={0}
                                                             className="w-24"
-                                                            placeholder="Mano de obra"
-                                                            hideControls
                                                             isPrice
                                                             disabled={submitting}
                                                         />
                                                     </div>
-                                                    <div className="flex flex-col items-end">
-                                                        <span className="text-xs">Total</span>
-                                                        <span className="font-medium">{formatPriceCLP(subtotalWithoutTax)}</span>
+                                                    <div className="flex flex-col justify-end h-full">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleRemoveProduct(productId)}
+                                                            disabled={submitting}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                                                <path d="M3 6h18"></path>
+                                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                                            </svg>
+                                                            <span className="sr-only">Eliminar</span>
+                                                        </Button>
                                                     </div>
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleRemoveProduct(productId)}
-                                                        disabled={submitting}
-                                                    >
-                                                        Eliminar
-                                                    </Button>
                                                 </div>
                                             </li>
                                         )
                                     })}
                                     {selectedProducts.length === 0 && (
-                                        <li className="text-center py-10 text-gray-500">
-                                            No hay productos en esta cotización
-                                        </li>
+                                        <li className="text-center py-10 text-gray-500">No hay productos en esta cotización</li>
                                     )}
                                 </ul>
                             </ScrollArea>
@@ -645,12 +686,7 @@ export default function EditQuotationPage() {
                 </div>
 
                 <div className="mt-6 flex justify-end gap-3">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => navigate("/admin/cotizaciones")}
-                        disabled={submitting}
-                    >
+                    <Button type="button" variant="outline" onClick={() => navigate("/admin/cotizaciones")} disabled={submitting}>
                         Cancelar
                     </Button>
                     <Button
@@ -697,21 +733,15 @@ export default function EditQuotationPage() {
                                 <CommandGroup heading="Productos disponibles">
                                     <ScrollArea className="h-[200px]">
                                         {products
-                                            .filter(product => {
+                                            .filter((product) => {
                                                 // Find the stock for this product
-                                                const stockProduct = stockProducts.find(
-                                                    sp => sp.product?.product_id === product.product_id
-                                                );
+                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
                                                 // Only include products with stock quantity > 0
-                                                return stockProduct && stockProduct.quantity > 0;
+                                                return stockProduct && stockProduct.quantity > 0
                                             })
                                             .map((product) => {
-                                                const stockProduct = stockProducts.find(
-                                                    sp => sp.product?.product_id === product.product_id
-                                                )
-                                                const selectedProduct = tempSelectedProducts.find(
-                                                    sp => sp.productId === product.product_id
-                                                )
+                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
+                                                const selectedProduct = tempSelectedProducts.find((sp) => sp.productId === product.product_id)
                                                 const isSelected = !!selectedProduct
 
                                                 return (
@@ -760,13 +790,11 @@ export default function EditQuotationPage() {
                                 <CommandGroup heading="Productos sin stock">
                                     <ScrollArea className="h-[200px]">
                                         {products
-                                            .filter(product => {
+                                            .filter((product) => {
                                                 // Find the stock for this product
-                                                const stockProduct = stockProducts.find(
-                                                    sp => sp.product?.product_id === product.product_id
-                                                );
+                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
                                                 // Only include products with stock quantity = 0
-                                                return !stockProduct || stockProduct.quantity <= 0;
+                                                return !stockProduct || stockProduct.quantity <= 0
                                             })
                                             .map((product) => {
                                                 return (
@@ -794,11 +822,7 @@ export default function EditQuotationPage() {
                         </Command>
 
                         <div className="flex justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => handleModalClose(false)}
-                            >
+                            <Button type="button" variant="outline" onClick={() => handleModalClose(false)}>
                                 Cancelar
                             </Button>
                             <Button
@@ -815,3 +839,4 @@ export default function EditQuotationPage() {
         </motion.div>
     )
 }
+
