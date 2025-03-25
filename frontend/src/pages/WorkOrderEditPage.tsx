@@ -5,26 +5,64 @@ import {
   createWorkProductDetail,
   updateWorkProductDetail,
   deleteWorkProductDetail,
-  getWorkProductDetailsByQuotationId
+  getWorkProductDetailsByQuotationId,
 } from "@/services/workProductDetail";
 import { getCompleteWorkOrderById, updateWorkOrder } from "@/services/workOrderService";
 import { fetchProducts } from "@/services/productService";
+// Se incluye updateStockProduct para modificar el stock
+import { getStockProducts, updateStockProduct } from "@/services/stockProductService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, Car, Wrench, FileText, AlertCircle, Plus, Trash2, Info, User, X } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
+import {
+  ArrowLeft,
+  Save,
+  Car,
+  Wrench,
+  FileText,
+  AlertCircle,
+  Plus,
+  Trash2,
+  Info,
+  User,
+  X,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
 import { motion } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { fetchPersonsEmployee } from "@/services/personService";
-import { createWorkOrderTechnician, getWorkOrderTechnicians, deleteWorkOrderTechnician } from "@/services/workOrderTechnicianService";
+import {
+  createWorkOrderTechnician,
+  getWorkOrderTechnicians,
+  deleteWorkOrderTechnician,
+} from "@/services/workOrderTechnicianService";
 import { Person, WorkOrderTechnician } from "@/types/interfaces";
 
 const WorkOrderEditPage = () => {
@@ -34,6 +72,7 @@ const WorkOrderEditPage = () => {
   const [description, setDescription] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [stockProducts, setStockProducts] = useState<any[]>([]);
   const [status, setStatus] = useState<string>("not_started");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -43,19 +82,26 @@ const WorkOrderEditPage = () => {
   const [productQuantity, setProductQuantity] = useState<number>(1);
   const [productLaborPrice, setProductLaborPrice] = useState<number>(0);
   const [taxRate, setTaxRate] = useState<number>(0.19);
-  // New state to track if the order is quotation-based
+  // Para distinguir órdenes basadas en cotización
   const [isQuotationBased, setIsQuotationBased] = useState<boolean>(false);
   const [quotationProducts, setQuotationProducts] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<Person[]>([]);
   const [assignedTechnicians, setAssignedTechnicians] = useState<WorkOrderTechnician[]>([]);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<number | null>(null);
   const [loadingTechnicians, setLoadingTechnicians] = useState(false);
+  const [tempProducts, setTempProducts] = useState<any[]>([]); // Add temporary products state
+  const [productsToDelete, setProductsToDelete] = useState<number[]>([]); // Track products to delete
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const productsData = await fetchProducts();
         setAllProducts(productsData);
+
+        // Cargar stock
+        const stockData = await getStockProducts();
+        setStockProducts(stockData);
+
         await loadWorkOrder();
       } catch (err) {
         console.error("Error loading data:", err);
@@ -71,42 +117,31 @@ const WorkOrderEditPage = () => {
       setLoading(true);
       setError(null);
       const data = await getCompleteWorkOrderById(Number(id));
-
       console.log("Loaded work order data:", data);
-      if (data.vehicle) {
-        console.log("Vehicle data:", data.vehicle);
-      }
       setOrderData(data);
       setDescription(data.description || "");
 
-      // Check if the order is based on a quotation
+      // Determinar si la orden se basa en una cotización
       const hasQuotation = !!data.quotation?.quotation_id;
       setIsQuotationBased(hasQuotation);
 
       if (data.productDetails && data.productDetails.length > 0) {
-        console.log("Using product details from work order:", data.productDetails);
-        setProducts(data.productDetails);
+        // Agregar originalQuantity para seguimiento
+        const enhancedProducts = data.productDetails.map((product: any) => ({
+          ...product,
+          originalQuantity: product.quantity,
+        }));
+        setProducts(enhancedProducts);
       }
 
-      // If the order is quotation-based, also load the quotation products
-      if (hasQuotation) {
+      if (hasQuotation && data.quotation) {
         try {
-          console.log("Fetching product details from quotation:", data.quotation.quotation_id);
           const quotationDetails = await getWorkProductDetailsByQuotationId(data.quotation.quotation_id);
-          console.log("Quotation details:", quotationDetails);
-
-          // Store quotation products separately for reference
           setQuotationProducts(quotationDetails || []);
-
-          // If no work order products were loaded earlier, use the quotation products
-          if (!data.productDetails || data.productDetails.length === 0) {
-            setProducts(quotationDetails || []);
-          }
         } catch (detailError) {
           console.error("Error loading quotation details:", detailError);
         }
       }
-
       setStatus(data.order_status || "not_started");
     } catch (err) {
       console.error("Error loading work order:", err);
@@ -117,157 +152,293 @@ const WorkOrderEditPage = () => {
     }
   };
 
+  // Modified to use temp products state
   const handleAddProduct = () => {
+    setTempProducts([...products]); // Initialize temp products with current products
     setShowProductModal(true);
     setSelectedProductId(null);
     setProductQuantity(1);
     setProductLaborPrice(0);
   };
 
-  const handleAddProductConfirm = async () => {
-    if (!selectedProductId) {
-      toast.error("Por favor seleccione un producto");
+  // Handle product selection in modal
+  const handleTempProductChange = (productId: number, quantity: number, laborPrice: number = 0) => {
+    const selectedProduct = allProducts.find(p => p.product_id === productId);
+    if (!selectedProduct) return;
+
+    // Only validate stock for products not already in the order
+    const isNewProduct = !products.some(p => p.product_id === productId);
+
+    const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
+    const availableStock = stockProduct ? stockProduct.quantity : 0;
+
+    // Validate stock only for new products
+    if (isNewProduct && quantity > availableStock) {
+      toast.error(`No hay suficiente stock para ${selectedProduct.product_name}. Disponible: ${availableStock}`);
       return;
     }
 
-    const selectedProduct = allProducts.find(p => p.product_id === selectedProductId);
-    if (!selectedProduct) return;
-
+    // Calculate price with margin
     const basePrice = Number(selectedProduct.sale_price);
     const margin = Number(selectedProduct.profit_margin) / 100;
-    const priceWithMargin = basePrice * (1 + margin);
+    const priceWithMargin = Number((basePrice * (1 + margin)).toFixed(2));
 
-    // Create new product with appropriate associations
-    const newProductDetail = {
-      product_id: selectedProductId,
-      product: selectedProduct,
-      quantity: productQuantity,
-      sale_price: priceWithMargin,
-      labor_price: productLaborPrice,
-      tax_id: 1, // Default tax ID
-      original_price: basePrice,
-      profit_margin: selectedProduct.profit_margin,
-      // Associate with work order or quotation based on the source
-      work_order_id: isQuotationBased ? undefined : Number(id),
-      quotation_id: isQuotationBased ? orderData.quotation.quotation_id : undefined,
-    };
+    setTempProducts(prev => {
+      const existingIndex = prev.findIndex(p => p.product_id === productId);
+      if (existingIndex >= 0) {
+        // Update existing product
+        return prev.map((p, i) =>
+          i === existingIndex
+            ? { ...p, quantity, labor_price: laborPrice, _temp: true }
+            : p
+        );
+      } else {
+        // Add new product
+        return [...prev, {
+          product_id: productId,
+          product: selectedProduct,
+          quantity,
+          sale_price: priceWithMargin,
+          labor_price: laborPrice,
+          _temp: true,
+          _isNew: true
+        }];
+      }
+    });
+  };
 
-    try {
-      // If this is a new product (not already in the work order), create it in the database
-      const createdDetail = await createWorkProductDetail(newProductDetail);
+  // Remove product from temp state
+  const handleTempRemoveProduct = (productId: number) => {
+    setTempProducts(prev => prev.filter(p => p.product_id !== productId));
+  };
 
-      // Add the created detail to the products list with its ID
-      setProducts(prev => [...prev, {
-        ...newProductDetail,
-        work_product_detail_id: createdDetail.work_product_detail_id
-      }]);
+  // Apply temporary changes to main state
+  const handleModalClose = (save: boolean) => {
+    if (save) {
+      // Only validate NEW products that aren't already in the order
+      const newTempProducts = tempProducts.filter(p => p._temp && p._isNew);
 
-      toast.success("Producto agregado exitosamente");
-    } catch (error) {
-      console.error("Error creating product detail:", error);
-      toast.error("Error al agregar el producto");
+      const hasInvalidQuantity = newTempProducts.some(product => {
+        const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+        const availableStock = stockProduct ? stockProduct.quantity : 0;
+        return product.quantity > availableStock;
+      });
 
-      // Still add to local state for UI consistency, but mark it as not saved
-      setProducts(prev => [...prev, {
-        ...newProductDetail,
-        _isNew: true // Mark as new/unsaved for tracking
-      }]);
+      if (hasInvalidQuantity) {
+        toast.error("Uno o más productos nuevos exceden el stock disponible");
+        return;
+      }
+
+      setProducts(tempProducts);
     }
 
     setShowProductModal(false);
   };
 
-  // Function to remove a product
-  const handleRemoveProduct = async (index: number) => {
+  // Modified to only mark products for deletion
+  const handleRemoveProduct = (index: number) => {
     const productToRemove = products[index];
 
     if (productToRemove.work_product_detail_id) {
-      try {
-        await deleteWorkProductDetail(productToRemove.work_product_detail_id);
-        toast.success("Producto eliminado exitosamente");
-      } catch (error) {
-        console.error("Error deleting product detail:", error);
-        toast.error("Error al eliminar el producto");
+      // Add to list of products to delete on save
+      setProductsToDelete(prev => [...prev, productToRemove.work_product_detail_id]);
+    }
+
+    // Remove from current list without updating stock yet
+    setProducts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add this function to handle quantity changes in the product table
+  const handleProductQuantityChange = (index: number, newQuantity: number) => {
+    setProducts(prev => {
+      const updated = [...prev];
+
+      // Get the current product
+      const product = updated[index];
+
+      // Find the stock for this product
+      const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+      const availableStock = stockProduct ? stockProduct.quantity : 0;
+
+      // For existing products, we need to consider their original quantity
+      // which was already taken from the stock
+      if (!product._isNew && product.originalQuantity !== undefined) {
+        // Calculate how many additional units we can take
+        // availableStock + originalQuantity = total available for this product
+        const maxAllowed = availableStock + product.originalQuantity;
+
+        if (newQuantity > maxAllowed) {
+          toast.error(`No puede exceder el stock disponible más el original (${maxAllowed})`);
+          return prev;
+        }
+      } else if (product._isNew && newQuantity > availableStock) {
+        // For new products, we simply check against the available stock
+        toast.error(`No puede exceder el stock disponible (${availableStock})`);
+        return prev;
+      }
+
+      // Update the quantity and mark as modified
+      updated[index] = {
+        ...product,
+        quantity: newQuantity,
+        _modified: true
+      };
+
+      return updated;
+    });
+  };
+
+  // Also modify the handler for labor price to mark products as modified
+  const handleProductLaborPriceChange = (index: number, newLaborPrice: number) => {
+    setProducts(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        labor_price: newLaborPrice,
+        _modified: true
+      };
+      return updated;
+    });
+  };
+
+  // Submit: Actualiza la orden y procesa cada detalle
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !orderData) return;
+
+    // Validar que cada detalle no exceda el stock actual, considerando su cantidad original
+    for (const product of products) {
+      // Skip products that will be deleted
+      if (productsToDelete.includes(product.work_product_detail_id)) continue;
+
+      const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+      if (!stockProduct) continue;
+
+      const availableStock = stockProduct.quantity;
+
+      // For existing products, only check the additional quantity
+      if (!product._isNew && product.originalQuantity !== undefined) {
+        // If the new quantity is less than or equal to the original, it's always valid
+        // since we're just returning items to stock
+        if (product.quantity <= product.originalQuantity) continue;
+
+        // Otherwise, check if we have enough stock for the additional quantity
+        const additionalQuantity = product.quantity - product.originalQuantity;
+        if (additionalQuantity > availableStock) {
+          const productName = product.product?.product_name ||
+            allProducts.find(p => p.product_id === product.product_id)?.product_name ||
+            "seleccionado";
+          toast.error(`No hay suficiente stock para el producto ${productName}. 
+                      Puede aumentar máximo en ${availableStock} unidades.`);
+          return;
+        }
+      } else if (product._isNew && product.quantity > availableStock) {
+        // For new products, validate the full quantity
+        const productName = product.product?.product_name ||
+          allProducts.find(p => p.product_id === product.product_id)?.product_name ||
+          "seleccionado";
+        toast.error(`No hay suficiente stock para el producto ${productName}. Máximo: ${availableStock}`);
         return;
       }
     }
 
-    setProducts(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleProductQuantityChange = (index: number, value: number) => {
-    setProducts(prev =>
-      prev.map((p, i) => i === index ? { ...p, quantity: value } : p)
-    );
-  };
-
-  const handleProductLaborPriceChange = (index: number, value: number) => {
-    setProducts(prev =>
-      prev.map((p, i) => i === index ? { ...p, labor_price: value } : p)
-    );
-  };
-
-  // Function to submit the work order with modified products
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Payload only with work order data (no productDetails)
-    const orderPayload = {
-      description,
-      order_status: status,
-      total_amount: totalAmount,
-    };
-
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      await updateWorkOrder(Number(id), orderPayload);
+      await updateWorkOrder(Number(id), {
+        description,
+        order_status: status,
+        total_amount: totalAmount,
+      });
 
-      // Process each product detail individually
-      for (const product of products) {
-        // Skip products that already exist and haven't been modified
-        if (product.work_product_detail_id &&
-          !product._modified) {
-          continue;
+      // Process deletions first
+      for (const detailId of productsToDelete) {
+        const productToRemove = orderData.productDetails.find(p => p.work_product_detail_id === detailId);
+
+        if (productToRemove) {
+          await deleteWorkProductDetail(detailId);
+
+          // Return quantity to stock
+          const stockProduct = stockProducts.find(sp => sp.product?.product_id === productToRemove.product_id);
+          if (stockProduct && stockProduct.stock_product_id) {
+            // Fix: Ensure quantity is properly parsed as a number and avoid potential type conversion issues
+            const removedQuantity = parseInt(productToRemove.quantity.toString(), 10);
+            const currentStock = parseInt(stockProduct.quantity.toString(), 10);
+            const updatedQuantity = currentStock + removedQuantity;
+
+            console.log(`Returning ${removedQuantity} units to stock. Before: ${currentStock}, After: ${updatedQuantity}`);
+
+            await updateStockProduct(stockProduct.stock_product_id.toString(), {
+              ...stockProduct,
+              quantity: updatedQuantity,
+            });
+          }
         }
+      }
+
+      // Process each product: update if modified, create if new
+      for (const product of products) {
+        // Skip deleted products
+        if (productsToDelete.includes(product.work_product_detail_id)) continue;
 
         const detailPayload = {
           product_id: product.product_id,
           quantity: Number(product.quantity),
-          sale_price: Number(product.sale_price),
-          labor_price: Number(product.labor_price),
+          sale_price: Number(Number(product.sale_price).toFixed(2)),
+          labor_price: Number(Number(product.labor_price).toFixed(2)),
           discount: product.discount || 0,
           tax_id: product.tax_id || 1,
-          // Set associations based on source
-          work_order_id: isQuotationBased ? undefined : Number(id),
-          quotation_id: isQuotationBased ? orderData.quotation.quotation_id : undefined
+          ...(isQuotationBased
+            ? { quotation_id: orderData.quotation.quotation_id }
+            : { work_order_id: Number(id) }
+          ),
         };
 
-        if (product.work_product_detail_id) {
-          // Update existing product detail
+        if (product.work_product_detail_id && product._modified) {
+          // Update existing product
           await updateWorkProductDetail(product.work_product_detail_id, detailPayload);
-        } else {
+
+          // Update stock if quantity changed
+          const originalQuantity = product.originalQuantity || 0;
+          const quantityDiff = product.quantity - originalQuantity;
+
+          if (quantityDiff !== 0) {
+            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+            if (stockProduct && stockProduct.stock_product_id) {
+              // Subtract the additional quantity from stock
+              const updatedQuantity = stockProduct.quantity - quantityDiff;
+              await updateStockProduct(stockProduct.stock_product_id.toString(), {
+                ...stockProduct,
+                quantity: updatedQuantity,
+              });
+            }
+          }
+        } else if (!product.work_product_detail_id) {
           // Create new product detail
           await createWorkProductDetail(detailPayload);
+
+          // Update stock
+          const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+          if (stockProduct && stockProduct.stock_product_id) {
+            const updatedQuantity = stockProduct.quantity - product.quantity;
+            await updateStockProduct(stockProduct.stock_product_id.toString(), {
+              ...stockProduct,
+              quantity: updatedQuantity,
+            });
+          }
         }
       }
 
       toast.success("Orden de trabajo y detalles actualizados exitosamente");
-      // Navigate first, then reload the page after a short delay to ensure navigation completes
       navigate("/admin/orden-trabajo");
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      setTimeout(() => window.location.reload(), 100);
     } catch (error) {
       console.error("Error updating work order:", error);
       toast.error("Error al actualizar la orden de trabajo");
     } finally {
       setSubmitting(false);
+      // Clear deleted products list
+      setProductsToDelete([]);
     }
-  };
-
-  // Function to show clearly the price with margin
-  const calculatePriceWithMargin = (basePrice: number, profitMargin: number) => {
-    return basePrice * (1 + profitMargin / 100);
   };
 
   // Cálculos de totales
@@ -275,12 +446,10 @@ const WorkOrderEditPage = () => {
     (acc, p) => acc + Number(p.sale_price) * Number(p.quantity),
     0
   );
-
   const totalLaborPrice = products.reduce(
     (acc, p) => acc + Number(p.labor_price),
     0
   );
-
   const subtotal = totalProductPrice + totalLaborPrice;
   const ivaAmount = subtotal * taxRate;
   const totalAmount = subtotal + ivaAmount;
@@ -294,7 +463,6 @@ const WorkOrderEditPage = () => {
     return statusMap[status] || status;
   };
 
-  // Load technicians (employees with trabajador role)
   useEffect(() => {
     const fetchTechnicians = async () => {
       try {
@@ -308,7 +476,6 @@ const WorkOrderEditPage = () => {
     fetchTechnicians();
   }, []);
 
-  // Load assigned technicians whenever work order ID changes
   useEffect(() => {
     if (id) {
       const fetchAssignedTechnicians = async () => {
@@ -325,22 +492,18 @@ const WorkOrderEditPage = () => {
     }
   }, [id]);
 
-  // Handle technician assignment
   const handleAssignTechnician = async () => {
     if (!selectedTechnicianId || !id) {
       toast.error("Por favor seleccione un Mécanico");
       return;
     }
-
     setLoadingTechnicians(true);
     try {
       const workOrderId = Number(id);
-      const newAssignment = await createWorkOrderTechnician({
+      await createWorkOrderTechnician({
         work_order_id: workOrderId,
-        technician_id: selectedTechnicianId
+        technician_id: selectedTechnicianId,
       });
-
-      // Add the new assignment to the list
       const assignedTech = await getWorkOrderTechnicians(workOrderId);
       setAssignedTechnicians(assignedTech);
       setSelectedTechnicianId(null);
@@ -352,10 +515,8 @@ const WorkOrderEditPage = () => {
     }
   };
 
-  // Handle removing technician assignment
   const handleRemoveTechnician = async (assignmentId: number) => {
     if (!id) return;
-
     try {
       await deleteWorkOrderTechnician(assignmentId);
       setAssignedTechnicians(prev => prev.filter(tech => tech.id !== assignmentId));
@@ -393,6 +554,7 @@ const WorkOrderEditPage = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => navigate("/admin/orden-trabajo")}>
@@ -419,8 +581,8 @@ const WorkOrderEditPage = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Información General y Vehículo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Información general */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -486,7 +648,6 @@ const WorkOrderEditPage = () => {
             </CardContent>
           </Card>
 
-          {/* Información del vehículo */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -558,7 +719,7 @@ const WorkOrderEditPage = () => {
             </CardContent>
           </Card>
 
-          {/* Technician Assignment Card */}
+          {/* Asignación de Mécanico */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -601,11 +762,7 @@ const WorkOrderEditPage = () => {
                           <span>
                             {assignment.technician?.name} {assignment.technician?.first_surname}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveTechnician(assignment.id)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleRemoveTechnician(assignment.id)}>
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
@@ -639,9 +796,7 @@ const WorkOrderEditPage = () => {
                     <thead className="bg-muted">
                       <tr>
                         <th className="px-4 py-2 text-left">Producto</th>
-                        {isQuotationBased && (
-                          <th className="px-4 py-2 text-center">Origen</th>
-                        )}
+                        {isQuotationBased && <th className="px-4 py-2 text-center">Origen</th>}
                         <th className="px-4 py-2 text-center">Cantidad</th>
                         <th className="px-4 py-2 text-right">Precio Neto</th>
                         <th className="px-4 py-2 text-right">Precio c/Margen</th>
@@ -661,11 +816,10 @@ const WorkOrderEditPage = () => {
                         const margin = foundProduct ? Number(foundProduct.profit_margin) / 100 : 0;
                         const priceWithMargin = Number(product.sale_price);
                         const subtotal = priceWithMargin * Number(product.quantity) + Number(product.labor_price);
-
-                        // Determine if this product is from a quotation
+                        const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+                        const currentStock = stockProduct ? stockProduct.quantity : 0;
                         const isFromQuotation = isQuotationBased &&
                           quotationProducts.some(qp => qp.product_id === product.product_id);
-
                         return (
                           <tr key={index} className={`hover:bg-muted/50 ${product._isNew ? 'bg-yellow-50' : ''}`}>
                             <td className="px-4 py-2 font-medium">
@@ -675,6 +829,9 @@ const WorkOrderEditPage = () => {
                                   No guardado
                                 </span>
                               )}
+                              <div className="text-xs text-green-600 mt-1">
+                                Stock disponible: {currentStock}
+                              </div>
                             </td>
                             {isQuotationBased && (
                               <td className="px-4 py-2 text-center">
@@ -687,11 +844,22 @@ const WorkOrderEditPage = () => {
                               <Input
                                 type="number"
                                 value={product.quantity || 0}
-                                onChange={(e) => handleProductQuantityChange(index, Number(e.target.value))}
+                                onChange={(e) => {
+                                  const newValue = Number(e.target.value);
+                                  // Let the handler function handle validation
+                                  handleProductQuantityChange(index, newValue);
+                                }}
                                 className="w-20 mx-auto text-center"
                                 disabled={submitting}
                                 min={1}
+                                max={product._isNew ? currentStock : (currentStock + (product.originalQuantity || 0))}
                               />
+                              <div className="text-xs text-muted-foreground text-center mt-1">
+                                {!product._isNew && product.originalQuantity ?
+                                  `Original: ${product.originalQuantity} - Máx adicional: ${currentStock}` :
+                                  `Máx: ${currentStock}`
+                                }
+                              </div>
                             </td>
                             <td className="px-4 py-2 text-right">{formatPriceCLP(netPrice)}</td>
                             <td className="px-4 py-2 text-right">
@@ -703,7 +871,7 @@ const WorkOrderEditPage = () => {
                             <td className="px-4 py-2">
                               <Input
                                 type="number"
-                                value={product.labor_price || 0} y
+                                value={product.labor_price || 0}
                                 onChange={(e) => handleProductLaborPriceChange(index, Number(e.target.value))}
                                 className="w-24 ml-auto text-right"
                                 disabled={submitting}
@@ -728,9 +896,9 @@ const WorkOrderEditPage = () => {
                     </tbody>
                   </table>
                 </div>
+                {/* Totales */}
                 <div className="grid grid-cols-2 gap-4 text-sm mt-6">
                   <div className="space-y-2">
-                    <div className="p-3 rounded bg-accent/5"></div>
                     <div className="flex justify-between">
                       <span>Subtotal Productos:</span>
                       <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
@@ -793,8 +961,10 @@ const WorkOrderEditPage = () => {
         </div>
       </form>
 
-      {/* Modal para agregar producto */}
-      <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
+      {/* Modal para agregar producto - Updated to handle temporary products */}
+      <Dialog open={showProductModal} onOpenChange={(isOpen) => {
+        if (!isOpen) handleModalClose(false);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Agregar Producto</DialogTitle>
@@ -813,55 +983,218 @@ const WorkOrderEditPage = () => {
                   <CommandList>
                     <CommandEmpty>No se encontraron productos.</CommandEmpty>
                     <ScrollArea className="h-72">
-                      <CommandGroup>
-                        {allProducts.map((product) => (
-                          <CommandItem
-                            key={product.product_id}
-                            onSelect={() => setSelectedProductId(product.product_id)}
-                            className={selectedProductId === product.product_id ? "bg-accent text-accent-foreground" : ""}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{product.product_name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                Precio: {formatPriceCLP(Number(product.sale_price))} - Margen: {product.profit_margin}%
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
+                      <CommandGroup heading="Productos disponibles">
+                        {allProducts
+                          .filter(product => {
+                            // Verificar si el producto ya existe en la lista temporal (no en products)
+                            const existingTempProduct = tempProducts.find(p => p.product_id === product.product_id && p._temp);
+
+                            // Si el producto ya existe en productos temporales, no mostrarlo
+                            if (existingTempProduct) {
+                              return false;
+                            }
+
+                            // Los productos que ya están en la orden NO deben ser filtrados por stock
+                            const alreadyInOrder = products.find(p => p.product_id === product.product_id);
+                            if (alreadyInOrder) {
+                              return false;
+                            }
+
+                            // Para productos nuevos, sí verificamos el stock
+                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+                            return stockProduct && stockProduct.quantity > 0;
+                          })
+                          .map(product => {
+                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+                            const tempProduct = tempProducts.find(p => p.product_id === product.product_id);
+                            const isSelected = !!tempProduct;
+
+                            return (
+                              <CommandItem
+                                key={product.product_id}
+                                onSelect={() => {
+                                  if (!isSelected) {
+                                    handleTempProductChange(product.product_id, 1, 0);
+                                  }
+                                }}
+                                className={isSelected ? "bg-accent text-accent-foreground" : ""}
+                              >
+                                <div className="flex items-center space-x-4 flex-1">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        handleTempProductChange(product.product_id, 1, 0);
+                                      } else {
+                                        handleTempRemoveProduct(product.product_id);
+                                      }
+                                    }}
+                                  />
+                                  <div className="flex-col">
+                                    <span className="font-medium">{product.product_name}</span>
+                                    <span className="text-xs text-muted-foreground block">
+                                      Precio: {formatPriceCLP(Number(product.sale_price))} - Margen: {product.profit_margin}% - Stock: {stockProduct?.quantity || 0}
+                                    </span>
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <div className="flex items-center space-x-2">
+                                    <Label htmlFor={`temp-quantity-${product.product_id}`} className="text-xs">
+                                      Cantidad:
+                                    </Label>
+                                    <Input
+                                      id={`temp-quantity-${product.product_id}`}
+                                      type="number"
+                                      min="1"
+                                      max={stockProduct?.quantity || 1}
+                                      value={tempProduct.quantity}
+                                      onChange={(e) => handleTempProductChange(
+                                        product.product_id,
+                                        Number(e.target.value),
+                                        tempProduct.labor_price
+                                      )}
+                                      className="w-16 h-7 text-xs"
+                                    />
+                                  </div>
+                                )}
+                              </CommandItem>
+                            );
+                          })}
+                      </CommandGroup>
+                      <CommandGroup heading="Productos sin stock o ya agregados">
+                        {allProducts
+                          .filter(product => {
+                            // Los productos que ya están en productos temporales
+                            const existingTempProduct = tempProducts.find(p => p.product_id === product.product_id && p._temp);
+
+                            // Los productos que ya están en la orden
+                            const existingProduct = products.find(p => p.product_id === product.product_id);
+
+                            // Si está en los temporales, lo mostramos aquí
+                            if (existingTempProduct) {
+                              return false; // Ya no lo mostramos en esta sección
+                            }
+
+                            // Si está en la orden original pero no en temporales, lo mostramos aquí
+                            if (existingProduct) {
+                              return true;
+                            }
+
+                            // Para productos nuevos, verificamos si no tienen stock
+                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+                            return !stockProduct || stockProduct.quantity <= 0;
+                          })
+                          .map(product => {
+                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+                            const existingProduct = products.find(p => p.product_id === product.product_id);
+
+                            let statusMessage = "";
+                            if (existingProduct) {
+                              statusMessage = "Ya agregado a la orden";
+                            } else {
+                              statusMessage = `Margen: ${product.profit_margin}% - Sin stock`;
+                            }
+
+                            return (
+                              <CommandItem
+                                key={product.product_id}
+                                className="opacity-50 cursor-not-allowed"
+                                disabled
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{product.product_name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Precio: {formatPriceCLP(Number(product.sale_price))} - {statusMessage}
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
                       </CommandGroup>
                     </ScrollArea>
                   </CommandList>
                 </Command>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            {/* Show selected products in modal */}
+            {tempProducts.some(p => p._temp) && (
               <div className="space-y-2">
-                <Label htmlFor="quantity">Cantidad</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={productQuantity}
-                  onChange={(e) => setProductQuantity(Number(e.target.value))}
-                />
+                <Label>Productos seleccionados:</Label>
+                <ScrollArea className="h-40 border rounded p-2">
+                  <ul className="space-y-2">
+                    {tempProducts
+                      .filter(p => p._temp)
+                      .map(product => {
+                        const foundProduct = allProducts.find(p => p.product_id === product.product_id);
+                        const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
+
+                        return (
+                          <li key={product.product_id} className="flex items-center justify-between text-sm p-1 border-b">
+                            <div>
+                              <p>{foundProduct?.product_name || `Producto #${product.product_id}`}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Stock: {stockProduct?.quantity || 0}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="flex flex-col items-end">
+                                <Label htmlFor={`modal-quantity-${product.product_id}`} className="text-xs">
+                                  Cantidad
+                                </Label>
+                                <Input
+                                  id={`modal-quantity-${product.product_id}`}
+                                  type="number"
+                                  min="1"
+                                  max={stockProduct?.quantity || 1}
+                                  value={product.quantity}
+                                  onChange={(e) => {
+                                    const newQuantity = Number(e.target.value);
+                                    handleTempProductChange(product.product_id, newQuantity, product.labor_price);
+                                  }}
+                                  className="w-16 h-7 text-xs"
+                                />
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <Label htmlFor={`modal-labor-${product.product_id}`} className="text-xs">
+                                  M. Obra
+                                </Label>
+                                <Input
+                                  id={`modal-labor-${product.product_id}`}
+                                  type="number"
+                                  min="0"
+                                  value={product.labor_price}
+                                  onChange={(e) => {
+                                    const newLaborPrice = Number(e.target.value);
+                                    handleTempProductChange(product.product_id, product.quantity, newLaborPrice);
+                                  }}
+                                  className="w-20 h-7 text-xs"
+                                />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive"
+                                onClick={() => handleTempRemoveProduct(product.product_id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </ScrollArea>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="laborPrice">Mano de Obra</Label>
-                <Input
-                  id="laborPrice"
-                  type="number"
-                  min="0"
-                  value={productLaborPrice}
-                  onChange={(e) => setProductLaborPrice(Number(e.target.value))}
-                />
-              </div>
-            </div>
+            )}
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowProductModal(false)}>
+            <Button variant="outline" onClick={() => handleModalClose(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleAddProductConfirm}>Agregar</Button>
+            <Button onClick={() => handleModalClose(true)}>
+              Aplicar Cambios
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
