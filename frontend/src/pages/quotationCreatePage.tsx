@@ -28,7 +28,7 @@ import { getTaxById } from "@/services/taxService"
 import { createWorkProductDetail } from "@/services/workProductDetail"
 import type { Quotation, Vehicle, Product, StockProduct, WorkProductDetail } from "../types/interfaces"
 import { fetchProducts } from "../services/productService"
-import { getStockProducts, updateStockProduct } from "../services/stockProductService"
+import { getStockProducts } from "../services/stockProductService"
 import type React from "react"
 import { NumberInput } from "@/components/numberInput"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
@@ -171,20 +171,6 @@ const QuotationCreatePage = () => {
           }
         },
       )
-      const updatedStockProducts = selectedProducts.map(({ productId, quantity }) => {
-        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === productId)
-        return {
-          ...stockProduct,
-          quantity: stockProduct?.quantity ? stockProduct.quantity - quantity : 0,
-        }
-      }
-      )
-      await Promise.all(updatedStockProducts.map((stockProduct) => {
-        if (stockProduct.stock_product_id !== undefined) {
-          return updateStockProduct(stockProduct.stock_product_id.toString(), stockProduct);
-        }
-        return Promise.resolve(); // Skip if stock_product_id is undefined
-      }))
       await Promise.all(newWorkProductDetails.map((detail) => createWorkProductDetail(detail)))
       toast.success("Cotización creada exitosamente")
       navigate("/admin/cotizaciones")
