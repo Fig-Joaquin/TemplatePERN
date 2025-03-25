@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Search, Edit, Trash2, Package, Plus } from "lucide-react"
 import { fetchProducts, updateProduct, deleteProduct } from "../services/productService"
+import { updateStockProduct } from "../services/stockProductService"
 import type { Product } from "../types/interfaces"
 import { formatDate } from "@/utils/formDate"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
@@ -107,6 +108,21 @@ const ProductPage = () => {
         sale_price: Number(editSalePrice),
         description: editDescription,
         product_quantity: Number(editStockQuantity),
+      }
+
+      // Update the stock using stock_product_id when available
+      if (selectedProduct.stock?.stock_product_id) {
+        const stockProduct = {
+          quantity: Number(editStockQuantity)
+        }
+        
+        await updateStockProduct(
+          selectedProduct.stock.stock_product_id.toString(), 
+          stockProduct
+        )
+      } else {
+        console.warn("Product stock doesn't have a stock_product_id")
+        // If needed, you could create a new stock entry here
       }
       
       // Only add supplier_id if a valid supplier is selected

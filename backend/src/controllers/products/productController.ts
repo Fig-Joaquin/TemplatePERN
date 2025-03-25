@@ -79,7 +79,8 @@ export const createProduct = async (req: Request, res: Response, _next: NextFunc
         let product = productRepository.create({
             ...restData,
             supplier: supplierEntity || undefined,
-            type: productTypeEntity, product_quantity
+            type: productTypeEntity,
+            product_quantity
         });
 
         product = await productRepository.save(product); // Guardar producto y obtener su ID

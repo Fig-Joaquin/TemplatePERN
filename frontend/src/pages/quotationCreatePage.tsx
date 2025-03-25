@@ -348,11 +348,6 @@ const QuotationCreatePage = () => {
                               <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                               <p className="text-sm text-muted-foreground">
                                 Precio: {formatPriceCLP(Number(product?.sale_price))} - Stock: {stockProduct?.quantity}
-                                {stockProduct && (
-                                  <span className="text-xs ml-1 text-green-600">
-                                    (Restante: {stockProduct.quantity - quantity})
-                                  </span>
-                                )}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
@@ -519,11 +514,6 @@ const QuotationCreatePage = () => {
                                     <p className="text-sm text-muted-foreground">
                                       Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
                                       {stockProduct?.quantity || 0}
-                                      {isSelected && stockProduct && (
-                                        <span className="text-xs ml-1 text-green-600">
-                                          (Restante: {stockProduct.quantity - (selectedProduct?.quantity || 0)})
-                                        </span>
-                                      )}
                                     </p>
                                   </div>
                                 </div>

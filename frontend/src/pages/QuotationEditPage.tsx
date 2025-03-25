@@ -12,7 +12,7 @@ import {
 } from "@/services/workProductDetail"
 import { fetchVehicles } from "@/services/vehicleService"
 import { fetchProducts } from "@/services/productService"
-import { getStockProducts, updateStockProduct } from "@/services/stockProductService"
+import { getStockProducts } from "@/services/stockProductService"
 import { getTaxById } from "@/services/taxService"
 import { Button } from "@/components/ui/button"
 import { NumberInput } from "@/components/numberInput"
@@ -262,47 +262,6 @@ export default function EditQuotationPage() {
                 vehicle_id: selectedVehicleId || undefined,
                 total_price: Math.trunc(totalPrice),
             }
-
-            const updatedStockProducts = selectedProducts
-                .map(({ productId, quantity, originalQuantity = 0, workProductDetailId }) => {
-                    const stockProduct = stockProducts.find((sp) => sp.product?.product_id === productId)
-                    if (!stockProduct) return null
-
-                    // Solo modificamos el stock si es un producto existente con cantidad modificada
-                    // O si es un producto nuevo
-                    let newQuantity = stockProduct.quantity
-                    
-                    if (workProductDetailId) {
-                        // Es un producto existente - solo afectar el stock por la diferencia
-                        if (quantity !== originalQuantity) {
-                            const difference = quantity - originalQuantity
-                            newQuantity = stockProduct.quantity - difference
-                        }
-                    } else {
-                        // Es un producto nuevo - afectar el stock por la cantidad total
-                        newQuantity = stockProduct.quantity - quantity
-                    }
-
-                    // Solo retornamos si hay cambios en el stock
-                    if (newQuantity !== stockProduct.quantity) {
-                        return {
-                            ...stockProduct,
-                            quantity: newQuantity,
-                        }
-                    }
-                    return null
-                })
-                .filter(Boolean) // Filtramos los null
-
-            // Actualizamos el stock solo para los productos que tienen cambios
-            await Promise.all(
-                updatedStockProducts.map((stockProduct) => {
-                    if (stockProduct?.stock_product_id !== undefined) {
-                        return updateStockProduct(stockProduct.stock_product_id.toString(), stockProduct)
-                    }
-                    return Promise.resolve()
-                }),
-            )
 
             // Update the quotation
             if (!id) {
@@ -557,15 +516,9 @@ export default function EditQuotationPage() {
                                                 ? calculateTotalWithMargin(Number(product.sale_price), 1, Number(product.profit_margin))
                                                 : 0)
                                         
-                                        // Calculate the stock difference correctly
+                                        // Calculate if this is an existing product
                                         const isExistingProduct = workProductDetailId !== undefined
                                         const originalQty = originalQuantity || 0
-                                        const quantityDifference = quantity - originalQty
-                                        
-                                        // For UI display, calculate remaining stock based on the difference, not the total
-                                        const displayedRemainingStock = stockProduct 
-                                            ? stockProduct.quantity - (isExistingProduct ? quantityDifference : quantity)
-                                            : 0
 
                                         return (
                                             <li
@@ -586,16 +539,6 @@ export default function EditQuotationPage() {
                                                     <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                                                     <p className="text-sm text-muted-foreground">
                                                         Precio: {formatPriceCLP(unitPrice)} - Stock: {stockProduct?.quantity}
-                                                        {stockProduct && (
-                                                            <span className={`text-xs ml-1 ${
-                                                                quantityDifference > 0 ? "text-amber-600" : "text-green-600"
-                                                            }`}>
-                                                                (Restante: {displayedRemainingStock})
-                                                                {isExistingProduct && quantityDifference !== 0 && (
-                                                                    <span> | Δ: {quantityDifference > 0 ? "-" : "+"}{Math.abs(quantityDifference)}</span>
-                                                                )}
-                                                            </span>
-                                                        )}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center space-x-4">
@@ -772,11 +715,6 @@ export default function EditQuotationPage() {
                                                                 <p className="text-sm text-muted-foreground">
                                                                     Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
                                                                     {stockProduct?.quantity || 0}
-                                                                    {isSelected && stockProduct && (
-                                                                        <span className="text-xs ml-1 text-green-600">
-                                                                            (Restante: {stockProduct.quantity - (selectedProduct?.quantity || 0)})
-                                                                        </span>
-                                                                    )}
                                                                 </p>
                                                             </div>
                                                         </div>
