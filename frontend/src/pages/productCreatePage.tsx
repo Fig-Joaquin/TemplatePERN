@@ -60,41 +60,45 @@ const ProductCreatePage = () => {
     )
     : productTypes
 
+  // Función para calcular el precio con margen (solo para mostrar)
+  const calculatePriceWithMargin = () => {
+    const purchasePrice = Number(lastPurchasePrice);
+    const margin = Number(profitMargin) / 100;
+    return purchasePrice * (1 + margin);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     if (
-      Number(salePrice) === 0 ||
       Number(lastPurchasePrice) === 0 ||
       Number(stockQuantity) === 0
     ) {
       toast.error(
-        "El precio de venta, último precio de compra y cantidad deben ser mayores a 0"
+        "El precio de compra y cantidad deben ser mayores a 0"
       )
       setLoading(false)
       return
     }
 
     try {
-      console.log("Creating product"+ selectedSupplier)
-
       const newProduct = {
         product_name: productName,
         product_type_id: Number(selectedProductType),
         profit_margin: Number(profitMargin),
         last_purchase_price: Number(lastPurchasePrice),
-        sale_price: Number(salePrice),
+        sale_price: Number(lastPurchasePrice), // Usar el mismo valor que lastPurchasePrice
         description,
         product_quantity: Number(stockQuantity),
       }
-      
+
       // Only add supplier_id if one is selected and not "none"
       if (selectedSupplier && selectedSupplier !== "none") {
         Object.assign(newProduct, { supplier_id: Number(selectedSupplier) });
       }
       // No need to explicitly set supplier_id to null, just omit it
-      
+
       await createProduct(newProduct)
       toast.success("Producto creado exitosamente")
       navigate("/admin/productos")
@@ -261,16 +265,21 @@ const ProductCreatePage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="salePrice">Precio neto</Label>
-                    <NumberInput
-                      id="salePrice"
-                      value={Number(salePrice)}
-                      onChange={(value) => setSalePrice(value)}
-                      min={0}
-                      required
-                      isPrice
-                      className="w-full"
-                    />
+                    <Label htmlFor="salePrice">Precio neto (con margen)</Label>
+                    <div className="relative">
+                      <NumberInput
+                        id="salePrice"
+                        value={calculatePriceWithMargin()}
+                        onChange={(value) => {/* No hacemos nada, es solo visual */ }}
+                        min={0}
+                        isPrice
+                        className="w-full"
+                        disabled={true} // Hacemos que el campo sea de solo lectura
+                      />
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Precio de venta calculado con margen del {profitMargin}%
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="stockQuantity">
