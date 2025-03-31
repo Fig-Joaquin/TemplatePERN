@@ -231,7 +231,7 @@ export default function EditQuotationPage() {
                 // Para productos existentes, validar solo la diferencia
                 const originalQuantity = selectedProduct.originalQuantity || 0
                 const quantityChange = selectedProduct.quantity - originalQuantity
-                
+
                 // Solo validamos si hay un incremento en la cantidad
                 if (quantityChange > 0 && quantityChange > stockProduct.quantity) {
                     toast.error(`No hay suficiente stock para el producto ${products.find(p => p.product_id === selectedProduct.productId)?.product_name}`)
@@ -245,7 +245,7 @@ export default function EditQuotationPage() {
                 }
             }
         }
-        
+
         try {
             setSubmitting(true)
 
@@ -463,10 +463,10 @@ export default function EditQuotationPage() {
                                         <SelectValue placeholder="Seleccionar estado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                            <SelectItem value="pending">Pendiente</SelectItem>
-                                            <SelectItem value="approved">Aprobada</SelectItem>
-                                            <SelectItem value="rejected">Rechazada</SelectItem>
-                                        </SelectContent>
+                                        <SelectItem value="pending">Pendiente</SelectItem>
+                                        <SelectItem value="approved">Aprobada</SelectItem>
+                                        <SelectItem value="rejected">Rechazada</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
 
@@ -508,14 +508,14 @@ export default function EditQuotationPage() {
                                     {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice, originalQuantity, workProductDetailId }) => {
                                         const product = products.find((p) => p.product_id === Number(productId))
                                         const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
-                                        
+
                                         // Calculate the unit price for display
                                         const unitPrice =
                                             originalSalePrice ||
                                             (product
                                                 ? calculateTotalWithMargin(Number(product.sale_price), 1, Number(product.profit_margin))
                                                 : 0)
-                                        
+
                                         // Calculate if this is an existing product
                                         const isExistingProduct = workProductDetailId !== undefined
                                         const originalQty = originalQuantity || 0
@@ -523,9 +523,8 @@ export default function EditQuotationPage() {
                                         return (
                                             <li
                                                 key={productId}
-                                                className={`flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors ${
-                                                    isExistingProduct ? "border-primary/20" : ""
-                                                }`}
+                                                className={`flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors ${isExistingProduct ? "border-primary/20" : ""
+                                                    }`}
                                             >
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
@@ -551,7 +550,7 @@ export default function EditQuotationPage() {
                                                             value={quantity}
                                                             onChange={(newValue) => handleProductChange(productId, newValue, laborPrice)}
                                                             min={1}
-                                                            max={isExistingProduct 
+                                                            max={isExistingProduct
                                                                 ? (stockProduct?.quantity ?? 0) + originalQty // Para productos existentes, permito hasta stock actual + original
                                                                 : (stockProduct?.quantity ?? 0)} // Para nuevos, solo hasta el stock disponible
                                                             className="w-20"
@@ -777,4 +776,3 @@ export default function EditQuotationPage() {
         </motion.div>
     )
 }
-

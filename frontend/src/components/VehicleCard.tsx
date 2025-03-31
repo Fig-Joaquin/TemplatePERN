@@ -27,9 +27,11 @@ export const VehicleCard = ({ vehicle, onEdit, onDelete, showActions = false }: 
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4 space-y-2">
-        <p className="text-sm">
-          <span className="font-medium">Año:</span> {vehicle.year}
-        </p>
+        {vehicle.year && (
+          <p className="text-sm">
+            <span className="font-medium">Año:</span> {vehicle.year}
+          </p>
+        )}
         <p className="text-sm">
           <span className="font-medium">Color:</span> {vehicle.color}
         </p>

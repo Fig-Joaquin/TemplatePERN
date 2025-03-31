@@ -17,6 +17,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   id,
   isPrice = false,
   required = false,
+  disabled = false,
 }) => {
   const [inputValue, setInputValue] = useState(formatValue(value))
 
@@ -71,6 +72,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       className={`text-right ${className}`}
       placeholder={placeholder}
       required={required}
+      disabled={disabled}
     />
   )
 }

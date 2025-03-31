@@ -115,21 +115,21 @@ const ProductPage = () => {
         const stockProduct = {
           quantity: Number(editStockQuantity)
         }
-        
+
         await updateStockProduct(
-          selectedProduct.stock.stock_product_id.toString(), 
+          selectedProduct.stock.stock_product_id.toString(),
           stockProduct
         )
       } else {
         console.warn("Product stock doesn't have a stock_product_id")
         // If needed, you could create a new stock entry here
       }
-      
+
       // Only add supplier_id if a valid supplier is selected
       if (editSelectedSupplier && editSelectedSupplier !== "none") {
         Object.assign(updatedProduct, { supplier_id: Number(editSelectedSupplier) });
       }
-      
+
       await updateProduct(selectedProduct.product_id, updatedProduct)
       toast.success("Producto actualizado correctamente")
       const updatedProducts = await fetchProducts()
@@ -165,7 +165,7 @@ const ProductPage = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}

@@ -190,9 +190,10 @@ const QuotationCreatePage = () => {
   }
 
   // Función que utiliza el margen del producto (profit_margin) en los cálculos
-  const calculateTotalWithMargin = (price: number, quantity: number, profitMargin: number) => {
-    return price * quantity * (1 + profitMargin / 100)
-  }
+  const calculateTotalWithMargin = (price: number, quantity: number, profitMargin: number): number => {
+    const total = price * quantity * (1 + profitMargin / 100);
+    return Math.round(total * 100) / 100; // Redondea a 2 decimales
+  };
 
   const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
     const product = products.find((p) => p.product_id === Number(productId))
@@ -201,7 +202,7 @@ const QuotationCreatePage = () => {
 
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => {
     return total + (Number(laborPrice) || 0)  // Convertir a número y usar 0 si es inválido
-}, 0)
+  }, 0)
 
   const subtotalWithoutTax = totalProductPrice + totalLaborPrice
   const taxAmount = subtotalWithoutTax * taxRate

@@ -39,7 +39,7 @@ export interface Vehicle {
   model: model
   mileage_history: mileage_history[]
   color: string
-  year: number
+  year?: number // Changed to optional
   owner: Person | null // Allow owner to be null
   company: company | null // Allow company to be null
 }

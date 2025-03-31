@@ -160,12 +160,15 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
 
 export const updateVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
+        console.log("Update vehicle request body:", req.body);
         const { id } = req.params;
-        // Cargar el vehículo junto con su historial de kilometraje
+        
+        // Cargar el vehículo junto con sus relaciones
         const vehicle = await vehicleRepository.findOne({
             where: { vehicle_id: parseInt(id) },
-            relations: ["mileage_history"]
+            relations: ["model", "owner", "company", "mileage_history"]
         });
+        
         if (!vehicle) {
             res.status(404).json({ message: "Vehículo no encontrado" });
             return;
@@ -175,30 +178,106 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
         const updateSchema = vehicleSchema.partial();
         const validationResult = updateSchema.safeParse(req.body);
         if (!validationResult.success) {
-            res.status(400).json({ errors: validationResult.error.errors });
+            console.log("Validation errors:", validationResult.error.errors);
+            res.status(400).json({ 
+                message: "Error de validación", 
+                errors: validationResult.error.errors 
+            });
             return;
         }
         
-        const updateData = validationResult.data;
+        // Extraer IDs y datos del vehículo
+        const { vehicle_model_id, person_id, company_id, ...vehicleData } = validationResult.data;
         const mileageHistory = req.body.mileageHistory;
         
-        // Actualizar los campos del vehículo
-        vehicleRepository.merge(vehicle, updateData);
+        // Actualizar modelo si se proporciona
+        if (vehicle_model_id) {
+            const model = await modelRepository.findOneBy({ vehicle_model_id });
+            if (!model) {
+                res.status(404).json({ message: "El modelo especificado no existe." });
+                return;
+            }
+            vehicle.model = model;
+        }
 
-        // Si se proporcionó un historial de kilometraje, agregar los nuevos registros
-        if (mileageHistory && Array.isArray(mileageHistory) && mileageHistory.length > 0) {
-            const newMileageRecords = mileageHistory.map(record =>
-                typeof record === 'number' ? { current_mileage: record } : { ...record }
-            );
-            vehicle.mileage_history = [...(vehicle.mileage_history || []), ...newMileageRecords];
+        // Actualizar propietario según los IDs proporcionados
+        if (person_id !== undefined) {
+            if (person_id === null) {
+                vehicle.owner = null;
+            } else {
+                const owner = await ownerRepository.findOneBy({ person_id });
+                if (!owner) {
+                    res.status(404).json({ message: "El propietario especificado no existe." });
+                    return;
+                }
+                vehicle.owner = owner;
+            }
+        }
+
+        // Actualizar compañía solo si se proporciona explícitamente company_id
+        if (company_id !== undefined) {
+            if (company_id === null) {
+                vehicle.company = null;
+            } else {
+                const company = await companiesEntity.findOneBy({ company_id });
+                if (!company) {
+                    res.status(404).json({ message: "La compañía especificada no existe." });
+                    return;
+                }
+                vehicle.company = company;
+            }
+        }
+
+        // Asegurarse que el vehículo pertenece a alguien (persona o compañía)
+        if (vehicle.owner === null && vehicle.company === null) {
+            res.status(400).json({ message: "El vehículo debe pertenecer a una persona o compañía" });
+            return;
         }
         
-        await vehicleRepository.save(vehicle);
-        res.json(vehicle);
+        // Actualizar los campos del vehículo
+        vehicleRepository.merge(vehicle, vehicleData);
+
+        // Guardar primero el vehículo actualizado para asegurar que tenga un vehicle_id válido
+        const savedVehicle = await vehicleRepository.save(vehicle);
+        
+        // Procesar el historial de kilometraje solo después de guardar el vehículo
+        if (mileageHistory) {
+            if (Array.isArray(mileageHistory) && mileageHistory.length > 0) {
+                // Procesar array de registros
+                for (const record of mileageHistory) {
+                    const mileageRecord = mileageHistoryRepository.create({
+                        vehicle: savedVehicle,
+                        current_mileage: typeof record === 'number' ? record : record.current_mileage,
+                        ...(typeof record !== 'number' ? record : {})
+                    });
+                    await mileageHistoryRepository.save(mileageRecord);
+                }
+            } else if (typeof mileageHistory === 'number' && mileageHistory > 0) {
+                // Procesar un único valor numérico
+                const mileageRecord = mileageHistoryRepository.create({
+                    vehicle: savedVehicle,
+                    current_mileage: mileageHistory
+                });
+                await mileageHistoryRepository.save(mileageRecord);
+            }
+        }
+        
+        // Obtener el vehículo actualizado con todas las relaciones
+        const updatedVehicle = await vehicleRepository.findOne({
+            where: { vehicle_id: parseInt(id) },
+            relations: ["model", "model.brand", "owner", "company", "mileage_history"]
+        });
+        
+        res.json(updatedVehicle);
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar vehículo", error });
+        console.error("Error al actualizar vehículo:", error);
+        res.status(500).json({ 
+            message: "Error al actualizar vehículo", 
+            error: error instanceof Error ? error.message : String(error)
+        });
     }
 };
+
 
 // Agrega el repositorio de WorkOrder para eliminar órdenes de trabajo relacionadas
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);

@@ -11,7 +11,23 @@ export const createVehicle = async (vehicleData: Partial<Vehicle>) => {
 }
 
 export const updateVehicle = async (vehicleId: number, vehicleData: Partial<Vehicle>) => {
-  return await api.put(`/vehicles/${vehicleId}`, vehicleData)
+  try {
+    // Ensure we're sending a clean object without nested properties
+    const cleanedData = {
+      ...vehicleData,
+      // Remove any nested properties that might cause issues
+      model: undefined,
+      owner: undefined,
+      company: undefined,
+      mileage_history: undefined
+    };
+    
+    const { data } = await api.put<Vehicle>(`/vehicles/${vehicleId}`, cleanedData)
+    return data
+  } catch (error) {
+    console.error("Error updating vehicle:", error);
+    throw error;
+  }
 }
 
 export const deleteVehicle = async (vehicleId: number) => {
