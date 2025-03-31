@@ -18,6 +18,14 @@ export function validateSQL(sql: string): { valid: boolean, error?: string } {
   // This is a simplified approach - a more robust parser would be better
   const sqlLower = sql.toLowerCase();
   
+  // Primero verificar si la consulta está vacía
+  if (!sql || !sql.trim()) {
+    return {
+      valid: false,
+      error: 'La consulta SQL está vacía'
+    };
+  }
+  
   // Check for table references in common SQL clauses
   let tableMatches: string[] = [];
   
@@ -41,6 +49,21 @@ export function validateSQL(sql: string): { valid: boolean, error?: string } {
         valid: false,
         error: `Table '${table}' does not exist in the database schema. Available tables: ${availableTables.join(', ')}`
       };
+    }
+  }
+  
+  // Verificar columnas referenciadas con tabla prefijo (table.column)
+  const columnRegex = /([a-z0-9_]+)\.([a-z0-9_]+)/gi;
+  while ((match = columnRegex.exec(sqlLower)) !== null) {
+    const [_, table, column] = match;
+    if (availableTables.includes(table.toLowerCase())) {
+      const tableColumns = Object.keys(dbSchema[table].columns).map(col => col.toLowerCase());
+      if (!tableColumns.includes(column.toLowerCase())) {
+        return {
+          valid: false,
+          error: `Column '${column}' does not exist in table '${table}'`
+        };
+      }
     }
   }
   

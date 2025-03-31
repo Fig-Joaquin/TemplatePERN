@@ -171,7 +171,7 @@ export let dbRelationships: DatabaseRelationships = {};
     // console.log('Database schema:', dbSchema);
     // console.log('Database relationships:', dbRelationships);
   } catch (error) {
-    // console.error('Failed to initialize database schema:', error);
+    console.error('Failed to initialize database schema:', error);
   }
 })();
 

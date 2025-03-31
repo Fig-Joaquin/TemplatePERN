@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { generateSQL, generateResponse, resetOllamaContext } from '../../services/ollama/ollamaService';
+import { generateSQL, generateResponse, resetOllamaContext, getConversationalResponse } from '../../services/ollama/ollamaService';
 import { executeQuery, validateSQL } from '../../services/db/dbService';
 
 // Store chat sessions
@@ -24,50 +24,72 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
       chatSessions[sessionId].push({ question, timestamp: new Date() });
     }
     
-    // Generate SQL from the question
-    const sqlQuery = await generateSQL(question);
-    
-    console.log('Generated SQL:', sqlQuery);
-    
-    // Validate SQL before execution
-    const validation = validateSQL(sqlQuery);
-    if (!validation.valid) {
-      res.status(400).json({ 
-        error: validation.error,
-        generatedSQL: sqlQuery,
-        response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}`
-      });
-      return;
-    }
-    
     try {
-      // Execute the query
-      const queryResult = await executeQuery(sqlQuery);
-      console.log('Query result:', queryResult);
+      // Generate SQL from the question
+      const sqlQuery = await generateSQL(question);
       
-      // Generate a natural language response
-      const answer = await generateResponse(question, queryResult);
+      console.log('Generated SQL:', sqlQuery);
       
-      // Store the response in session history
-      if (sessionId && chatSessions[sessionId]) {
-        chatSessions[sessionId][chatSessions[sessionId].length - 1].answer = answer;
-        chatSessions[sessionId][chatSessions[sessionId].length - 1].sql = sqlQuery;
+      // Validate SQL before execution
+      const validation = validateSQL(sqlQuery);
+      if (!validation.valid) {
+        res.status(400).json({ 
+          error: validation.error,
+          generatedSQL: sqlQuery,
+          response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}`
+        });
+        return;
       }
       
-      res.json({
-        question,
-        sql: sqlQuery,
-        result: queryResult,
-        answer,
-        response: answer // Add response field to match frontend expectation
-      });
-    } catch (dbError: any) {
-      // If database execution fails, return the error with the generated SQL
-      console.error('Database error:', dbError);
+      // Continuar con la ejecución...
+      try {
+        // Execute the query
+        const queryResult = await executeQuery(sqlQuery);
+        console.log('Query result:', queryResult);
+        
+        // Generate a natural language response
+        const answer = await generateResponse(question, queryResult);
+        
+        // Store the response in session history
+        if (sessionId && chatSessions[sessionId]) {
+          chatSessions[sessionId][chatSessions[sessionId].length - 1].answer = answer;
+          chatSessions[sessionId][chatSessions[sessionId].length - 1].sql = sqlQuery;
+        }
+        
+        res.json({
+          question,
+          sql: sqlQuery,
+          result: queryResult,
+          answer,
+          response: answer // Add response field to match frontend expectation
+        });
+      } catch (dbError: any) {
+        // If database execution fails, return the error with the generated SQL
+        console.error('Database error:', dbError);
+        res.status(400).json({
+          error: `Error executing SQL query: ${dbError.message}`,
+          generatedSQL: sqlQuery,
+          response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}`
+        });
+      }
+    } catch (error: any) {
+      // Check if it's a conversational query
+      if (error.message === "CONVERSATIONAL_QUERY") {
+        // Respond directly without executing SQL
+        const conversationalResponse = await getConversationalResponse(question);
+        res.json({
+          question,
+          answer: conversationalResponse,
+          response: conversationalResponse
+        });
+        return;
+      }
+      
+      // Other existing errors...
+      console.error('Error generating SQL:', error);
       res.status(400).json({
-        error: `Error executing SQL query: ${dbError.message}`,
-        generatedSQL: sqlQuery,
-        response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}`
+        error: error.message,
+        response: "Lo siento, no pude entender tu consulta."
       });
     }
   } catch (error: any) {
