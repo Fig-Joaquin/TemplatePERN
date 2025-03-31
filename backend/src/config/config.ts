@@ -1,13 +1,21 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 export const config = {
   db: {
     user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'admin@7120',
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'mydatabase',
-    password: process.env.DB_PASSWORD || 'password',
-    port: parseInt(process.env.DB_PORT || '5432')
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    database: process.env.DB_NAME || 'tallerDB',
   },
   ollama: {
-    url: process.env.OLLAMA_URL || 'http://localhost:11434',
-    model: process.env.OLLAMA_MODEL || 'qwen2.5:3b'
-  }
+    url: process.env.OLLAMA_API_URL || 'http://localhost:11434',
+    model: 'llama3',
+  },
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+  },
+  // Other configurations...
 };

@@ -80,9 +80,13 @@ export async function executeQuery(sql: string, params: any[] = []): Promise<any
   try {
     const result = await pool.query(sql, params);
     return result.rows;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error executing SQL query:', error);
-    throw error;
+    // Crear un error más descriptivo que mantenga el mensaje original
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const enhancedError = new Error(`Error executing SQL query: ${errorMessage}`);
+    (enhancedError as any).originalError = error;
+    throw enhancedError;
   }
 }
 
