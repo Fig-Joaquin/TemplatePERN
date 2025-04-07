@@ -1,7 +1,9 @@
 import { useState } from "react"
-import { SendHorizontal, X, Trash2, MessageCircle, ThumbsUp, ThumbsDown } from "lucide-react"
+import { SendHorizontal, X, Trash2, MessageCircle, ThumbsUp, ThumbsDown, Bot } from "lucide-react"
 import { toast } from "react-toastify"
 import { sendChatQuery, sendChatFeedback, resetChatSession } from "../services/chatbotService"
+import ReactMarkdown from 'react-markdown'
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Message {
   text: string
@@ -15,7 +17,8 @@ export const Chatbot = () => {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
+  const [, setIsTyping] = useState(false)
+  const [isWaitingResponse, setIsWaitingResponse] = useState(false)
 
   // Función para crear efecto de tipeo
   const typeBotMessage = (messageId: string, fullText: string) => {
@@ -57,25 +60,30 @@ export const Chatbot = () => {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setLoading(true)
-    setIsTyping(true)
-
-    // Agregar mensaje placeholder que se actualizará con la respuesta real
+    
     const placeholderId = Date.now().toString();
+    // Añadimos el mensaje del bot con los puntos de espera
     setMessages((prev) => [
       ...prev, 
-      { text: "•", isUser: false, id: placeholderId, hasFeedback: false }
+      { 
+        text: "", 
+        isUser: false, 
+        id: placeholderId, 
+        hasFeedback: false 
+      }
     ])
 
     try {
+      setIsWaitingResponse(true) // Mostrar los puntos de espera
       const { response } = await sendChatQuery(input)
-      
-      // Implementar el efecto de tipeo gradualmente mostrando el mensaje
+      setIsWaitingResponse(false) // Ocultar los puntos de espera
+      setIsTyping(true) // Iniciar animación de tipeo
       typeBotMessage(placeholderId, response);
     } catch (error) {
       toast.error("Error al procesar tu consulta")
-      // Eliminar mensaje placeholder en caso de error
       setMessages(prev => prev.filter(m => m.id !== placeholderId));
-      setIsTyping(false);
+      setIsWaitingResponse(false)
+      setIsTyping(false)
     } finally {
       setLoading(false)
     }
@@ -111,105 +119,181 @@ export const Chatbot = () => {
     toast.success("Historial borrado")
   }
 
+  const renderMessage = (text: string) => {
+    return (
+      <div className="prose prose-sm max-w-none text-card-foreground">
+        <ReactMarkdown
+          components={{
+            // Texto en negrita usa el color primario
+            strong: ({node, ...props}) => (
+              <span className="font-bold text-primary" {...props} />
+            ),
+            // Texto en cursiva usa el color secundario
+            em: ({node, ...props}) => (
+              <span className="italic text-secondary" {...props} />
+            ),
+            // Bloques de código usan los colores del tema
+            code: ({node, ...props}) => (
+              <code className="bg-muted/50 text-accent rounded px-1" {...props} />
+            ),
+            // Listas mantienen el color del texto principal
+            li: ({node, ...props}) => (
+              <li className="my-0 text-card-foreground" {...props} />
+            ),
+            // Enlaces usan el color de acento
+            a: ({node, ...props}) => (
+              <a className="text-accent hover:text-accent/80 underline" {...props} />
+            ),
+            // Encabezados usan el color primario
+            h1: ({node, ...props}) => (
+              <h1 className="text-primary font-bold" {...props} />
+            ),
+            h2: ({node, ...props}) => (
+              <h2 className="text-primary font-bold" {...props} />
+            ),
+            h3: ({node, ...props}) => (
+              <h3 className="text-primary font-bold" {...props} />
+            ),
+            // Párrafos usan el color del texto principal
+            p: ({node, ...props}) => (
+              <p className="text-card-foreground" {...props} />
+            )
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      </div>
+    )
+  }
+
   if (!isOpen) {
     return (
-      <button
+      <motion.button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-4 right-4 p-4 bg-primary hover:bg-primary hover:bg-opacity-90 text-primary-foreground rounded-full shadow-lg"
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        exit={{ scale: 0, rotate: 180 }}
+        transition={{
+          type: "spring",
+          stiffness: 260,
+          damping: 20
+        }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
       >
         <MessageCircle className="h-6 w-6" />
-      </button>
+      </motion.button>
     )
   }
 
   return (
-    <div className="fixed bottom-4 right-4 flex flex-col h-[600px] w-full max-w-[400px] bg-card rounded-lg shadow-lg border border-border">
-      <div className="flex justify-between items-center p-4 border-b border-border bg-muted">
-        <h2 className="text-lg font-semibold text-foreground">Asistente Virtual</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={clearHistory}
-            className="p-2 hover:bg-accent rounded-full text-muted-foreground hover:text-accent-foreground"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-destructive rounded-full text-muted-foreground hover:text-destructive-foreground"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 bg-background">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mb-4`}
-          >
-            <div
-              className={`max-w-[80%] p-3 rounded-lg ${
-                message.isUser
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground'
-              }`}
+    <AnimatePresence>
+      <motion.div
+        className="fixed bottom-4 right-4 flex flex-col h-[600px] w-full max-w-[400px] bg-card rounded-2xl shadow-xl border border-border/50 overflow-hidden backdrop-blur-sm"
+        initial={{ opacity: 0, scale: 0.3, y: 100 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.3, y: 100 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30
+        }}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-border/50 bg-gradient-to-r from-primary/10 to-secondary/10">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary/20 rounded-lg">
+              <Bot className="h-5 w-5 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">Asistente Virtual</h2>
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={clearHistory}
+              className="p-2 hover:bg-accent/20 rounded-lg text-muted-foreground hover:text-accent transition-colors"
             >
-              {message.text}
-              
-              {!message.isUser && !message.hasFeedback && (
-                <div className="flex justify-end mt-2 gap-2">
-                  <button 
-                    onClick={() => handleFeedback(message.id!, true)}
-                    className="p-1 hover:bg-green-100 rounded-full"
-                  >
-                    <ThumbsUp className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleFeedback(message.id!, false)}
-                    className="p-1 hover:bg-red-100 rounded-full"
-                  >
-                    <ThumbsDown className="h-4 w-4" />
-                  </button>
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2 hover:bg-destructive/20 rounded-lg text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 bg-background/50 space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} items-end gap-2`}
+            >
+              {!message.isUser && (
+                <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-secondary" />
                 </div>
               )}
+              <div
+                className={`max-w-[80%] p-3 rounded-2xl ${
+                  message.isUser
+                    ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground bg-primary'
+                    : 'bg-gradient-to-br from-secondary/90 to-secondary text-card-foreground'
+                } shadow-sm`}
+              >
+                {message.isUser ? (
+                  message.text
+                ) : isWaitingResponse && message.text === "" ? (
+                  <span className="flex gap-1 items-center h-5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </span>
+                ) : (
+                  renderMessage(message.text)
+                )}
+                
+                {!message.isUser && !message.hasFeedback && (
+                  <div className="flex justify-end mt-2 gap-1 border-t border-foreground/10 pt-2">
+                    <button 
+                      onClick={() => handleFeedback(message.id!, true)}
+                      className="p-1.5 hover:bg-foreground/20 rounded-lg transition-colors text-foreground"
+                    >
+                      <ThumbsUp className="h-3 w-3" />
+                    </button>
+                    <button 
+                      onClick={() => handleFeedback(message.id!, false)}
+                      className="p-1.5 hover:bg-foreground/20 rounded-lg transition-colors text-foreground"
+                    >
+                      <ThumbsDown className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        
-        {/* Typing indicator */}
-        {isTyping && (
-          <div className="flex justify-start mb-4">
-            <div className="max-w-[80%] p-3 rounded-lg bg-secondary text-secondary-foreground">
-              <span className="typing-indicator">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
 
-      <div className="flex-none p-4 border-t border-border bg-card">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Pregunta sobre algo..."
-            disabled={loading}
-            className="flex-1 p-2 bg-input text-foreground border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary hover:bg-opacity-90 disabled:opacity-50"
-          >
-            <SendHorizontal className="h-5 w-5" />
-          </button>
-        </form>
-      </div>
-    </div>
+        <div className="flex-none p-4 border-t border-border/50 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Pregunta sobre algo..."
+              disabled={loading}
+              className="flex-1 p-2.5 bg-background/80 text-foreground border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="p-2.5 bg-gradient-to-r from-primary to-primary/90 bg-primary text-card hover:text-primary-foreground rounded-xl hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+            >
+              <SendHorizontal className="h-5 w-5" />
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   )
 }

@@ -383,3 +383,45 @@ body {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
 }
+
+/* Estilos para Markdown */
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose ul {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin: 0;
+}
+
+.prose code {
+  font-size: 0.875em;
+}
+
+.prose pre {
+  margin: 0.5em 0;
+  padding: 0.5em;
+  background-color: var(--muted);
+  border-radius: 0.25rem;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 0.6s infinite;
+}

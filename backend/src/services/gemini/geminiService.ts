@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
 // Get the generative model
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-pro-exp-03-25",
+  model: "gemini-2.0-flash",
 });
 
 // Default generation configuration
@@ -25,8 +25,17 @@ const chatSessions: Record<string, any> = {};
  * Clean SQL query from generated response
  */
 function cleanSql(sql: string): string {
+  // Normalize SQL for checking
+  const normalizedSql = sql.toLowerCase().trim();
+  
+  // Check for dangerous operations
+  const forbiddenOperations = ['delete', 'insert', 'update', 'drop', 'truncate', 'alter'];
+  if (forbiddenOperations.some(op => normalizedSql.includes(op))) {
+    throw new Error("FORBIDDEN_OPERATION");
+  }
+
   return sql
-    .replace(/^[^]*?(SELECT|INSERT|UPDATE|DELETE)/i, '$1')
+    .replace(/^[^]*?(SELECT)/i, '$1')
     .replace(/```sql|```|La consulta SQL válida.*?\n/g, '')
     .replace(/;[^]*$/, ';')
     .trim();
@@ -35,10 +44,10 @@ function cleanSql(sql: string): string {
 /**
  * Generate SQL query using Gemini API
  */
-export async function generateGeminiSQL(question: string): Promise<string> {
+export async function generateGeminiSQL(question: string): Promise<{ isError: boolean; message: string; isConversational?: boolean }> {
   // Check for conversational queries
   if (/^(hola|saludos|buenos días|buenas tardes|buenas noches|qué tal|como estás|gracias|ayuda|help)/i.test(question.trim())) {
-    throw new Error("CONVERSATIONAL_QUERY");
+    return { isError: false, isConversational: true, message: await getGeminiConversationalResponse(question) };
   }
   
   // Format the schema information
@@ -49,23 +58,43 @@ export async function generateGeminiSQL(question: string): Promise<string> {
   
   console.log('Available tables for Gemini:', tables);
   
-  // Construct the prompt with schema information
-  const prompt = `Tablas PostgreSQL:\n${tables}\n\nGenera una consulta SQL para: ${question}\n\nDevuelve solo la consulta SQL sin comentarios adicionales. No uses comillas para encerrar la consulta.`;
+  // Modified prompt to encourage joins when querying vehicles
+  const prompt = `Tablas PostgreSQL:\n${tables}\n\n
+Cuando generes consultas que involucren la tabla vehicles:
+- Usa LEFT JOIN con vehicle_models y vehicle_brands para obtener información del modelo y marca
+- Usa LEFT JOIN con persons para obtener información del propietario si es una persona
+- Usa LEFT JOIN con companies para obtener información de la empresa si es una compañía
+- Usa LEFT JOIN con mileage_history para obtener el historial de kilometraje
+
+Genera una consulta SQL para: ${question}\n\n
+Devuelve solo la consulta SQL sin comentarios adicionales. No uses comillas para encerrar la consulta.`;
 
   try {
-    // Use a simple session without history for SQL generation
     const result = await model.generateContent(prompt);
     const response = result.response.text();
     console.log('Raw Gemini SQL response:', response);
     
-    // Clean up the generated SQL
-    const sql = cleanSql(response);
-    console.log('Cleaned Gemini SQL:', sql);
-    
-    return sql;
+    try {
+      const sql = cleanSql(response);
+      console.log('Cleaned Gemini SQL:', sql);
+      return { isError: false, message: sql };
+    } catch (error) {
+      if (error instanceof Error && error.message === "FORBIDDEN_OPERATION") {
+        return { 
+          isError: true, 
+          message: "Por seguridad, solo se permiten consultas SELECT para proteger la integridad de la base de datos." 
+        };
+      }
+      throw error;
+    }
   } catch (error) {
     console.error('Error generating SQL with Gemini:', error);
-    throw new Error('Failed to generate SQL');
+    return { 
+      isError: true, 
+      message: error instanceof Error && error.message.includes("Por seguridad") 
+        ? error.message 
+        : 'Failed to generate SQL' 
+    };
   }
 }
 
