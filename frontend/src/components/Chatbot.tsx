@@ -75,15 +75,45 @@ export const Chatbot = () => {
 
     try {
       setIsWaitingResponse(true) // Mostrar los puntos de espera
-      const { response } = await sendChatQuery(input)
+      const response = await sendChatQuery(input)
       setIsWaitingResponse(false) // Ocultar los puntos de espera
-      setIsTyping(true) // Iniciar animación de tipeo
-      typeBotMessage(placeholderId, response);
-    } catch (error) {
-      toast.error("Error al procesar tu consulta")
-      setMessages(prev => prev.filter(m => m.id !== placeholderId));
+      
+      // Si hay un mensaje de respuesta, mostrarlo
+      if (response && response.response) {
+        setIsTyping(true) // Iniciar animación de tipeo
+        typeBotMessage(placeholderId, response.response);
+      } else {
+        // Si no hay respuesta, mostrar un mensaje de error genérico
+        setMessages(prev => 
+          prev.map(m => m.id === placeholderId 
+            ? { ...m, text: "Lo siento, no pude procesar tu consulta correctamente." } 
+            : m
+          )
+        );
+      }
+    } catch (error: any) {
       setIsWaitingResponse(false)
       setIsTyping(false)
+      
+      // Extraer el mensaje de error del objeto de respuesta
+      let errorMessage = "Error al procesar tu consulta. Por favor, intenta con otra pregunta.";
+      
+      if (error.response && error.response.data) {
+        // Si hay una propiedad 'response' en el error.response.data, usarla
+        if (error.response.data.response) {
+          errorMessage = error.response.data.response;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        }
+      }
+      
+      // Mostrar el mensaje de error directamente en el chat como si fuera un mensaje del bot
+      setMessages(prev => 
+        prev.map(m => m.id === placeholderId 
+          ? { ...m, text: errorMessage } 
+          : m
+        )
+      );
     } finally {
       setLoading(false)
     }

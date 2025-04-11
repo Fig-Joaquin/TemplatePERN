@@ -266,7 +266,7 @@ const ProductPage = () => {
       )}
 
       <Dialog open={modalOpen} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="bg-card text-card-foreground">
+        <DialogContent className="bg-card text-card-foreground max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{modalType === "edit" ? "Editar Producto" : "Confirmar eliminación"}</DialogTitle>
           </DialogHeader>
@@ -289,103 +289,105 @@ const ProductPage = () => {
               </DialogFooter>
             </>
           ) : (
-            <form onSubmit={handleEdit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="editProductName">Nombre del producto</Label>
-                <Input
-                  id="editProductName"
-                  type="text"
-                  value={editProductName}
-                  onChange={(e) => setEditProductName(e.target.value)}
-                  required
-                />
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editProductName">Nombre del producto</Label>
+                  <Input
+                    id="editProductName"
+                    type="text"
+                    value={editProductName}
+                    onChange={(e) => setEditProductName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editProductType">Tipo de Producto</Label>
+                  <select
+                    id="editProductType"
+                    value={editSelectedProductType}
+                    onChange={(e) => setEditSelectedProductType(e.target.value)}
+                    className="w-full p-2 border border-input bg-background text-sm rounded-md"
+                    required
+                  >
+                    <option value="">Seleccione un tipo</option>
+                    {productTypes.map((type) => (
+                      <option key={type.product_type_id} value={type.product_type_id}>
+                        {type.type_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editSupplier">Proveedor</Label>
+                  <select
+                    id="editSupplier"
+                    value={editSelectedSupplier}
+                    onChange={(e) => setEditSelectedSupplier(e.target.value)}
+                    className="w-full p-2 border border-input bg-background text-sm rounded-md"
+                  >
+                    <option value="none">Sin proveedor</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier.supplier_id} value={supplier.supplier_id}>
+                        {supplier.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editProfitMargin">Margen de ganancia (%)</Label>
+                  <Input
+                    id="editProfitMargin"
+                    type="number"
+                    value={editProfitMargin}
+                    onChange={(e) => setEditProfitMargin(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editLastPurchasePrice">Último precio de compra</Label>
+                  <NumberInput
+                    id="editLastPurchasePrice"
+                    value={editLastPurchasePrice}
+                    onChange={(value) => setEditLastPurchasePrice(value)}
+                    min={1}
+                    required
+                    isPrice
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editSalePrice">Precio de venta</Label>
+                  <NumberInput
+                    id="editSalePrice"
+                    value={editSalePrice}
+                    onChange={(value) => setEditSalePrice(value)}
+                    min={1}
+                    required
+                    isPrice
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editStockQuantity">Cantidad de Producto</Label>
+                  <NumberInput
+                    id="editStockQuantity"
+                    value={editStockQuantity}
+                    onChange={(value) => setEditStockQuantity(value)}
+                    min={1}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editDescription">Descripción</Label>
+                  <Input
+                    id="editDescription"
+                    type="text"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="editProductType">Tipo de Producto</Label>
-                <select
-                  id="editProductType"
-                  value={editSelectedProductType}
-                  onChange={(e) => setEditSelectedProductType(e.target.value)}
-                  className="w-full p-2 border border-input bg-background text-sm rounded-md"
-                  required
-                >
-                  <option value="">Seleccione un tipo</option>
-                  {productTypes.map((type) => (
-                    <option key={type.id} value={type.product_type_id}>
-                      {type.type_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editSupplier">Proveedor</Label>
-                <select
-                  id="editSupplier"
-                  value={editSelectedSupplier}
-                  onChange={(e) => setEditSelectedSupplier(e.target.value)}
-                  className="w-full p-2 border border-input bg-background text-sm rounded-md"
-                >
-                  <option value="none">Sin proveedor</option>
-                  {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.supplier_id}>
-                      {supplier.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editProfitMargin">Margen de ganancia (%)</Label>
-                <Input
-                  id="editProfitMargin"
-                  type="number"
-                  value={editProfitMargin}
-                  onChange={(e) => setEditProfitMargin(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editLastPurchasePrice">Último precio de compra</Label>
-                <NumberInput
-                  id="editLastPurchasePrice"
-                  value={editLastPurchasePrice}
-                  onChange={(value) => setEditLastPurchasePrice(value)}
-                  min={1}
-                  required
-                  isPrice
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editSalePrice">Precio de venta</Label>
-                <NumberInput
-                  id="editSalePrice"
-                  value={editSalePrice}
-                  onChange={(value) => setEditSalePrice(value)}
-                  min={1}
-                  required
-                  isPrice
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editStockQuantity">Cantidad de Producto</Label>
-                <NumberInput
-                  id="editStockQuantity"
-                  value={editStockQuantity}
-                  onChange={(value) => setEditStockQuantity(value)}
-                  min={1}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editDescription">Descripción</Label>
-                <Input
-                  id="editDescription"
-                  type="text"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  required
-                />
-              </div>
-              <DialogFooter>
+              <DialogFooter className="pt-4">
                 <Button type="button" variant="outline" onClick={closeModal}>
                   Cancelar
                 </Button>

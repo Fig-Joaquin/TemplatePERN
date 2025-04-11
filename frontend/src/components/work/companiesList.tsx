@@ -3,6 +3,8 @@ import type { Company, brand } from "../../types/interfaces";
 import { Button } from "@/components/ui/button";
 import VehicleList from "../vehicleList";
 import RutFormatter from "../RutFormatter";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Edit, Trash2 } from "lucide-react";
 
 interface CompanyListProps {
   companies: Company[];
@@ -14,63 +16,49 @@ interface CompanyListProps {
 const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handleDelete, brands }) => {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              RUT
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Nombre
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Email
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Teléfono
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Vehículos
-            </th>
-            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Acciones
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>RUT</TableHead>
+            <TableHead>Nombre</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Teléfono</TableHead>
+            <TableHead>Vehículos</TableHead>
+            <TableHead className="text-center">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {companies.map((company) => (
-            <tr key={company.company_id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <TableRow key={company.company_id}>
+              <TableCell>
                 <RutFormatter rut={company.rut} />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {company.name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {company.email ?? "No hay información"}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                +{company.phone ?? "No hay información"}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              </TableCell>
+              <TableCell>{company.name}</TableCell>
+              <TableCell>{company.email ?? "No hay información"}</TableCell>
+              <TableCell>+{company.phone ?? "No hay información"}</TableCell>
+              <TableCell>
                 {company.vehicles && company.vehicles.length > 0 ? (
                   <VehicleList vehicles={company.vehicles} brands={brands} />
                 ) : (
                   "No hay vehículos"
                 )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                <Button variant="outline" onClick={() => handleEdit(company)}>
-                  Editar
-                </Button>
-                <Button variant="destructive" onClick={() => handleDelete(company.company_id)}>
-                  Eliminar
-                </Button>
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-center">
+                <div className="flex justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(company)}>
+                    <Edit className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-1">Editar</span>
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(company.company_id)}>
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-1">Eliminar</span>
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 };

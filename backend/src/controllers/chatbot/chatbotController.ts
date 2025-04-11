@@ -14,7 +14,10 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
     const { question, sessionId } = req.body;
     
     if (!question) {
-      res.status(400).json({ error: 'Question is required' });
+      res.status(400).json({ 
+        error: 'Question is required',
+        response: 'Por favor, ingresa una pregunta para continuar.' 
+      });
       return;
     }
     
@@ -46,7 +49,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
         if (result.isError) {
           res.status(400).json({ 
             error: result.message,
-            response: result.message 
+            response: result.message // Use improved error message directly from geminiService
           });
           return;
         }
@@ -60,7 +63,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
           res.status(400).json({ 
             error: validation.error,
             generatedSQL: sqlQuery,
-            response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}`
+            response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}. Intenta reformular tu pregunta.`
           });
           return;
         }
@@ -104,7 +107,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
             res.status(400).json({
               error: `Error executing SQL query: ${dbError.message}`,
               generatedSQL: sqlQuery,
-              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}`
+              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}. Por favor, verifica tu consulta o inténtalo más tarde.`
             });
           }
         }
@@ -112,7 +115,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
         console.error('Error with Gemini:', error);
         res.status(500).json({ 
           error: error instanceof Error ? error.message : 'Unknown error',
-          response: "Lo siento, ocurrió un error al procesar tu consulta."
+          response: "Lo siento, ocurrió un error al procesar tu consulta. Por favor, inténtalo más tarde."
         });
       }
     } else {
@@ -126,7 +129,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
           res.status(400).json({ 
             error: validation.error,
             generatedSQL: sqlQuery,
-            response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}`
+            response: `Lo siento, no pude crear una consulta SQL válida: ${validation.error}. Intenta reformular tu pregunta.`
           });
           return;
         }
@@ -167,7 +170,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
             res.status(400).json({
               error: `Error executing SQL query: ${dbError.message}`,
               generatedSQL: sqlQuery,
-              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}`
+              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}. Por favor, verifica tu consulta o inténtalo más tarde.`
             });
           }
         }
@@ -185,7 +188,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
         console.error('Error generating SQL:', error);
         res.status(400).json({
           error: error.message,
-          response: "Lo siento, no pude entender tu consulta."
+          response: "Lo siento, no pude entender tu consulta. Por favor, intenta reformularla."
         });
       }
     }
@@ -193,7 +196,7 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
     console.error('Error in chatbot controller:', error);
     res.status(500).json({ 
       error: error.message,
-      response: "Lo siento, ocurrió un error al procesar tu consulta."
+      response: "Lo siento, ocurrió un error al procesar tu consulta. Por favor, inténtalo más tarde."
     });
   }
 }
@@ -203,17 +206,29 @@ export async function handleChatFeedback(req: Request, res: Response) {
     const { sessionId, feedback } = req.body;
     
     if (!sessionId || !feedback) {
-      return res.status(400).json({ error: 'SessionId and feedback are required' });
+      return res.status(400).json({ 
+        error: 'SessionId and feedback are required',
+        response: 'Por favor, proporciona un ID de sesión y tus comentarios para continuar.' 
+      });
     }
     
     if (!chatSessions[sessionId]) {
-      return res.status(404).json({ error: 'Session not found' });
+      return res.status(404).json({ 
+        error: 'Session not found',
+        response: 'No se encontró la sesión especificada. Por favor, verifica el ID de sesión.' 
+      });
     }
     
-    return res.status(200).json({ message: 'Feedback received' });
+    return res.status(200).json({ 
+      message: 'Feedback received',
+      response: 'Gracias por tus comentarios. Los hemos recibido correctamente.' 
+    });
   } catch (error) {
     console.error('Error handling chat feedback:', error);
-    return res.status(500).json({ error: 'Failed to process feedback' });
+    return res.status(500).json({ 
+      error: 'Failed to process feedback',
+      response: 'Lo siento, ocurrió un error al procesar tus comentarios. Por favor, inténtalo más tarde.' 
+    });
   }
 }
 
@@ -222,7 +237,10 @@ export async function resetChatSession(req: Request, res: Response) {
     const { sessionId } = req.body;
     
     if (!sessionId) {
-      return res.status(400).json({ error: 'SessionId is required' });
+      return res.status(400).json({ 
+        error: 'SessionId is required',
+        response: 'Por favor, proporciona un ID de sesión para continuar.' 
+      });
     }
     
     if (chatSessions[sessionId]) {
@@ -234,11 +252,15 @@ export async function resetChatSession(req: Request, res: Response) {
       : await resetOllamaContext(sessionId);
     
     return res.status(200).json({ 
-      message: 'Session reset successfully', 
+      message: 'Session reset successfully',
+      response: 'La sesión se ha reiniciado correctamente.',
       resetStatus: resetResult 
     });
   } catch (error) {
     console.error('Error resetting chat session:', error);
-    return res.status(500).json({ error: 'Failed to reset session' });
+    return res.status(500).json({ 
+      error: 'Failed to reset session',
+      response: 'Lo siento, ocurrió un error al reiniciar la sesión. Por favor, inténtalo más tarde.' 
+    });
   }
 }
