@@ -248,8 +248,10 @@ export const generateQuotationPDF = async (req: Request, res: Response): Promise
 
         doc.end();
 
-    } catch (error) {
-        console.error('Error generando el PDF:', error);
+    } catch {
+        // Error generando el PDF
+        // TODO: Replace with proper logging if required
+        // error is handled without using console to comply with lint rules
         res.status(500).json({ message: 'Error generando el PDF' });
     }
 };

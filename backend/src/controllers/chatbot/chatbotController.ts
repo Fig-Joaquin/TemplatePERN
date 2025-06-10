@@ -1,10 +1,18 @@
+/* eslint-disable no-console */
 import { Request, Response } from 'express';
 import { generateSQL, generateResponse, resetOllamaContext, getConversationalResponse } from '../../services/ollama/ollamaService';
 import { resetGeminiContext, generateGeminiSQL, generateGeminiSQLResponse } from '../../services/gemini/geminiService';
 import { executeQuery, validateSQL } from '../../services/db/dbService';
 
 // Store chat sessions
-const chatSessions: Record<string, any[]> = {};
+interface ChatSessionEntry {
+  question: string;
+  timestamp: Date;
+  answer?: string;
+  sql?: string;
+}
+
+const chatSessions: Record<string, ChatSessionEntry[]> = {};
 
 // Define which model to use
 const useGemini = true; // Set to true to use Gemini, false to use Ollama
@@ -89,8 +97,11 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
             answer,
             response: answer
           });
-        } catch (dbError: any) {
-          const errorMessage = dbError.message || '';
+        } catch (dbError: unknown) {
+          let errorMessage = '';
+          if (typeof dbError === 'object' && dbError !== null && 'message' in dbError && typeof (dbError as { message: string }).message === 'string') {
+            errorMessage = (dbError as { message: string }).message;
+          }
           const isConnectionError = errorMessage.includes('ETIMEDOUT') || 
                                    errorMessage.includes('ECONNREFUSED') || 
                                    errorMessage.includes('connect');
@@ -105,9 +116,9 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
             });
           } else {
             res.status(400).json({
-              error: `Error executing SQL query: ${dbError.message}`,
+              error: `Error executing SQL query: ${errorMessage}`,
               generatedSQL: sqlQuery,
-              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}. Por favor, verifica tu consulta o inténtalo más tarde.`
+              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${errorMessage}. Por favor, verifica tu consulta o inténtalo más tarde.`
             });
           }
         }
@@ -152,8 +163,11 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
             answer,
             response: answer
           });
-        } catch (dbError: any) {
-          const errorMessage = dbError.message || '';
+        } catch (dbError: unknown) {
+          let errorMessage = '';
+          if (typeof dbError === 'object' && dbError !== null && 'message' in dbError && typeof (dbError as { message: string }).message === 'string') {
+            errorMessage = (dbError as { message: string }).message;
+          }
           const isConnectionError = errorMessage.includes('ETIMEDOUT') || 
                                    errorMessage.includes('ECONNREFUSED') || 
                                    errorMessage.includes('connect');
@@ -168,14 +182,14 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
             });
           } else {
             res.status(400).json({
-              error: `Error executing SQL query: ${dbError.message}`,
+              error: `Error executing SQL query: ${errorMessage}`,
               generatedSQL: sqlQuery,
-              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${dbError.message}. Por favor, verifica tu consulta o inténtalo más tarde.`
+              response: `Lo siento, ocurrió un error al ejecutar la consulta: ${errorMessage}. Por favor, verifica tu consulta o inténtalo más tarde.`
             });
           }
         }
-      } catch (error: any) {
-        if (error.message === "CONVERSATIONAL_QUERY") {
+      } catch (error: unknown) {
+        if (typeof error === "object" && error !== null && "message" in error && typeof (error as { message: string }).message === "string" && (error as { message: string }).message === "CONVERSATIONAL_QUERY") {
           const conversationalResponse = await getConversationalResponse(question);
           res.json({
             question,
@@ -187,60 +201,64 @@ export async function handleChatQuery(req: Request, res: Response): Promise<void
         
         console.error('Error generating SQL:', error);
         res.status(400).json({
-          error: error.message,
+          error: typeof error === "object" && error !== null && "message" in error && typeof (error as { message: string }).message === "string" ? (error as { message: string }).message : "Unknown error",
           response: "Lo siento, no pude entender tu consulta. Por favor, intenta reformularla."
         });
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in chatbot controller:', error);
     res.status(500).json({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       response: "Lo siento, ocurrió un error al procesar tu consulta. Por favor, inténtalo más tarde."
     });
   }
 }
 
-export async function handleChatFeedback(req: Request, res: Response) {
+export async function handleChatFeedback(req: Request, res: Response): Promise<void> {
   try {
     const { sessionId, feedback } = req.body;
     
     if (!sessionId || !feedback) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         error: 'SessionId and feedback are required',
         response: 'Por favor, proporciona un ID de sesión y tus comentarios para continuar.' 
       });
+      return;
     }
-    
+
     if (!chatSessions[sessionId]) {
-      return res.status(404).json({ 
+      res.status(404).json({ 
         error: 'Session not found',
         response: 'No se encontró la sesión especificada. Por favor, verifica el ID de sesión.' 
       });
+      return;
     }
-    
-    return res.status(200).json({ 
+
+    res.status(200).json({ 
       message: 'Feedback received',
       response: 'Gracias por tus comentarios. Los hemos recibido correctamente.' 
     });
+    return;
   } catch (error) {
     console.error('Error handling chat feedback:', error);
-    return res.status(500).json({ 
+    res.status(500).json({ 
       error: 'Failed to process feedback',
       response: 'Lo siento, ocurrió un error al procesar tus comentarios. Por favor, inténtalo más tarde.' 
     });
   }
 }
 
-export async function resetChatSession(req: Request, res: Response) {
+export async function resetChatSession(req: Request, res: Response): Promise<void> {
   try {
     const { sessionId } = req.body;
     
     if (!sessionId) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         error: 'SessionId is required',
         response: 'Por favor, proporciona un ID de sesión para continuar.' 
       });
+      return;
     }
     
     if (chatSessions[sessionId]) {
@@ -251,14 +269,15 @@ export async function resetChatSession(req: Request, res: Response) {
       ? await resetGeminiContext(sessionId)
       : await resetOllamaContext(sessionId);
     
-    return res.status(200).json({ 
+    res.status(200).json({ 
       message: 'Session reset successfully',
       response: 'La sesión se ha reiniciado correctamente.',
       resetStatus: resetResult 
     });
+    return;
   } catch (error) {
     console.error('Error resetting chat session:', error);
-    return res.status(500).json({ 
+    res.status(500).json({ 
       error: 'Failed to reset session',
       response: 'Lo siento, ocurrió un error al reiniciar la sesión. Por favor, inténtalo más tarde.' 
     });

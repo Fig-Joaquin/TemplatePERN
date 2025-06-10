@@ -18,7 +18,7 @@ export const authenticateUser = (req: AuthRequest, res: Response, next: NextFunc
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_default");
     req.user = decoded; // 🔹 Usa `as any` para evitar errores de tipado en `req.user`
     next(); // 🔹 Siempre llama a `next()` en caso de éxito
-  } catch (error) {
+  } catch {
     res.status(403).json({ message: "Token inválido o expirado" });
     return; // 🔹 Asegura que devuelva `void`
   }

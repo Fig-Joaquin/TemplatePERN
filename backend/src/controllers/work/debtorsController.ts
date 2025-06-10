@@ -89,7 +89,7 @@ export const updateDebtor = async (req: Request, res: Response, next: NextFuncti
             return next({ status: 404, message: "Deudor no encontrado" });
         }
         // Eliminar work_order_id de los datos a actualizar
-        const { work_order_id, ...debtorData } = validationResult.data;
+        const { work_order_id, ...debtorData } = validationResult.data; // eslint-disable-line @typescript-eslint/no-unused-vars
         debtorRepository.merge(debtor, debtorData);
         debtor = await debtorRepository.save(debtor);
         res.status(200).json({ data: debtor });

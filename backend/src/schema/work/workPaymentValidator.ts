@@ -13,7 +13,7 @@ export const WorkPaymentSchema = z.object({
 export type CreateWorkPaymentInput = z.infer<typeof WorkPaymentSchema>;
 
 // For validation of incoming data
-export const validateWorkPayment = (data: unknown) => {
+export const validateWorkPayment = (data: unknown): CreateWorkPaymentInput => {
     return WorkPaymentSchema.parse(data);
 };
 

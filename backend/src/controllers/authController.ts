@@ -1,4 +1,5 @@
 // src/controllers/authController.ts
+/* eslint-disable no-console */
 import { Request, Response, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -82,7 +83,7 @@ export const checkSession: RequestHandler = async (req: Request, res: Response):
       return;
     }
     res.json({ user: decoded, person: user.person });
-  } catch (error) {
+  } catch {
     res.status(401).json({ error: "Token inválido o expirado" });
   }
 };

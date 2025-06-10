@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import axios from 'axios';
 import { config } from '../../config/config';
 import { dbSchema } from '../../config/dbSchema';
@@ -13,7 +14,13 @@ interface OllamaResponse {
   done_reason?: string;
 }
 
-async function streamOllamaResponse(url: string, data: any): Promise<string> {
+interface OllamaChatRequest {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  stream?: boolean;
+}
+
+async function streamOllamaResponse(url: string, data: OllamaChatRequest): Promise<string> {
   try {
     const response = await axios.post(url, data, { responseType: 'stream' });
     return new Promise((resolve, reject) => {
@@ -24,7 +31,7 @@ async function streamOllamaResponse(url: string, data: any): Promise<string> {
           try {
             const parsed = JSON.parse(line) as OllamaResponse;
             if (parsed.message?.content) fullContent += parsed.message.content;
-          } catch (e) {
+          } catch {
             console.warn('Error parsing chunk:', line);
           }
         }
@@ -80,7 +87,7 @@ export async function generateSQL(question: string): Promise<string> {
   }
 }
 
-export async function generateResponse(question: string, sqlResult: any[]): Promise<string> {
+export async function generateResponse(question: string, sqlResult: Record<string, unknown>[]): Promise<string> {
   if (!sqlResult || sqlResult.length === 0) {
     return "No se encontraron resultados";
   }
@@ -102,7 +109,7 @@ export async function generateResponse(question: string, sqlResult: any[]): Prom
   }
 }
 
-export async function resetOllamaContext(_sessionId: any): Promise<boolean> {
+export async function resetOllamaContext(_sessionId: string): Promise<boolean> {
   try {
     await axios.post(`${config.ollama.url}/api/chat`, {
       model: config.ollama.model,

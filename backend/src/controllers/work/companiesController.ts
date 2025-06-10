@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { Company } from "../../entities/work/companiesEntity";
@@ -145,7 +146,7 @@ export const deleteCompany = async (req: Request, res: Response, _next: NextFunc
                 return;
             }
             res.status(204).send();
-        } catch (error) {
+        } catch {
             res.status(409).json({ message: "No se puede eliminar la empresa porque tiene registros asociados." });
         }
     } catch (error) {

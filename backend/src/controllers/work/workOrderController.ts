@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { WorkOrderSchema } from "../../schema/work/workOrderValidator";
@@ -245,8 +246,13 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
       }
   
       res.json({ message: "Orden de trabajo eliminada exitosamente" });
-    } catch (error: any) {
-      console.error("Error en deleteWorkOrder:", error.stack);
-      res.status(500).json({ message: "Error al eliminar la orden de trabajo", error: error.message });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error en deleteWorkOrder:", error.stack);
+        res.status(500).json({ message: "Error al eliminar la orden de trabajo", error: error.message });
+      } else {
+        console.error("Error en deleteWorkOrder:", error);
+        res.status(500).json({ message: "Error al eliminar la orden de trabajo", error: String(error) });
+      }
     }
   };

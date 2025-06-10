@@ -8,21 +8,21 @@ const router = express.Router();
 router.post('/query', async (req: Request, res: Response) => {
   try {
 	await handleChatQuery(req, res);
-  } catch (error) {
+  } catch {
 	res.status(500).json({ error: 'An error occurred' });
   }
 });
 router.post('/feedback', async (req: Request, res: Response) => {
   try {
 	await handleChatFeedback(req, res);
-  } catch (error) {
+  } catch {
 	res.status(500).json({ error: 'An error occurred' });
   }
 });
 router.post('/reset', async (req: Request, res: Response) => {
   try {
 	await resetChatSession(req, res);
-  } catch (error) {
+  } catch {
 	res.status(500).json({ error: 'An error occurred' });
   }
 });

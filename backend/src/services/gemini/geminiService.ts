@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from '../../config/config';
 import { dbSchema } from '../../config/dbSchema';
@@ -19,7 +20,7 @@ const generationConfig = {
 };
 
 // Store chat sessions
-const chatSessions: Record<string, any> = {};
+const chatSessions: Record<string, ReturnType<typeof model.startChat>> = {};
 
 // Define error messages for better user experience
 const errorMessages = {
@@ -61,7 +62,13 @@ export async function generateGeminiSQL(question: string): Promise<{ isError: bo
   
   // Format the schema information
   const tables = Object.entries(dbSchema).map(([tableName, schema]) => {
-    const columns = Object.keys(schema.columns).join(', ');
+    const columns = Object.entries(schema.columns).map(([colName, colType]) => {
+      // Incluir información específica si es un ENUM
+      if (colType.startsWith('ENUM')) {
+        return `${colName} ${colType}`;
+      }
+      return colName;
+    }).join(', ');
     return `${tableName}: ${columns}`;
   }).join('\n');
   
@@ -71,7 +78,7 @@ export async function generateGeminiSQL(question: string): Promise<{ isError: bo
   const prompt = `Tablas PostgreSQL:\n${tables}\n\n
 Instrucciones importantes:
 - Utiliza siempre LEFT JOIN en lugar de INNER JOIN cuando sea posible para preservar todos los registros de la tabla principal
-- Cuando generes consultas que involucren la tabla vehicles:
+- Cuando generes consultas que involucren la tabla vehicles (las tablas de quotation y work order tienen relación con vehicles para que siempre hagas el LEFT JOIN y muestres la información de la tabla vehicles):
   - Usa LEFT JOIN con vehicle_models y vehicle_brands para obtener información del modelo y marca
   - Usa LEFT JOIN con persons para obtener información del propietario si es una persona
   - Usa LEFT JOIN con companies para obtener información de la empresa si es una compañía
@@ -169,7 +176,7 @@ export async function generateGeminiResponse(question: string, sessionId?: strin
 /**
  * Generate response based on SQL results using Gemini
  */
-export async function generateGeminiSQLResponse(question: string, sqlResult: any[]): Promise<string> {
+export async function generateGeminiSQLResponse(question: string, sqlResult: Record<string, unknown>[]): Promise<string> {
   if (!sqlResult || sqlResult.length === 0) {
     return "No se encontraron resultados para tu consulta. Intenta reformular tu pregunta o usar otros términos de búsqueda.";
   }

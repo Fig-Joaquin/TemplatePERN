@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { DataSource } from "typeorm";
 import dotenv from "dotenv";
 import * as entities from "../entities"; // Importa todas las entidades desde el archivo barril

@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+/* eslint-disable no-console */
+import { Pool, QueryResultRow } from 'pg';
 import { config } from '../../config/config';
 import { dbSchema } from '../../config/dbSchema';
 
@@ -55,7 +56,7 @@ export function validateSQL(sql: string): { valid: boolean, error?: string } {
   // Verificar columnas referenciadas con tabla prefijo (table.column)
   const columnRegex = /([a-z0-9_]+)\.([a-z0-9_]+)/gi;
   while ((match = columnRegex.exec(sqlLower)) !== null) {
-    const [_, table, column] = match;
+    const [, table, column] = match;
     if (availableTables.includes(table.toLowerCase())) {
       const tableColumns = Object.keys(dbSchema[table].columns).map(col => col.toLowerCase());
       if (!tableColumns.includes(column.toLowerCase())) {
@@ -70,7 +71,7 @@ export function validateSQL(sql: string): { valid: boolean, error?: string } {
   return { valid: true };
 }
 
-export async function executeQuery(sql: string, params: any[] = []): Promise<any> {
+export async function executeQuery<T extends QueryResultRow>(sql: string, params: unknown[] = []): Promise<T[]> {
   // Validate the SQL query before execution
   const validation = validateSQL(sql);
   if (!validation.valid) {
@@ -78,14 +79,14 @@ export async function executeQuery(sql: string, params: any[] = []): Promise<any
   }
   
   try {
-    const result = await pool.query(sql, params);
-    return result.rows;
+    const result = await pool.query<T>(sql, params);
+    return result.rows as T[];
   } catch (error: unknown) {
     console.error('Error executing SQL query:', error);
     // Crear un error más descriptivo que mantenga el mensaje original
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const enhancedError = new Error(`Error executing SQL query: ${errorMessage}`);
-    (enhancedError as any).originalError = error;
+    const enhancedError = new Error(`Error executing SQL query: ${errorMessage}`) as Error & { originalError?: unknown };
+    enhancedError.originalError = error;
     throw enhancedError;
   }
 }

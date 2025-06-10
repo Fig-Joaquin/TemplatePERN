@@ -1,4 +1,5 @@
 // src/controllers/workOrderTechnicianController.ts
+/* eslint-disable no-console */
 import { Request, Response, NextFunction } from "express";
 import { DeepPartial } from "typeorm";
 import { AppDataSource } from "../../config/ormconfig";

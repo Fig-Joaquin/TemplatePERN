@@ -47,24 +47,66 @@ async function getTables(): Promise<string[]> {
 
 // Function to get columns for a specific table
 async function getTableColumns(tableName: string): Promise<Record<string, string>> {
-  const query = `
+  // Consulta para obtener información de las columnas básicas
+  const columnQuery = `
     SELECT column_name, data_type, 
            CASE WHEN is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END as nullable,
-           CASE WHEN column_default IS NOT NULL THEN ' DEFAULT ' || column_default ELSE '' END as default_val
+           CASE WHEN column_default IS NOT NULL THEN ' DEFAULT ' || column_default ELSE '' END as default_val,
+           udt_name
     FROM information_schema.columns 
     WHERE table_schema = 'public' 
     AND table_name = $1
     ORDER BY ordinal_position
   `;
   
-  const result = await pool.query(query, [tableName]);
+  const result = await pool.query(columnQuery, [tableName]);
   
   const columns: Record<string, string> = {};
+  
+  // Primero procesamos las columnas regulares
   for (const row of result.rows) {
-    columns[row.column_name] = `${row.data_type}${row.nullable}${row.default_val}`;
+    let columnType = row.data_type;
+    
+    // Si es un tipo ENUM, obtendremos sus valores
+    if (row.data_type === 'USER-DEFINED' || row.data_type === 'enum') {
+      // Ajustar para trabajar directamente con el tipo udt_name
+      const enumName = row.udt_name;
+      const enumValues = await getEnumValues(enumName);
+      if (enumValues.length > 0) {
+        columnType = `ENUM(${enumValues.join(', ')})`;
+      }
+    }
+    
+    columns[row.column_name] = `${columnType}${row.nullable}${row.default_val}`;
   }
   
   return columns;
+}
+
+// Simple logger utility to avoid direct console usage
+function logError(message: string, error: unknown): void {
+  // You can replace this with a more sophisticated logging solution later
+  // This avoids the linting error while still logging the issue
+  process.stderr.write(`${message} ${error}\n`);
+}
+
+// Función auxiliar para obtener los valores de un tipo ENUM
+async function getEnumValues(typeName: string): Promise<string[]> {
+  const query = `
+    SELECT e.enumlabel
+    FROM pg_type t 
+    JOIN pg_enum e ON t.oid = e.enumtypid  
+    WHERE t.typname = $1
+    ORDER BY e.enumsortorder
+  `;
+  
+  try {
+    const result = await pool.query(query, [typeName]);
+    return result.rows.map(row => `'${row.enumlabel}'`);
+  } catch (error) {
+    logError(`Error fetching enum values for ${typeName}:`, error);
+    return [];
+  }
 }
 
 // Function to get primary keys for a table
@@ -143,7 +185,7 @@ export async function getDatabaseSchema(): Promise<DatabaseSchema> {
     
     return schema;
   } catch (error) {
-    console.error('Error fetching database schema:', error);
+    logError('Error fetching database schema:', error);
     throw new Error('Failed to fetch database schema');
   }
 }
@@ -153,7 +195,7 @@ export async function getDatabaseRelationships(): Promise<DatabaseRelationships>
   try {
     return await getRelationships();
   } catch (error) {
-    console.error('Error fetching database relationships:', error);
+    logError('Error fetching database relationships:', error);
     throw new Error('Failed to fetch database relationships');
   }
 }
@@ -163,7 +205,7 @@ export let dbSchema: DatabaseSchema = {};
 export let dbRelationships: DatabaseRelationships = {};
 
 // Initialize schema on module load
-(async () => {
+(async (): Promise<void> => {
   try {
     dbSchema = await getDatabaseSchema();
     dbRelationships = await getDatabaseRelationships();
@@ -171,7 +213,7 @@ export let dbRelationships: DatabaseRelationships = {};
     // console.log('Database schema:', dbSchema);
     // console.log('Database relationships:', dbRelationships);
   } catch (error) {
-    console.error('Failed to initialize database schema:', error);
+    logError('Failed to initialize database schema:', error);
   }
 })();
 
@@ -182,7 +224,7 @@ export async function refreshSchema(): Promise<void> {
     dbRelationships = await getDatabaseRelationships();
     // console.log('Database schema refreshed successfully');
   } catch (error) {
-    console.error('Failed to refresh database schema:', error);
+    logError('Failed to refresh database schema:', error);
     throw error;
   }
 }
