@@ -147,3 +147,35 @@ export const deleteQuotation = async (req: Request, res: Response, _next: NextFu
         res.status(500).json({ message: "Error al eliminar la cotización", error });
     }
 };
+
+export const getQuotationsByVehicleLicensePlate = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const { licensePlate } = req.params;
+        
+        const quotations = await quotationRepository.find({
+            where: { 
+                vehicle: { 
+                    license_plate: licensePlate.toUpperCase() 
+                } 
+            },
+            relations: [
+                "vehicle",
+                "vehicle.model", 
+                "vehicle.model.brand", 
+                "vehicle.owner", 
+                "vehicle.company",
+                "productDetails",
+                "productDetails.product",
+                "productDetails.tax"
+            ]
+        });
+
+        res.json(quotations);
+    } catch (error) {
+        console.error("Error al obtener cotizaciones por patente:", error);
+        res.status(500).json({ 
+            message: "Error al obtener cotizaciones por patente", 
+            error: error instanceof Error ? error.message : error 
+        });
+    }
+};

@@ -256,3 +256,40 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
       }
     }
   };
+
+export const getWorkOrdersByVehicleLicensePlate = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const { licensePlate } = req.params;
+        
+        const workOrders = await workOrderRepository.find({
+            where: { 
+                vehicle: { 
+                    license_plate: licensePlate.toUpperCase() 
+                } 
+            },
+            relations: [
+                "vehicle",
+                "vehicle.model",
+                "vehicle.model.brand",
+                "vehicle.owner",
+                "vehicle.company",
+                "quotation",
+                "debtors",
+                "productDetails",
+                "productDetails.product",
+                "productDetails.quotation",
+                "productDetails.tax",
+                "technicians",
+                "technicians.technician"
+            ]
+        });
+
+        res.json(workOrders);
+    } catch (error) {
+        console.error("Error al obtener órdenes de trabajo por patente:", error);
+        res.status(500).json({ 
+            message: "Error al obtener órdenes de trabajo por patente", 
+            error: error instanceof Error ? error.message : error 
+        });
+    }
+};

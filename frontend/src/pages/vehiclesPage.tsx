@@ -106,11 +106,11 @@ const VehiclesPage = () => {
     if (vehicle) {
       if (vehicle.owner) {
         setOwnerType("person");
-        setSelectedPerson(persons.find((p) => p.person_id === vehicle.owner.person_id) || null);
+        setSelectedPerson(persons.find((p) => p.person_id === vehicle.owner!.person_id) || null);
         setSelectedCompany(null);
       } else if (vehicle.company) {
         setOwnerType("company");
-        setSelectedCompany(companies.find((c) => c.company_id === vehicle.company.company_id) || null);
+        setSelectedCompany(companies.find((c) => c.company_id === vehicle.company!.company_id) || null);
         setSelectedPerson(null);
       }
     } else {

@@ -44,3 +44,8 @@ export const fetchVehiclesByPersonId = async (personId: number) => {
   return data
 }
 
+export const fetchVehicleByLicensePlate = async (licensePlate: string) => {
+  const { data } = await api.get<Vehicle>(`/vehicles/license/${licensePlate}`)
+  return data
+}
+

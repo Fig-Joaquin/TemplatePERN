@@ -41,15 +41,9 @@ export interface Vehicle {
   color: string
   year?: number // Changed to optional
   owner: Person | null // Allow owner to be null
-  company: company | null // Allow company to be null
+  company: Company | null // Allow company to be null
 }
 
-export interface company {
-  company_id: number
-  name: string
-  email: string
-  rut: string
-}
 
 export interface Company {
   company_id: number;
@@ -96,6 +90,7 @@ export interface WorkOrder {
   work_order_status: "approved" | "rejected" | "pending"
   vehicle: Vehicle
   entry_date: Date
+  total_amount: number
   // Agrega otras propiedades relevantes si es necesario
 }
 

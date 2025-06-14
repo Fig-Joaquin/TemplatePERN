@@ -6,12 +6,14 @@ getVehicleById,
 createVehicle, 
 updateVehicle, 
 deleteVehicle, 
-getVehiclesByPersonId
+getVehiclesByPersonId,
+getVehicleByLicensePlate
 } from "../../controllers/vehicles/vehicleController";
 
 const vehicleRoutes = Router();
 
 vehicleRoutes.get("/", getAllVehicles);          // Obtiene todos los vehículos
+vehicleRoutes.get("/license/:licensePlate", getVehicleByLicensePlate); // Obtiene un vehículo por patente
 vehicleRoutes.get("/:id", getVehicleById);         // Obtiene un vehículo por ID
 vehicleRoutes.get("/person/:personId", getVehiclesByPersonId); // Obtiene los vehículos de un propietario
 vehicleRoutes.post("/", createVehicle);            // Crea un nuevo vehículo

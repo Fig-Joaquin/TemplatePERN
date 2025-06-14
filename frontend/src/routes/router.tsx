@@ -20,12 +20,17 @@ import WorkOrdersPage from "@/pages/WorkOrderPage";
 import WorkOrderCreatePage from "@/pages/WorkOrderCreatePage";
 import CompaniesPage from "@/pages/work/CompaniesPage";
 import WorkOrderEditPage from "@/pages/WorkOrderEditPage";
+import VehicleSearchPage from "@/pages/VehicleSearchPage";
 
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Login />,
+  },
+  {
+    path: "/consulta-vehiculo",
+    element: <VehicleSearchPage />,
   },
   {
     path: "/admin",

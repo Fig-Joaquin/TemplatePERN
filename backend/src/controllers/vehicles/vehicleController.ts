@@ -69,7 +69,6 @@ export const getVehicleById = async (req: Request, res: Response, _next: NextFun
     }
 };
 
-
 export const createVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         console.log("Body:", req.body);
@@ -352,5 +351,101 @@ export const deleteVehicle = async (req: Request, res: Response, _next: NextFunc
     } catch (error) {
         console.error("Error al eliminar vehículo:", error);
         res.status(500).json({ message: "Error al eliminar vehículo", error });
+    }
+};
+
+export const getVehicleByLicensePlate = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const { licensePlate } = req.params;
+        
+        // Obtener información básica del vehículo
+        const vehicle = await vehicleRepository.findOne({
+            where: { license_plate: licensePlate.toUpperCase() },
+            relations: [
+                "model", 
+                "model.brand", 
+                "owner", 
+                "mileage_history", 
+                "company"
+            ]
+        });
+        
+        if (!vehicle) {
+            res.status(404).json({ message: `No se encontró ningún vehículo con la patente '${licensePlate}'` });
+            return;
+        }
+
+        // Obtener cotizaciones con sus detalles de productos usando Query Builder
+        const quotationsWithDetails = await AppDataSource
+            .createQueryBuilder(Quotation, "quotation")
+            .leftJoinAndSelect("quotation.vehicle", "vehicle")
+            .leftJoin("work_product_details", "wpd", "wpd.quotation_id = quotation.quotation_id")
+            .leftJoin("products", "product", "product.product_id = wpd.product_id")
+            .leftJoin("taxes", "tax", "tax.tax_id = wpd.tax_id")
+            .where("quotation.vehicle_id = :vehicleId", { vehicleId: vehicle.vehicle_id })
+            .getMany();
+
+        // Obtener detalles de productos separadamente para las cotizaciones
+        const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
+        const quotationProductDetails = await workProductDetailRepository
+            .createQueryBuilder("wpd")
+            .leftJoinAndSelect("wpd.product", "product")
+            .leftJoinAndSelect("wpd.tax", "tax")
+            .leftJoinAndSelect("wpd.quotation", "quotation")
+            .where("quotation.vehicle_id = :vehicleId", { vehicleId: vehicle.vehicle_id })
+            .andWhere("wpd.quotation_id IS NOT NULL")
+            .getMany();
+
+        // Obtener órdenes de trabajo
+        const workOrders = await workOrderRepository.find({
+            where: { vehicle: { vehicle_id: vehicle.vehicle_id } },
+            relations: [
+                "quotation",
+                "debtors",
+                "technicians",
+                "technicians.technician"
+            ]
+        });
+
+        // Obtener detalles de productos para las órdenes de trabajo
+        const workOrderProductDetails = await workProductDetailRepository
+            .createQueryBuilder("wpd")
+            .leftJoinAndSelect("wpd.product", "product")
+            .leftJoinAndSelect("wpd.tax", "tax")
+            .leftJoinAndSelect("wpd.work_order", "work_order")
+            .where("work_order.vehicle_id = :vehicleId", { vehicleId: vehicle.vehicle_id })
+            .andWhere("wpd.work_order_id IS NOT NULL")
+            .getMany();
+
+        // Agrupar detalles por cotización
+        const quotationsComplete = quotationsWithDetails.map(quotation => ({
+            ...quotation,
+            productDetails: quotationProductDetails.filter(detail => 
+                detail.quotation?.quotation_id === quotation.quotation_id
+            )
+        }));
+
+        // Agrupar detalles por orden de trabajo
+        const workOrdersComplete = workOrders.map(workOrder => ({
+            ...workOrder,
+            productDetails: workOrderProductDetails.filter(detail => 
+                detail.work_order?.work_order_id === workOrder.work_order_id
+            )
+        }));
+
+        // Respuesta completa con toda la información
+        const completeVehicleInfo = {
+            ...vehicle,
+            quotations: quotationsComplete,
+            workOrders: workOrdersComplete
+        };
+        
+        res.json(completeVehicleInfo);
+    } catch (error) {
+        console.error("Error al buscar información completa del vehículo:", error);
+        res.status(500).json({ 
+            message: "Error al buscar información completa del vehículo", 
+            error: error instanceof Error ? error.message : error 
+        });
     }
 };
