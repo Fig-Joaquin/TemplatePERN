@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
-import { Gasto, TipoGasto } from "../entities";
+import {  TipoGasto } from "../entities/tipoGasto";
+import { Gasto } from "../entities/gastosEmpresas";
 import { GastoSchema, UpdateGastoSchema } from "../schema/work/gastoValidator";
 import { DeepPartial } from "typeorm";
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { AppDataSource } from "../../config/ormconfig";
-import { TipoGasto } from "../../entities";
-import { TipoGastoSchema } from "../../schema/work/tipoGastoValidator";
+import { AppDataSource } from "../config/ormconfig";
+import { TipoGasto } from "../entities/tipoGasto";
+import { TipoGastoSchema } from "../schema/work/tipoGastoValidator";
 
 const tipoGastoRepository = AppDataSource.getRepository(TipoGasto);
 
