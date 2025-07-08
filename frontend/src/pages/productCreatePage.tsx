@@ -22,7 +22,6 @@ import { Package } from "lucide-react"
 
 const ProductCreatePage = () => {
   const [productName, setProductName] = useState("")
-  const [salePrice, setSalePrice] = useState(0)
   const [stockQuantity, setStockQuantity] = useState(0)
   const [description, setDescription] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
@@ -270,7 +269,7 @@ const ProductCreatePage = () => {
                       <NumberInput
                         id="salePrice"
                         value={calculatePriceWithMargin()}
-                        onChange={(value) => {/* No hacemos nada, es solo visual */ }}
+                        onChange={() => {/* No hacemos nada, es solo visual */ }}
                         min={0}
                         isPrice
                         className="w-full"

@@ -663,7 +663,7 @@ const SidebarMenuSkeleton = React.forwardRef<
       {showIcon && (
         <Skeleton
           className="size-4 rounded-md"
-          data-"
+          data-sidebar="menu-skeleton-icon"
         />
       )}
       <Skeleton

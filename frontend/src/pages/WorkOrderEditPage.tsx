@@ -78,10 +78,10 @@ const WorkOrderEditPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
-  const [productQuantity, setProductQuantity] = useState<number>(1);
-  const [productLaborPrice, setProductLaborPrice] = useState<number>(0);
-  const [taxRate, setTaxRate] = useState<number>(0.19);
+  const [, setSelectedProductId] = useState<number | null>(null);
+  const [, setProductQuantity] = useState<number>(1);
+  const [, setProductLaborPrice] = useState<number>(0);
+  const [taxRate] = useState<number>(0.19);
   // Para distinguir órdenes basadas en cotización
   const [isQuotationBased, setIsQuotationBased] = useState<boolean>(false);
   const [quotationProducts, setQuotationProducts] = useState<any[]>([]);
@@ -125,16 +125,16 @@ const WorkOrderEditPage = () => {
       const hasQuotation = !!data.quotation?.quotation_id;
       setIsQuotationBased(hasQuotation);
 
-      if (data.productDetails && data.productDetails.length > 0) {
+      if ((data as any).product_details && (data as any).product_details.length > 0) {
         // Agregar originalQuantity para seguimiento
-        const enhancedProducts = data.productDetails.map((product: any) => ({
+        const enhancedProducts = (data as any).product_details.map((product: any) => ({
           ...product,
           originalQuantity: product.quantity,
         }));
         setProducts(enhancedProducts);
       }
 
-      if (hasQuotation && data.quotation) {
+      if (hasQuotation && data.quotation && data.quotation.quotation_id) {
         try {
           const quotationDetails = await getWorkProductDetailsByQuotationId(data.quotation.quotation_id);
           setQuotationProducts(quotationDetails || []);
@@ -142,7 +142,7 @@ const WorkOrderEditPage = () => {
           console.error("Error loading quotation details:", detailError);
         }
       }
-      setStatus(data.order_status || "not_started");
+      setStatus(data.work_order_status || "not_started");
     } catch (err) {
       console.error("Error loading work order:", err);
       setError("No se pudo cargar la información de la orden de trabajo");
@@ -346,13 +346,13 @@ const WorkOrderEditPage = () => {
     try {
       await updateWorkOrder(Number(id), {
         description,
-        order_status: status,
+        work_order_status: status as "finished" | "in_progress" | "not_started",
         total_amount: totalAmount,
       });
 
       // Process deletions first
       for (const detailId of productsToDelete) {
-        const productToRemove = orderData.productDetails.find(p => p.work_product_detail_id === detailId);
+        const productToRemove = (orderData as any).product_details?.find((p: any) => p.work_product_detail_id === detailId);
 
         if (productToRemove) {
           await deleteWorkProductDetail(detailId);
@@ -762,7 +762,7 @@ const WorkOrderEditPage = () => {
                           <span>
                             {assignment.technician?.name} {assignment.technician?.first_surname}
                           </span>
-                          <Button variant="ghost" size="sm" onClick={() => handleRemoveTechnician(assignment.id)}>
+                          <Button variant="ghost" size="sm" onClick={() => assignment.id && handleRemoveTechnician(assignment.id)}>
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
@@ -813,7 +813,6 @@ const WorkOrderEditPage = () => {
                           `Producto #${product.product_id}`;
                         const foundProduct = allProducts.find(p => p.product_id === product.product_id);
                         const netPrice = foundProduct ? Number(foundProduct.sale_price) : Number(product.sale_price);
-                        const margin = foundProduct ? Number(foundProduct.profit_margin) / 100 : 0;
                         const priceWithMargin = Number(product.sale_price);
                         const subtotal = priceWithMargin * Number(product.quantity) + Number(product.labor_price);
                         const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
@@ -1085,7 +1084,6 @@ const WorkOrderEditPage = () => {
                             return !stockProduct || stockProduct.quantity <= 0;
                           })
                           .map(product => {
-                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
                             const existingProduct = products.find(p => p.product_id === product.product_id);
 
                             let statusMessage = "";

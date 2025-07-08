@@ -51,6 +51,7 @@ export interface Company {
   name: string;
   email: string;
   phone?: string;
+  vehicles?: Vehicle[]; // Optional array of vehicles
 }
 
 export interface model {
@@ -91,6 +92,7 @@ export interface WorkOrder {
   vehicle: Vehicle
   entry_date: Date
   total_amount: number
+  quotation_id?: number
   // Agrega otras propiedades relevantes si es necesario
 }
 

@@ -42,7 +42,7 @@ const WorkOrderForm = ({ initialData, quotationId, onSuccess, onClose }: WorkOrd
     try {
       const newWorkOrder: WorkOrderInput = {
         description,
-        work_order_status: "pending",
+        work_order_status: "not_started",
         vehicle_id: initialData?.vehicle.vehicle_id || 1, // Se debe obtener dinámicamente
         quotation_id: quotationId,
         total_amount: products.reduce((total, p) => total + p.sale_price * p.quantity + p.labor_price, 0),

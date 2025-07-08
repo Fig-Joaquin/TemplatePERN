@@ -117,7 +117,7 @@ export default function Notifications({ notifications, setNotifications, onClose
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`border rounded-md shadow-sm p-4 ${getNotificationStyles(n.type)} ${n.work_order_id ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                className={`border rounded-md shadow-sm p-4 ${getNotificationStyles(n.type || "info")} ${n.work_order_id ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
                 onClick={() => n.work_order_id ? handleNotificationClick(n) : null}
               >
                 <div className="flex gap-3">

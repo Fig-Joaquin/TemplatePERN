@@ -15,7 +15,7 @@ import { getWorkProductDetailsByQuotationId } from "../../services/workProductDe
 import { getStockProducts, updateStockProduct } from "../../services/stockProductService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { getTaxById } from "@/services/taxService";
-import { getChileanISOString, formatChileanDate, formatChileanShortDate } from "@/utils/dateUtils";
+import { getChileanISOString, formatChileanDate } from "@/utils/dateUtils";
 import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput, StockProduct } from "../../types/interfaces";
 
 const WorkOrderWithQuotation = () => {
@@ -169,7 +169,7 @@ const WorkOrderWithQuotation = () => {
       };
 
       console.log("Enviando orden con fecha chilena:", workOrderPayload.order_date);
-      const response = await createWorkOrder(workOrderPayload);
+      await createWorkOrder(workOrderPayload);
 
       // Update stock for each product in the quotation
       await updateProductStock();
