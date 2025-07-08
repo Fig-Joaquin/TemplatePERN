@@ -20,6 +20,8 @@ import Companies from "./work/companiesRoutes";
 import chatbotRoute from "./chatbotRoutes";
 import workOrderTechnicianRoutes from "./work/workOrderTechnician";
 import notificationRoutes from "./notificationRoutes";
+import gastoRoutes from "./gastoRoutes";
+import tipoGastoRoutes from "./tipoGastoRoutes";
 
 const router = Router();
 
@@ -44,5 +46,7 @@ router.use("/companies", Companies);
 router.use("/chatbot", chatbotRoute);
 router.use("/workOrderTechnicians", workOrderTechnicianRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/gastos", gastoRoutes);
+router.use("/tiposGasto", tipoGastoRoutes);
 
 export default router;
