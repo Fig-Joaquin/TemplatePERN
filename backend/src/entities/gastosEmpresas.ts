@@ -2,8 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "t
 import { IsString, IsNumber, Min, IsDate } from "class-validator";
 import { TipoGasto } from "./tipoGasto";
 
-@Entity("gastos_empresas")
-export class Gasto {
+@Entity("GastoEmpresa")
+export class GastoEmpresa {
     @PrimaryGeneratedColumn()
     id_gasto_empresa!: number;
 

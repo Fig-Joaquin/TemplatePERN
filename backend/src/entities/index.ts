@@ -24,3 +24,5 @@ export { Supplier } from "./work/suppliersEntity";
 export { Debtor } from "./work/debtorsEntity";
 export { WorkOrderTechnician } from "./work/workOrderTechnician";
 export {Notification} from "./notificationEntity";
+export { GastoEmpresa } from "./gastosEmpresas";
+export { TipoGasto } from "./tipoGasto";

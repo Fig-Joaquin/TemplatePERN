@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import {  TipoGasto } from "../entities/tipoGasto";
-import { Gasto } from "../entities/gastosEmpresas";
+import { GastoEmpresa } from "../entities/gastosEmpresas";
 import { GastoSchema, UpdateGastoSchema } from "../schema/work/gastoValidator";
 import { DeepPartial } from "typeorm";
 
-const gastoRepository = AppDataSource.getRepository(Gasto);
+const gastoRepository = AppDataSource.getRepository(GastoEmpresa);
 const tipoGastoRepository = AppDataSource.getRepository(TipoGasto);
 
 export const getAllGastos = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
@@ -69,7 +69,7 @@ export const createGasto = async (req: Request, res: Response, _next: NextFuncti
         const newGasto = gastoRepository.create({
             ...rest,
             tipo_gasto: tipoGasto
-        } as DeepPartial<Gasto>);
+        } as DeepPartial<GastoEmpresa>);
         
         await gastoRepository.save(newGasto);
         

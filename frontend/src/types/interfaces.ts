@@ -252,4 +252,19 @@ export interface WorkOrderTechnician {
   assigned_at?: Date;
 }
 
+export interface TipoGasto {
+  id_tipo_gasto?: number;
+  nombre_tipo_gasto: string;
+  descripcion?: string;
+}
+
+export interface Gasto {
+  id_gasto_empresa?: number;
+  tipo_gasto: TipoGasto;
+  descripcion: string;
+  monto: number;
+  fecha_gasto: Date | string;
+  numero_boleta?: string;
+}
+
 

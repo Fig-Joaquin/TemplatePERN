@@ -21,6 +21,9 @@ import WorkOrderCreatePage from "@/pages/WorkOrderCreatePage";
 import CompaniesPage from "@/pages/work/CompaniesPage";
 import WorkOrderEditPage from "@/pages/WorkOrderEditPage";
 import VehicleSearchPage from "@/pages/VehicleSearchPage";
+import GastosPage from "@/pages/work/GastosPage";
+import GastoFormPage from "@/pages/work/GastoFormPage";
+import TipoGastoPage from "@/pages/work/TipoGastoPage";
 
 
 const router = createBrowserRouter([
@@ -57,6 +60,10 @@ const router = createBrowserRouter([
       { path: "orden-trabajo/editar/:id", element: <WorkOrderEditPage />, handle: { title: "Editar Orden de Trabajo" } },
       { path: "nueva-orden-trabajo", element: <WorkOrderCreatePage />, handle: { title: "Órdenes de Trabajo" } },
       { path: "empresas", element: <CompaniesPage />, handle: { title: "Empresas" } },
+      { path: "gastos", element: <GastosPage />, handle: { title: "Gastos" } },
+      { path: "gastos/nuevo", element: <GastoFormPage />, handle: { title: "Nuevo Gasto" } },
+      { path: "gastos/editar/:id", element: <GastoFormPage />, handle: { title: "Editar Gasto" } },
+      { path: "tipos-gasto", element: <TipoGastoPage />, handle: { title: "Tipos de Gasto" } },
       { path: "*", element: <h1>Not Found</h1> },
     ],
   },

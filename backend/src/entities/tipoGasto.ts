@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { IsString, Length } from "class-validator";
-import { Gasto } from "./gastosEmpresas"; // Adjust the import path as necessary
+import { GastoEmpresa } from "./gastosEmpresas"; // Adjust the import path as necessary
 
-@Entity("tipo_gasto")
+@Entity("TipoGasto")
 export class TipoGasto {
     @PrimaryGeneratedColumn()
     id_tipo_gasto!: number;
@@ -16,6 +16,6 @@ export class TipoGasto {
     @IsString()
     descripcion?: string;
 
-    @OneToMany(() => Gasto, gasto => gasto.tipo_gasto)
-    gastos!: Gasto[];
+    @OneToMany(() => GastoEmpresa, gasto => gasto.tipo_gasto)
+    gastos!: GastoEmpresa[];
 }
