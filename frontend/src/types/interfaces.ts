@@ -82,17 +82,19 @@ export interface Quotation {
   quotation_status: "approved" | "rejected" | "pending"
   total_price: number
   details?: WorkProductDetail[];
+  
   // Agrega otras propiedades relevantes si es necesario
 }
 
 export interface WorkOrder {
   work_order_id: number
   description: string
-  work_order_status: "approved" | "rejected" | "pending"
+  order_status: "approved" | "rejected" | "pending"
   vehicle: Vehicle
   entry_date: Date
   total_amount: number
   quotation_id?: number
+  technicians?: Array<{} | Person>;
   // Agrega otras propiedades relevantes si es necesario
 }
 
@@ -195,7 +197,7 @@ export interface WorkOrder {
   work_order_status: WorkOrderStatus;
   vehicle: Vehicle;
   quotation?: Quotation;
-  entry_date: Date;
+  order_date: Date;
 }
 
 export interface WorkOrderInput {
@@ -262,9 +264,25 @@ export interface Gasto {
   id_gasto_empresa?: number;
   tipo_gasto: TipoGasto;
   descripcion: string;
-  monto: number;
+  monto: number | string; // Puede venir como string desde el backend
   fecha_gasto: Date | string;
   numero_boleta?: string;
+}
+
+export interface PaymentType {
+  payment_type_id?: number;
+  type_name: string;
+}
+
+export interface WorkPayment {
+  work_payment_id?: number;
+  payment_type: PaymentType;
+  payment_type_id?: number; // Para creación/edición
+  work_order: WorkOrder;
+  work_order_id?: number; // Para creación/edición
+  payment_status: string;
+  amount_paid: number | string; // Puede venir como string desde el backend
+  payment_date: Date | string;
 }
 
 

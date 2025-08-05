@@ -83,8 +83,9 @@ const sidebarStructure = [
     items: [
       { name: "Pagos de clientes", path: "/admin/finanzas/pagos" },
       { name: "Impuestos", path: "/admin/finanzas/impuestos" },
-      { name: "Registro de Gastos", path: "/admin/gastos" },
-      { name: "Tipos de Gasto", path: "/admin/tipos-gasto" },
+      { name: "Registro de Gastos", path: "/admin/finanzas/gastos" },
+      { name: "Tipos de Gasto", path: "/admin/finanzas/tipos-gasto" },
+      { name: "Tipos de Pago", path: "/admin/finanzas/tipos-pago" },
     ],
   },
   {

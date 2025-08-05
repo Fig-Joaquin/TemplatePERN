@@ -20,7 +20,7 @@ export class GastoEmpresa {
     @Min(0, { message: "El monto no puede ser negativo" })
     monto!: number;
 
-    @Column({ type: "date" })
+    @Column()
     @IsDate()
     fecha_gasto!: Date;
 

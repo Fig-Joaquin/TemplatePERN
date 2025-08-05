@@ -24,6 +24,9 @@ import VehicleSearchPage from "@/pages/VehicleSearchPage";
 import GastosPage from "@/pages/work/GastosPage";
 import GastoFormPage from "@/pages/work/GastoFormPage";
 import TipoGastoPage from "@/pages/work/TipoGastoPage";
+import WorkPaymentPage from "@/pages/work/workPayment";
+import WorkPaymentFormPage from "@/pages/work/workPaymentFormPage";
+import PaymentTypePage from "@/pages/work/paymentType";
 
 
 const router = createBrowserRouter([
@@ -60,10 +63,14 @@ const router = createBrowserRouter([
       { path: "orden-trabajo/editar/:id", element: <WorkOrderEditPage />, handle: { title: "Editar Orden de Trabajo" } },
       { path: "nueva-orden-trabajo", element: <WorkOrderCreatePage />, handle: { title: "Órdenes de Trabajo" } },
       { path: "empresas", element: <CompaniesPage />, handle: { title: "Empresas" } },
-      { path: "gastos", element: <GastosPage />, handle: { title: "Gastos" } },
-      { path: "gastos/nuevo", element: <GastoFormPage />, handle: { title: "Nuevo Gasto" } },
-      { path: "gastos/editar/:id", element: <GastoFormPage />, handle: { title: "Editar Gasto" } },
-      { path: "tipos-gasto", element: <TipoGastoPage />, handle: { title: "Tipos de Gasto" } },
+      { path: "finanzas/gastos", element: <GastosPage />, handle: { title: "Gastos" } },
+      { path: "finanzas/gastos/nuevo", element: <GastoFormPage />, handle: { title: "Nuevo Gasto" } },
+      { path: "finanzas/gastos/editar/:id", element: <GastoFormPage />, handle: { title: "Editar Gasto" } },
+      { path: "finanzas/tipos-gasto", element: <TipoGastoPage />, handle: { title: "Tipos de Gasto" } },
+      { path: "finanzas/pagos", element: <WorkPaymentPage />, handle: { title: "Pagos de Trabajo" } },
+      { path: "finanzas/pagos/nuevo", element: <WorkPaymentFormPage />, handle: { title: "Nuevo Pago" } },
+      { path: "finanzas/pagos/editar/:id", element: <WorkPaymentFormPage />, handle: { title: "Editar Pago" } },
+      { path: "finanzas/tipos-pago", element: <PaymentTypePage />, handle: { title: "Tipos de Pago" } },
       { path: "*", element: <h1>Not Found</h1> },
     ],
   },
