@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, CheckCircle2, AlertCircle, Info, Clock } from "lucide-react";
+import { Bell, CheckCircle2, AlertCircle, Info, Clock, X, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDate } from "@/utils/formDate";
 import { useNavigate, useLocation } from "react-router-dom";
+import { deleteNotification, deleteAllNotifications } from "@/services/notification/notificationService";
 
 interface Notification {
   notification_id: number;
@@ -18,41 +20,59 @@ interface Notification {
 interface NotificationsProps {
   notifications: Notification[];
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
-  onClose?: () => void; // Add this prop to allow closing the popover
+  onClose?: () => void;
 }
 
 export default function Notifications({ notifications, setNotifications, onClose }: NotificationsProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: Notification, event: React.MouseEvent) => {
+    // Evitar que el click en la X o botones dispare la navegación
+    if ((event.target as HTMLElement).closest('.delete-button')) {
+      return;
+    }
+
     if (notification.work_order_id) {
-      // Close the popover before navigation to prevent UI slowdowns
       if (onClose) {
         onClose();
       }
 
       const targetPath = `/admin/orden-trabajo/editar/${notification.work_order_id}`;
-
-      // Check if we're navigating to the same route pattern (just different work order ID)
       const currentPath = location.pathname;
       const isOnWorkOrderPage = currentPath.includes('/admin/orden-trabajo/editar/');
 
       if (isOnWorkOrderPage) {
-        // If we're already on a work order page, force a page refresh by using window.location
         window.location.href = targetPath;
       } else {
-        // For normal navigation between different route types, use React Router navigate
         navigate(targetPath);
       }
     }
   };
 
+  const handleDeleteNotification = async (notificationId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Evitar que dispare el click del contenedor
+    try {
+      await deleteNotification(notificationId);
+      setNotifications(prev => prev.filter(n => n.notification_id !== notificationId));
+    } catch (error) {
+      console.error("Error eliminando notificación:", error);
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    try {
+      await deleteAllNotifications();
+      setNotifications([]);
+    } catch (error) {
+      console.error("Error eliminando todas las notificaciones:", error);
+    }
+  };
+
   useEffect(() => {
-    // Process notifications to add type based on content
     if (notifications.length > 0) {
       const enhancedNotifications = notifications.map((note: any) => {
-        if (note.type) return note; // Skip if already has type
+        if (note.type) return note;
 
         const message = note.message.toLowerCase();
         let type: "success" | "warning" | "info" = "info";
@@ -97,10 +117,23 @@ export default function Notifications({ notifications, setNotifications, onClose
   return (
     <Card className="border-0 shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl font-semibold flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Notificaciones
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Notificaciones
+          </CardTitle>
+          {notifications.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDeleteAllNotifications}
+              className="text-xs text-muted-foreground hover:text-destructive h-8 px-2"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Eliminar todas
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
         {notifications.length === 0 ? (
@@ -115,12 +148,21 @@ export default function Notifications({ notifications, setNotifications, onClose
                 key={n.notification_id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
+                exit={{ opacity: 0, x: -100 }}
                 transition={{ duration: 0.2 }}
-                className={`border rounded-md shadow-sm p-4 ${getNotificationStyles(n.type || "info")} ${n.work_order_id ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-                onClick={() => n.work_order_id ? handleNotificationClick(n) : null}
+                className={`border rounded-md shadow-sm p-4 relative ${getNotificationStyles(n.type || "info")} ${n.work_order_id ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                onClick={(e) => n.work_order_id ? handleNotificationClick(n, e) : null}
               >
-                <div className="flex gap-3">
+                {/* Botón X para eliminar notificación individual */}
+                <button
+                  className="delete-button absolute top-2 right-2 text-muted-foreground hover:text-destructive transition-colors p-1 rounded-full hover:bg-background/50"
+                  onClick={(e) => handleDeleteNotification(n.notification_id, e)}
+                  title="Eliminar notificación"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+
+                <div className="flex gap-3 pr-6">
                   {getNotificationIcon(n.type || "info")}
                   <div className="flex-1">
                     <p className="text-sm font-medium">{n.message}</p>
