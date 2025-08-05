@@ -25,6 +25,7 @@ import {
 } from "@/services/gastoService";
 import { fetchTiposGasto } from "@/services/tipoGastoService";
 import type { Gasto, TipoGasto } from "@/types/interfaces";
+import { formatDateForInput } from "@/utils/formatDateForInput";
 
 export default function GastoFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +46,7 @@ export default function GastoFormPage() {
     id_tipo_gasto: "",
     descripcion: "",
     monto: 0,
-    fecha_gasto: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
+    fecha_gasto: formatDateForInput(new Date()), // Corregido para usar formatDateForInput
     numero_boleta: ""
   });
 
@@ -61,8 +62,8 @@ export default function GastoFormPage() {
           setFormData({
             id_tipo_gasto: gastoData.tipo_gasto.id_tipo_gasto!.toString(),
             descripcion: gastoData.descripcion,
-            monto: gastoData.monto,
-            fecha_gasto: new Date(gastoData.fecha_gasto).toISOString().split('T')[0],
+            monto: Number(gastoData.monto),
+            fecha_gasto: formatDateForInput(new Date(gastoData.fecha_gasto)),
             numero_boleta: gastoData.numero_boleta || ""
           });
         }
@@ -103,10 +104,14 @@ export default function GastoFormPage() {
     try {
       setSubmitting(true);
       
+      // No necesitamos manipular la fecha de nuevo, ya está en formato correcto
+      // Simplemente usar el valor del input directamente
+      const fechaISOString = formData.fecha_gasto;
+      
       const gastoData: Partial<Gasto> = {
         descripcion: formData.descripcion,
         monto: formData.monto,
-        fecha_gasto: formData.fecha_gasto,
+        fecha_gasto: fechaISOString,
         numero_boleta: formData.numero_boleta || undefined
       };
 
@@ -123,8 +128,8 @@ export default function GastoFormPage() {
         await createGasto(dataToSend);
         toast.success("Gasto creado correctamente");
       }
-      
-      navigate("/admin/gastos");
+
+      navigate("/admin/finanzas/gastos");
     } catch (error: any) {
       console.error("Error al guardar gasto:", error);
       toast.error(
@@ -155,7 +160,7 @@ export default function GastoFormPage() {
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate("/admin/gastos")}
+          onClick={() => navigate("/admin/finanzas/gastos")}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -248,7 +253,7 @@ export default function GastoFormPage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => navigate("/admin/gastos")}
+                onClick={() => navigate("/admin/finanzas/gastos")}
                 disabled={submitting}
               >
                 Cancelar

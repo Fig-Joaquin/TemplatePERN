@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { fetchGastos, deleteGasto } from "@/services/gastoService";
 import type { Gasto } from "@/types/interfaces";
+import { formatDate } from "@/utils/formDate";
 
 export default function GastosPage() {
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -70,9 +71,6 @@ export default function GastosPage() {
     );
   });
 
-  const formatDate = (dateString: string | Date) => {
-    return new Date(dateString).toLocaleDateString();
-  };
 
   return (
     <motion.div
@@ -86,7 +84,7 @@ export default function GastosPage() {
           <Banknote className="h-8 w-8" />
           Registro de Gastos
         </h1>
-        <Button onClick={() => navigate("/admin/gastos/nuevo")} className="bg-primary text-primary-foreground">
+        <Button onClick={() => navigate("/admin/finanzas/gastos/nuevo")} className="bg-primary text-primary-foreground">
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Gasto
         </Button>
@@ -155,7 +153,7 @@ export default function GastosPage() {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => navigate(`/admin/gastos/editar/${gasto.id_gasto_empresa}`)}
+                            onClick={() => navigate(`/admin/finanzas/gastos/editar/${gasto.id_gasto_empresa}`)}
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             Editar

@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const WorkPaymentSchema = z.object({
-    work_payment_id: z.number().optional(), // Optional because it's auto-generated
+    // Optional because it's auto-generated
     payment_type_id: z.number().int().positive(),
     work_order_id: z.number().int().positive(),
     payment_status: z.string().max(50),
-    amount_paid: z.number().positive().multipleOf(0.01), // For decimal validation
+    amount_paid: z.number().nonnegative(), // For decimal validation
     payment_date: z.coerce.date()
 });
 

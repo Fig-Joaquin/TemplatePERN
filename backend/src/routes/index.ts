@@ -22,6 +22,8 @@ import workOrderTechnicianRoutes from "./work/workOrderTechnician";
 import notificationRoutes from "./notificationRoutes";
 import gastoRoutes from "./gastoRoutes";
 import tipoGastoRoutes from "./tipoGastoRoutes";
+import paymentTypeRoutes from "./work/paymentTypeRoutes";
+import workPaymentRoutes from "./work/workPaymentRoutes";
 
 const router = Router();
 
@@ -48,5 +50,7 @@ router.use("/workOrderTechnicians", workOrderTechnicianRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/gastos", gastoRoutes);
 router.use("/tiposGasto", tipoGastoRoutes);
+router.use("/paymentTypes", paymentTypeRoutes);
+router.use("/workPayments", workPaymentRoutes);
 
 export default router;
