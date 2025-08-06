@@ -27,6 +27,7 @@ import TipoGastoPage from "@/pages/work/TipoGastoPage";
 import WorkPaymentPage from "@/pages/work/workPayment";
 import WorkPaymentFormPage from "@/pages/work/workPaymentFormPage";
 import PaymentTypePage from "@/pages/work/paymentType";
+import VehicleFormPage from "@/pages/vehicleFormPage";
 
 
 const router = createBrowserRouter([
@@ -48,6 +49,8 @@ const router = createBrowserRouter([
     children: [
       { path: "dashboard", element: <Dashboard />, handle: { title: "Dashboard" } },
       { path: "vehiculos", element: <VehiclesPage />, handle: { title: "Vehículos" } },
+      { path: "vehiculos/nuevo", element: <VehicleFormPage />, handle: { title: "Nuevo Vehículo" } },
+      { path: "vehiculos/editar/:id", element: <VehicleFormPage />, handle: { title: "Editar Vehículo" } },
       { path: "clientes", element: <ClientPage />, handle: { title: "Clientes" } },
       { path: "cotizaciones", element: <QuotationPage />, handle: { title: "Cotizaciones" } },
       { path: "cotizaciones/nuevo", element: <QuotationCreatePage />, handle: { title: "Nueva Cotización" } },

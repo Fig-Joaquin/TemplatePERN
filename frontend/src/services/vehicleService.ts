@@ -15,11 +15,12 @@ export const updateVehicle = async (vehicleId: number, vehicleData: Partial<Vehi
     // Ensure we're sending a clean object without nested properties
     const cleanedData = {
       ...vehicleData,
-      // Remove any nested properties that might cause issues
+      // Remove any nested properties that might cause issues, pero conservar mileageHistory
       model: undefined,
       owner: undefined,
       company: undefined,
       mileage_history: undefined
+      // mileageHistory se mantiene para enviar al backend
     };
     
     const { data } = await api.put<Vehicle>(`/vehicles/${vehicleId}`, cleanedData)

@@ -30,18 +30,23 @@ export interface ClientFormProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: React.FormEvent) => void
   onCancel: () => void
+  isCreating?: boolean
 }
 
 export interface Vehicle {
   vehicle_id: number
   license_plate: string
   vehicle_status: "running" | "not_running"
-  model: Model
+  vehicle_model_id: number
+  model?: Model
   mileage_history: MileageHistory[]
   color: string
   year?: number // Changed to optional
   owner: Person | null // Allow owner to be null
   company: Company | null // Allow company to be null
+  person_id?: number // For creating vehicles
+  company_id?: number // For creating vehicles
+  mileageHistory?: number // For creating vehicles with initial mileage
 }
 
 
@@ -91,7 +96,6 @@ export interface WorkOrder {
   description: string
   order_status: "finished" | "in_progress" | "not_started"
   vehicle: Vehicle
-  entry_date?: Date
   order_date: Date
   total_amount: number
   quotation_id?: number
