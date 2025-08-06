@@ -36,8 +36,8 @@ export interface Vehicle {
   vehicle_id: number
   license_plate: string
   vehicle_status: "running" | "not_running"
-  model: model
-  mileage_history: mileage_history[]
+  model: Model
+  mileage_history: MileageHistory[]
   color: string
   year?: number // Changed to optional
   owner: Person | null // Allow owner to be null
@@ -54,19 +54,19 @@ export interface Company {
   vehicles?: Vehicle[]; // Optional array of vehicles
 }
 
-export interface model {
+export interface Model {
   vehicle_model_id: number
   model_name: string
-  brand: brand
+  brand: Brand
   vehicle_brand_id?: number
 }
 
-export interface brand {
+export interface Brand {
   vehicle_brand_id: number
   brand_name: string
 }
 
-export interface mileage_history {
+export interface MileageHistory {
   mileage_history_id: number
   current_mileage: number
   registration_date: Date
@@ -79,7 +79,7 @@ export interface Quotation {
   quotation_id?: number
   vehicle_id: number
   description: string
-  quotation_status: "approved" | "rejected" | "pending"
+  quotation_status: QuotationStatus
   total_price: number
   details?: WorkProductDetail[];
   
@@ -89,13 +89,15 @@ export interface Quotation {
 export interface WorkOrder {
   work_order_id: number
   description: string
-  order_status: "approved" | "rejected" | "pending"
+  order_status: "finished" | "in_progress" | "not_started"
   vehicle: Vehicle
-  entry_date: Date
+  entry_date?: Date
+  order_date: Date
   total_amount: number
   quotation_id?: number
-  technicians?: Array<{} | Person>;
-  // Agrega otras propiedades relevantes si es necesario
+  quotation?: Quotation
+  technicians?: Array<WorkOrderTechnician | Person>
+  productDetails?: WorkProductDetail[]
 }
 
 export interface WorkProductDetail {
@@ -122,7 +124,7 @@ export interface Product {
   sale_price: number
   description: string
   product_quantity: number
-  type: type
+  type: ProductType
   supplier?: Supplier
   stock: StockProduct
 }
@@ -143,14 +145,14 @@ export interface StockProduct {
   updated_at?: Date
 }
 
-export interface type {
+export interface ProductType {
   product_type_id: number
   type_name: string
-  category?: category
+  category?: ProductCategory
   product_category_id: number
 }
 
-export interface category {
+export interface ProductCategory {
   product_category_id: number
   category_name: string
 }
@@ -189,35 +191,25 @@ export interface EmployeeFormProps {
   onCancel: () => void
   isEditing?: boolean; // New optional prop
 }
-export type WorkOrderStatus = "approved" | "rejected" | "pending";
-
-export interface WorkOrder {
-  work_order_id: number;
-  description: string;
-  work_order_status: WorkOrderStatus;
-  vehicle: Vehicle;
-  quotation?: Quotation;
-  order_date: Date;
-}
+export type WorkOrderStatus = "finished" | "in_progress" | "not_started";
+export type QuotationStatus = "approved" | "rejected" | "pending";
 
 export interface WorkOrderInput {
   description: string;
-  work_order_status: "finished" | "in_progress" | "not_started";
+  work_order_status?: WorkOrderStatus;
+  order_status?: WorkOrderStatus; // Support both field names
   vehicle_id: number;
   quotation_id?: number;
   entry_date?: string;
   total_amount: number;
   order_date?: string;
-  technician_id?: number;
 }
 
 export interface WorkOrderUpdateInput {
+  description?: string;
   work_order_status?: WorkOrderStatus;
+  order_status?: WorkOrderStatus; // Support both field names  
   total_amount?: number;
-}
-
-export interface WorkOrderUpdateInput {
-  work_order_status?: "approved" | "rejected" | "pending";
 }
 
 export interface WorkOrderFormProps {

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { WorkOrderSchema } from "../../schema/work/workOrderValidator";
+import { WorkOrderSchema, WorkOrderUpdateSchema } from "../../schema/work/workOrderValidator";
 import { DeepPartial } from "typeorm";
 import { WorkOrder, Vehicle, Quotation, Notification, WorkProductDetail, WorkOrderTechnician } from "../../entities";
 
@@ -81,7 +81,7 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
       if (!validationResult.success) {
         res.status(400).json({
           message: "Error de validación",
-          errors: validationResult.error.errors.map(err => ({
+          errors: validationResult.error.errors.map((err: any) => ({
             field: err.path.join("."),
             message: err.message
           }))
@@ -173,12 +173,11 @@ export const updateWorkOrder = async (req: Request, res: Response, _next: NextFu
         return;
       }
   
-      const updateSchema = WorkOrderSchema.partial();
-      const validationResult = updateSchema.safeParse(req.body);
+      const validationResult = WorkOrderUpdateSchema.safeParse(req.body);
       if (!validationResult.success) {
         res.status(400).json({
           message: "Error de validación",
-          errors: validationResult.error.errors.map(err => ({
+          errors: validationResult.error.errors.map((err: any) => ({
             field: err.path.join("."),
             message: err.message
           }))

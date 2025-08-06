@@ -6,11 +6,13 @@ getWorkOrderById,
 createWorkOrder,
 updateWorkOrder,
 deleteWorkOrder,
+getWorkOrdersByVehicleLicensePlate,
 } from "../../controllers/work/workOrderController";
 
 const workOrderRoutes = Router();
 
 workOrderRoutes.get("/", getAllWorkOrders);          // Obtener todas las órdenes de trabajo
+workOrderRoutes.get("/vehicle/:licensePlate", getWorkOrdersByVehicleLicensePlate); // Obtener órdenes por patente
 workOrderRoutes.get("/:id", getWorkOrderById);         // Obtener una orden de trabajo por ID
 workOrderRoutes.post("/", createWorkOrder);            // Crear una nueva orden de trabajo
 workOrderRoutes.put("/:id", updateWorkOrder);          // Actualizar una orden de trabajo existente

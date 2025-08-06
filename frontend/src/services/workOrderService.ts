@@ -1,6 +1,6 @@
 import api from "../utils/axiosConfig";
 import { WorkOrder, WorkOrderInput } from "../types/interfaces";
-import { getWorkProductDetailsByQuotationId, getWorkProductDetailsByWorkOrderId } from "./workProductDetail";
+import { getWorkProductDetailsByQuotationId, getWorkProductDetailsByWorkOrderId } from "./workProductDetailService";
 
 export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   const response = await api.get("/workOrders");
@@ -20,6 +20,7 @@ export const getCompleteWorkOrderById = async (id: number): Promise<WorkOrder> =
     const workOrder = response.data;
     
     console.log("API response for work order:", workOrder);
+    console.log("Product details from API:", workOrder.productDetails);
     
     // Si el vehículo no tiene las relaciones completas, podríamos cargarlas por separado
     if (workOrder.vehicle && (!workOrder.vehicle.model?.brand || !workOrder.vehicle.owner)) {
@@ -33,24 +34,30 @@ export const getCompleteWorkOrderById = async (id: number): Promise<WorkOrder> =
       }
     }
     
-    // Continuamos con la carga de detalles de productos
+    // Los productos deberían venir directamente del API en workOrder.productDetails
+    // Solo cargamos por separado si realmente no hay datos
     if (!workOrder.productDetails || workOrder.productDetails.length === 0) {
+      console.log("No product details found, attempting to load separately...");
       try {
         // Primero intentamos obtener por work_order_id
         const productDetails = await getWorkProductDetailsByWorkOrderId(id);
         if (productDetails && productDetails.length > 0) {
           workOrder.productDetails = productDetails;
+          console.log("Loaded product details separately:", productDetails);
         } 
         // Si no hay detalles directos y hay una cotización, intentamos por ahí
         else if (workOrder.quotation?.quotation_id) {
           const quotationDetails = await getWorkProductDetailsByQuotationId(workOrder.quotation.quotation_id);
           if (quotationDetails && quotationDetails.length > 0) {
             workOrder.productDetails = quotationDetails;
+            console.log("Loaded quotation details:", quotationDetails);
           }
         }
       } catch (error) {
         console.error("Error loading product details:", error);
       }
+    } else {
+      console.log("Product details loaded from main API call:", workOrder.productDetails);
     }
     
     return workOrder;

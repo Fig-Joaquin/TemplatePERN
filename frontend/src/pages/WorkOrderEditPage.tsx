@@ -125,13 +125,17 @@ const WorkOrderEditPage = () => {
       const hasQuotation = !!data.quotation?.quotation_id;
       setIsQuotationBased(hasQuotation);
 
-      if ((data as any).product_details && (data as any).product_details.length > 0) {
+      // Verificar si hay detalles de productos (productDetails sin guión bajo)
+      if (data.productDetails && data.productDetails.length > 0) {
         // Agregar originalQuantity para seguimiento
-        const enhancedProducts = (data as any).product_details.map((product: any) => ({
+        const enhancedProducts = data.productDetails.map((product: any) => ({
           ...product,
           originalQuantity: product.quantity,
         }));
         setProducts(enhancedProducts);
+        console.log("Loaded product details:", enhancedProducts);
+      } else {
+        console.log("No product details found in work order data");
       }
 
       if (hasQuotation && data.quotation && data.quotation.quotation_id) {
@@ -142,7 +146,7 @@ const WorkOrderEditPage = () => {
           console.error("Error loading quotation details:", detailError);
         }
       }
-      setStatus(data.work_order_status || "not_started");
+      setStatus(data.order_status || "not_started");
     } catch (err) {
       console.error("Error loading work order:", err);
       setError("No se pudo cargar la información de la orden de trabajo");
@@ -280,9 +284,11 @@ const WorkOrderEditPage = () => {
       // Update the quantity and mark as modified
       updated[index] = {
         ...product,
-        quantity: newQuantity,
+        quantity: Number(newQuantity), // Ensure it's a number
         _modified: true
       };
+
+      console.log("Updated product at index", index, ":", updated[index]); // Debug log
 
       return updated;
     });
@@ -294,9 +300,10 @@ const WorkOrderEditPage = () => {
       const updated = [...prev];
       updated[index] = {
         ...updated[index],
-        labor_price: newLaborPrice,
+        labor_price: Number(newLaborPrice), // Ensure it's a number
         _modified: true
       };
+      console.log("Updated labor price for product at index", index, ":", updated[index]);
       return updated;
     });
   };
@@ -346,13 +353,13 @@ const WorkOrderEditPage = () => {
     try {
       await updateWorkOrder(Number(id), {
         description,
-        work_order_status: status as "finished" | "in_progress" | "not_started",
+        order_status: status as "finished" | "in_progress" | "not_started",
         total_amount: totalAmount,
       });
 
       // Process deletions first
       for (const detailId of productsToDelete) {
-        const productToRemove = (orderData as any).product_details?.find((p: any) => p.work_product_detail_id === detailId);
+        const productToRemove = orderData.productDetails?.find((p: any) => p.work_product_detail_id === detailId);
 
         if (productToRemove) {
           await deleteWorkProductDetail(detailId);
@@ -381,17 +388,19 @@ const WorkOrderEditPage = () => {
         if (productsToDelete.includes(product.work_product_detail_id)) continue;
 
         const detailPayload = {
-          product_id: product.product_id,
+          product_id: Number(product.product_id),
           quantity: Number(product.quantity),
           sale_price: Number(Number(product.sale_price).toFixed(2)),
-          labor_price: Number(Number(product.labor_price).toFixed(2)),
-          discount: product.discount || 0,
-          tax_id: product.tax_id || 1,
+          labor_price: Number(Number(product.labor_price || 0).toFixed(2)),
+          discount: Number(product.discount || 0),
+          tax_id: Number(product.tax_id || 1),
           ...(isQuotationBased
-            ? { quotation_id: orderData.quotation.quotation_id }
+            ? { quotation_id: Number(orderData.quotation.quotation_id) }
             : { work_order_id: Number(id) }
           ),
         };
+
+        console.log("Sending detailPayload:", detailPayload); // Debug log
 
         if (product.work_product_detail_id && product._modified) {
           // Update existing product
