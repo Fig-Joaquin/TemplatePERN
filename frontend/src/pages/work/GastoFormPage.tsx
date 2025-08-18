@@ -10,20 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { NumberInput } from "@/components/numberInput";
-import { 
-  fetchGastoById, 
-  createGasto, 
-  updateGasto 
-} from "@/services/gastoService";
-import { fetchTiposGasto } from "@/services/tipoGastoService";
+import {
+  fetchGastoById,
+  createGasto,
+  updateGasto
+} from "@/services/gastoServiceAdapter";
+import { fetchTiposGasto } from "@/services/tipoGastoServiceAdapter";
 import type { Gasto, TipoGasto } from "@/types/interfaces";
 import { formatDateForInput } from "@/utils/formatDateForInput";
 
@@ -35,7 +35,7 @@ export default function GastoFormPage() {
   const [tiposGasto, setTiposGasto] = useState<TipoGasto[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState<{
     id_tipo_gasto: string;
     descripcion: string;
@@ -56,7 +56,7 @@ export default function GastoFormPage() {
         setLoading(true);
         const tiposData = await fetchTiposGasto();
         setTiposGasto(tiposData);
-        
+
         if (isEditMode) {
           const gastoData = await fetchGastoById(parseInt(id));
           setFormData({
@@ -95,19 +95,19 @@ export default function GastoFormPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!formData.id_tipo_gasto || !formData.descripcion || formData.monto <= 0) {
       toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      
+
       // No necesitamos manipular la fecha de nuevo, ya está en formato correcto
       // Simplemente usar el valor del input directamente
       const fechaISOString = formData.fecha_gasto;
-      
+
       const gastoData: Partial<Gasto> = {
         descripcion: formData.descripcion,
         monto: formData.monto,
@@ -120,7 +120,7 @@ export default function GastoFormPage() {
         ...gastoData,
         id_tipo_gasto: parseInt(formData.id_tipo_gasto)
       };
-      
+
       if (isEditMode) {
         await updateGasto(parseInt(id), dataToSend);
         toast.success("Gasto actualizado correctamente");
@@ -133,7 +133,7 @@ export default function GastoFormPage() {
     } catch (error: any) {
       console.error("Error al guardar gasto:", error);
       toast.error(
-        error.response?.data?.message || 
+        error.response?.data?.message ||
         "Error al guardar el gasto"
       );
     } finally {
@@ -178,8 +178,8 @@ export default function GastoFormPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="id_tipo_gasto">Tipo de Gasto*</Label>
-                <Select 
-                  value={formData.id_tipo_gasto} 
+                <Select
+                  value={formData.id_tipo_gasto}
                   onValueChange={(value) => handleSelectChange("id_tipo_gasto", value)}
                   required
                 >
@@ -188,8 +188,8 @@ export default function GastoFormPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {tiposGasto.map((tipo) => (
-                      <SelectItem 
-                        key={tipo.id_tipo_gasto} 
+                      <SelectItem
+                        key={tipo.id_tipo_gasto}
                         value={tipo.id_tipo_gasto!.toString()}
                       >
                         {tipo.nombre_tipo_gasto}
@@ -201,10 +201,10 @@ export default function GastoFormPage() {
 
               <div>
                 <Label htmlFor="descripcion">Descripción*</Label>
-                <Textarea 
-                  id="descripcion" 
-                  name="descripcion" 
-                  value={formData.descripcion} 
+                <Textarea
+                  id="descripcion"
+                  name="descripcion"
+                  value={formData.descripcion}
                   onChange={handleChange}
                   placeholder="Descripción del gasto"
                   rows={3}
@@ -227,11 +227,11 @@ export default function GastoFormPage() {
 
               <div>
                 <Label htmlFor="fecha_gasto">Fecha*</Label>
-                <Input 
-                  id="fecha_gasto" 
-                  name="fecha_gasto" 
-                  type="date" 
-                  value={formData.fecha_gasto} 
+                <Input
+                  id="fecha_gasto"
+                  name="fecha_gasto"
+                  type="date"
+                  value={formData.fecha_gasto}
                   onChange={handleChange}
                   required
                 />
@@ -239,10 +239,10 @@ export default function GastoFormPage() {
 
               <div>
                 <Label htmlFor="numero_boleta">Número de Boleta/Factura</Label>
-                <Input 
-                  id="numero_boleta" 
-                  name="numero_boleta" 
-                  value={formData.numero_boleta} 
+                <Input
+                  id="numero_boleta"
+                  name="numero_boleta"
+                  value={formData.numero_boleta}
                   onChange={handleChange}
                   placeholder="Opcional"
                 />
@@ -250,15 +250,15 @@ export default function GastoFormPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => navigate("/admin/finanzas/gastos")}
                 disabled={submitting}
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 disabled={submitting}
                 className="gap-2"

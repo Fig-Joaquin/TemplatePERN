@@ -1,55 +1,55 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
-import {  TipoGasto } from "../entities/tipoGasto";
-import { GastoEmpresa } from "../entities/gastosEmpresas";
-import { GastoSchema, UpdateGastoSchema } from "../schema/work/gastoValidator";
+import { ExpenseType } from "../entities/tipoGasto";
+import { CompanyExpense } from "../entities/gastosEmpresas";
+import { CompanyExpenseSchema, UpdateCompanyExpenseSchema } from "../schema/work/companyExpenseValidator";
 import { DeepPartial } from "typeorm";
 
-const gastoRepository = AppDataSource.getRepository(GastoEmpresa);
-const tipoGastoRepository = AppDataSource.getRepository(TipoGasto);
+const companyExpenseRepository = AppDataSource.getRepository(CompanyExpense);
+const expenseTypeRepository = AppDataSource.getRepository(ExpenseType);
 
-export const getAllGastos = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const getAllCompanyExpenses = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const gastos = await gastoRepository.find({ 
-            relations: ["tipo_gasto"] 
+        const expenses = await companyExpenseRepository.find({ 
+            relations: ["expense_type"] 
         });
-        res.json(gastos);
+        res.json(expenses);
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener los gastos", error });
+        res.status(500).json({ message: "Error retrieving company expenses", error });
     }
 };
 
-export const getGastoById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const getCompanyExpenseById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
+            res.status(400).json({ message: "Invalid ID" });
             return;
         }
 
-        const gasto = await gastoRepository.findOne({
-            where: { id_gasto_empresa: id },
-            relations: ["tipo_gasto"]
+        const expense = await companyExpenseRepository.findOne({
+            where: { company_expense_id: id },
+            relations: ["expense_type"]
         });
         
-        if (!gasto) {
-            res.status(404).json({ message: "Gasto no encontrado" });
+        if (!expense) {
+            res.status(404).json({ message: "Company expense not found" });
             return;
         }
 
-        res.json(gasto);
+        res.json(expense);
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener el gasto", error });
+        res.status(500).json({ message: "Error retrieving company expense", error });
     }
 };
 
-export const createGasto = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const createCompanyExpense = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const validationResult = GastoSchema.safeParse(req.body);
+        const validationResult = CompanyExpenseSchema.safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({
-                message: "Error de validación",
-                errors: validationResult.error.errors.map(err => ({
+                message: "Validation error",
+                errors: validationResult.error.errors.map((err: any) => ({
                     field: err.path.join("."),
                     message: err.message
                 }))
@@ -57,51 +57,51 @@ export const createGasto = async (req: Request, res: Response, _next: NextFuncti
             return;
         }
 
-        const { id_tipo_gasto, ...rest } = validationResult.data;
+        const { expense_type_id, ...rest } = validationResult.data;
         
-        // Verificar que el tipo de gasto exista
-        const tipoGasto = await tipoGastoRepository.findOneBy({ id_tipo_gasto });
-        if (!tipoGasto) {
-            res.status(404).json({ message: "Tipo de gasto no encontrado" });
+        // Verify that the expense type exists
+        const expenseType = await expenseTypeRepository.findOneBy({ expense_type_id: expense_type_id as number });
+        if (!expenseType) {
+            res.status(404).json({ message: "Expense type not found" });
             return;
         }
 
-        const newGasto = gastoRepository.create({
+        const newExpense = companyExpenseRepository.create({
             ...rest,
-            tipo_gasto: tipoGasto
-        } as DeepPartial<GastoEmpresa>);
+            expense_type: expenseType
+        } as DeepPartial<CompanyExpense>);
         
-        await gastoRepository.save(newGasto);
+        await companyExpenseRepository.save(newExpense);
         
-        res.status(201).json({ message: "Gasto creado exitosamente", gasto: newGasto });
+        res.status(201).json({ message: "Company expense created successfully", expense: newExpense });
     } catch (error) {
-        res.status(500).json({ message: "Error al crear el gasto", error });
+        res.status(500).json({ message: "Error creating company expense", error });
     }
 };
 
-export const updateGasto = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const updateCompanyExpense = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
+            res.status(400).json({ message: "Invalid ID" });
             return;
         }
 
-        const gasto = await gastoRepository.findOne({
-            where: { id_gasto_empresa: id },
-            relations: ["tipo_gasto"]
+        const expense = await companyExpenseRepository.findOne({
+            where: { company_expense_id: id },
+            relations: ["expense_type"]
         });
         
-        if (!gasto) {
-            res.status(404).json({ message: "Gasto no encontrado" });
+        if (!expense) {
+            res.status(404).json({ message: "Company expense not found" });
             return;
         }
 
-        const validationResult = UpdateGastoSchema.safeParse(req.body);
+        const validationResult = UpdateCompanyExpenseSchema.safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({
-                message: "Error de validación",
-                errors: validationResult.error.errors.map(err => ({
+                message: "Validation error",
+                errors: validationResult.error.errors.map((err: any) => ({
                     field: err.path.join("."),
                     message: err.message
                 }))
@@ -109,43 +109,43 @@ export const updateGasto = async (req: Request, res: Response, _next: NextFuncti
             return;
         }
 
-        const { id_tipo_gasto, ...rest } = validationResult.data;
+        const { expense_type_id, ...rest } = validationResult.data;
 
-        // Si se proporciona un tipo de gasto, verificar que exista
-        if (id_tipo_gasto !== undefined) {
-            const tipoGasto = await tipoGastoRepository.findOneBy({ id_tipo_gasto });
-            if (!tipoGasto) {
-                res.status(404).json({ message: "Tipo de gasto no encontrado" });
+        // If an expense type is provided, verify it exists
+        if (expense_type_id !== undefined) {
+            const expenseType = await expenseTypeRepository.findOneBy({ expense_type_id: expense_type_id as number });
+            if (!expenseType) {
+                res.status(404).json({ message: "Expense type not found" });
                 return;
             }
-            gasto.tipo_gasto = tipoGasto;
+            expense.expense_type = expenseType;
         }
 
-        gastoRepository.merge(gasto, rest);
-        await gastoRepository.save(gasto);
+        companyExpenseRepository.merge(expense, rest as DeepPartial<CompanyExpense>);
+        await companyExpenseRepository.save(expense);
         
-        res.json({ message: "Gasto actualizado exitosamente", gasto });
+        res.json({ message: "Company expense updated successfully", expense });
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar el gasto", error });
+        res.status(500).json({ message: "Error updating company expense", error });
     }
 };
 
-export const deleteGasto = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+export const deleteCompanyExpense = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            res.status(400).json({ message: "ID inválido" });
+            res.status(400).json({ message: "Invalid ID" });
             return;
         }
 
-        const result = await gastoRepository.delete(id);
+        const result = await companyExpenseRepository.delete(id);
         if (result.affected === 0) {
-            res.status(404).json({ message: "Gasto no encontrado" });
+            res.status(404).json({ message: "Company expense not found" });
             return;
         }
 
-        res.json({ message: "Gasto eliminado exitosamente" });
+        res.json({ message: "Company expense deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Error al eliminar el gasto", error });
+        res.status(500).json({ message: "Error deleting company expense", error });
     }
 };

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
-import { IsString, Length } from "class-validator";
+import { IsString, IsOptional } from "class-validator";
 import { Vehicle } from "..";
 
 
@@ -12,10 +12,10 @@ export class Quotation {
     @JoinColumn({ name: "vehicle_id" })
     vehicle!: Vehicle;
 
-    @Column({ type: "text" })
+    @Column({ type: "text", nullable: true })
+    @IsOptional()
     @IsString()
-    @Length(10, 1000, { message: "La descripción debe tener entre 10 y 1000 caracteres" })
-    description!: string;
+    description?: string;
 
     @Column({
         type: "enum",

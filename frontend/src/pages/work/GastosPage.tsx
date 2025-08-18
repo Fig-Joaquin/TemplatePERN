@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
-import { fetchGastos, deleteGasto } from "@/services/gastoService";
+import { fetchGastos, deleteGasto } from "@/services/gastoServiceAdapter";
 import type { Gasto } from "@/types/interfaces";
 import { formatDate } from "@/utils/formDate";
 
@@ -150,16 +150,16 @@ export default function GastosPage() {
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => navigate(`/admin/finanzas/gastos/editar/${gasto.id_gasto_empresa}`)}
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             Editar
                           </Button>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             className="text-destructive hover:text-destructive"
                             onClick={() => handleDeleteClick(gasto.id_gasto_empresa!)}

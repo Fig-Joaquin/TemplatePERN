@@ -1,27 +1,27 @@
 import { Router } from "express";
 import {
-    getAllTiposGasto,
-    getTipoGastoById,
-    createTipoGasto,
-    updateTipoGasto,
-    deleteTipoGasto
-} from "../controllers/tipoGastoController";
+    getAllExpenseTypes,
+    getExpenseTypeById,
+    createExpenseType,
+    updateExpenseType,
+    deleteExpenseType
+} from "../controllers/expenseTypeController";
 
 const router = Router();
 
-// Obtener todos los tipos de gasto
-router.get("/", getAllTiposGasto);
+// Get all expense types
+router.get("/", getAllExpenseTypes);
 
-// Obtener un tipo de gasto por ID
-router.get("/:id", getTipoGastoById);
+// Get an expense type by ID
+router.get("/:id", getExpenseTypeById);
 
-// Crear un nuevo tipo de gasto
-router.post("/", createTipoGasto);
+// Create a new expense type
+router.post("/", createExpenseType);
 
-// Actualizar un tipo de gasto existente
-router.put("/:id", updateTipoGasto);
+// Update an existing expense type
+router.put("/:id", updateExpenseType);
 
-// Eliminar un tipo de gasto
-router.delete("/:id", deleteTipoGasto);
+// Delete an expense type
+router.delete("/:id", deleteExpenseType);
 
 export default router;
