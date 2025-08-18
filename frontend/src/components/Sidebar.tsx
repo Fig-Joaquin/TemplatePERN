@@ -20,7 +20,7 @@ const sidebarStructure = [
     id: "inicio",
     icon: HomeIcon,
     title: "Inicio",
-    items: [{ name: "Dashboard", path: "/admin/dashboard" }],
+    path: "/admin/dashboard",
   },
   {
     id: "Clientes",
@@ -36,22 +36,13 @@ const sidebarStructure = [
     id: "vehiculos",
     icon: TruckIcon,
     title: "Vehículos",
-    items: [
-      { name: "Lista de vehículos", path: "/admin/vehiculos" },
-      // { name: "Registrar vehículo", path: "/admin/vehiculos/nuevo" },
-      // { name: "Historial de kilometraje", path: "/admin/vehiculos/kilometraje" },
-      { name: "Marcas de Vehículos", path: "/admin/marcas-vehiculos" },
-      { name: "Modelos de Vehículos", path: "/admin/modelos-vehiculos" },
-    ],
+    path: "/admin/vehiculos",
   },
   {
     id: "cotizaciones",
     icon: DocumentTextIcon,
     title: "Cotizaciones",
-    items: [
-      { name: "Nueva cotización", path: "/admin/cotizaciones/nuevo" },
-      { name: "Lista de cotizaciones", path: "/admin/cotizaciones" },
-    ],
+    path: "/admin/cotizaciones",
   },
   {
     id: "ordenes",
@@ -60,21 +51,13 @@ const sidebarStructure = [
     items: [
       { name: "Nueva Orden de Trabajo", path: "/admin/nueva-orden-trabajo" },
       { name: "Lista de órdenes", path: "/admin/orden-trabajo" },
-      // { name: "Pagos de órdenes", path: "/admin/ordenes/pagos" },
     ],
   },
   {
     id: "inventario",
     icon: ArchiveBoxIcon,
     title: "Inventario",
-    items: [
-      { name: "Lista de productos", path: "/admin/productos" },
-      { name: "Registrar producto", path: "/admin/productos/nuevo" },
-      // { name: "Compras", path: "/admin/inventario/compras" },
-      // { name: "Historial de compras", path: "/admin/inventario/historial" },
-      { name: "Categorias de productos", path: "/admin/categorias-productos" },
-      { name: "Tipos de productos", path: "/admin/tipo-productos" },
-    ],
+    path: "/admin/productos",
   },
   {
     id: "finanzas",
@@ -84,8 +67,6 @@ const sidebarStructure = [
       { name: "Pagos de clientes", path: "/admin/finanzas/pagos" },
       { name: "Impuestos", path: "/admin/finanzas/impuestos" },
       { name: "Registro de Gastos", path: "/admin/finanzas/gastos" },
-      { name: "Tipos de Gasto", path: "/admin/finanzas/tipos-gasto" },
-      { name: "Tipos de Pago", path: "/admin/finanzas/tipos-pago" },
     ],
   },
   {
@@ -94,8 +75,12 @@ const sidebarStructure = [
     title: "Configuración",
     items: [
       { name: "Usuarios", path: "/admin/configuracion/usuarios" },
-      { name: "Tipos de pago", path: "/admin/configuracion/tipos-pago" },
-      { name: "Categorías de productos", path: "/admin/configuracion/categorias" },
+      { name: "Marcas de Vehículos", path: "/admin/marcas-vehiculos" },
+      { name: "Modelos de Vehículos", path: "/admin/modelos-vehiculos" },
+      { name: "Categorías de productos", path: "/admin/categorias-productos" },
+      { name: "Tipos de productos", path: "/admin/tipo-productos" },
+      { name: "Tipos de Gasto", path: "/admin/finanzas/tipos-gasto" },
+      { name: "Tipos de Pago", path: "/admin/finanzas/tipos-pago" },
     ],
   },
 ]
@@ -186,24 +171,102 @@ const Sidebar = ({
         <ul className={cn("space-y-1", !isSidebarOpen && "flex flex-col items-center w-full")}>
           {sidebarStructure.map((section) => (
             <li key={section.id}>
-              <button
-                onClick={() => toggleSection(section.id)}
-                className={cn(
-                  "w-full flex items-center justify-between",
-                  "px-3 py-2.5 rounded-lg gap-3",
-                  "transition-all duration-200",
-                  "hover:bg-sidebar-accent",
-                  "text-sidebar",
-                  "active:scale-[0.98]",
-                  openSections[section.id] && "bg-sidebar-accent text-sidebar-accent"
-                )}
-              >
-                <div className="flex items-center gap-3 min-w-0">
+              {section.items ? (
+                // Sección con subelementos
+                <>
+                  <button
+                    onClick={() => toggleSection(section.id)}
+                    className={cn(
+                      "w-full flex items-center justify-between",
+                      "px-3 py-2.5 rounded-lg gap-3",
+                      "transition-all duration-200",
+                      "hover:bg-sidebar-accent",
+                      "text-sidebar",
+                      "active:scale-[0.98]",
+                      openSections[section.id] && "bg-sidebar-accent text-sidebar-accent"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <section.icon
+                        className={cn(
+                          "w-5 h-5 shrink-0",
+                          "transition-colors duration-200",
+                          openSections[section.id]
+                            ? "text-sidebar-accent"
+                            : "text-sidebar"
+                        )}
+                      />
+                      {isSidebarOpen && (
+                        <span className="text-sm font-medium truncate">
+                          {section.title}
+                        </span>
+                      )}
+                    </div>
+                    {isSidebarOpen && (
+                      <ChevronDownIcon
+                        className={cn(
+                          "w-4 h-4 transition-transform duration-200",
+                          openSections[section.id] && "rotate-180"
+                        )}
+                      />
+                    )}
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {openSections[section.id] && isSidebarOpen && (
+                      <motion.ul
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden mt-1 ml-2"
+                      >
+                        {section.items?.map((item) => {
+                          const isActive = location.pathname === item.path
+                          return (
+                            <li key={item.path}>
+                              <Link
+                                to={item.path}
+                                className={cn(
+                                  "flex items-center gap-2 w-full",
+                                  "px-6 py-2 rounded-lg",
+                                  "text-sm transition-all duration-200",
+                                  "text-sidebar",
+                                  "hover:bg-sidebar-accent",
+                                  "hover:text-sidebar-accent",
+                                  "active:scale-[0.98]",
+                                  isActive && "bg-sidebar-accent text-sidebar-accent font-medium"
+                                )}
+                              >
+                                <span className="truncate">{item.name}</span>
+                              </Link>
+                            </li>
+                          )
+                        })}
+                      </motion.ul>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                // Elemento simple con enlace directo
+                <Link
+                  to={section.path!}
+                  className={cn(
+                    "w-full flex items-center",
+                    "px-3 py-2.5 rounded-lg gap-3",
+                    "transition-all duration-200",
+                    "hover:bg-sidebar-accent",
+                    "text-sidebar",
+                    "hover:text-sidebar-accent",
+                    "active:scale-[0.98]",
+                    location.pathname === section.path && "bg-sidebar-accent text-sidebar-accent"
+                  )}
+                >
                   <section.icon
                     className={cn(
                       "w-5 h-5 shrink-0",
                       "transition-colors duration-200",
-                      openSections[section.id]
+                      location.pathname === section.path
                         ? "text-sidebar-accent"
                         : "text-sidebar"
                     )}
@@ -213,51 +276,8 @@ const Sidebar = ({
                       {section.title}
                     </span>
                   )}
-                </div>
-                {isSidebarOpen && (
-                  <ChevronDownIcon
-                    className={cn(
-                      "w-4 h-4 transition-transform duration-200",
-                      openSections[section.id] && "rotate-180"
-                    )}
-                  />
-                )}
-              </button>
-
-              <AnimatePresence initial={false}>
-                {openSections[section.id] && isSidebarOpen && (
-                  <motion.ul
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden mt-1 ml-2"
-                  >
-                    {section.items.map((item) => {
-                      const isActive = location.pathname === item.path
-                      return (
-                        <li key={item.path}>
-                          <Link
-                            to={item.path}
-                            className={cn(
-                              "flex items-center gap-2 w-full",
-                              "px-6 py-2 rounded-lg",
-                              "text-sm transition-all duration-200",
-                              "text-sidebar",
-                              "hover:bg-sidebar-accent",
-                              "hover:text-sidebar-accent",
-                              "active:scale-[0.98]",
-                              isActive && "bg-sidebar-accent text-sidebar-accent font-medium"
-                            )}
-                          >
-                            <span className="truncate">{item.name}</span>
-                          </Link>
-                        </li>
-                      )
-                    })}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
+                </Link>
+              )}
             </li>
           ))}
         </ul>

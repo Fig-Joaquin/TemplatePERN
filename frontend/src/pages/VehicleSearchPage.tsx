@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import type { Vehicle, Quotation, WorkOrder } from "../types/interfaces";
 import { formatQuantity } from "@/utils/formatQuantity";
 import { formatPriceCLP as formatPrice } from "@/utils/formatPriceCLP";
+import { formatDate } from "@/utils/formDate";
 
 // Extender la interfaz Vehicle para incluir las propiedades adicionales que vienen del backend
 interface VehicleWithDetails extends Vehicle {
@@ -228,11 +229,6 @@ const VehicleSearchPage = () => {
                             <span>-{formatPrice(detail.discount)}</span>
                           </div>
                         )}
-                        {detail.tax && (
-                          <div className="text-xs text-muted-foreground">
-                            IVA ({detail.tax.tax_rate}%) incluido
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -436,7 +432,7 @@ const VehicleSearchPage = () => {
                           .slice(0, 3)
                           .map((record) => (
                             <div key={record.mileage_history_id} className="flex justify-between items-center text-sm">
-                              <span>{new Date(record.registration_date).toLocaleDateString()}</span>
+                              <span>{formatDate(record.registration_date)}</span>
                               <Badge variant="outline">
                                 {formatQuantity(record.current_mileage)} km
                               </Badge>
@@ -489,7 +485,7 @@ const VehicleSearchPage = () => {
                                     </div>
                                     <div className="flex justify-between mb-2">
                                       <span className="font-medium">Fecha:</span>
-                                      <span>{quotation.entry_date ? new Date(quotation.entry_date).toLocaleDateString() : 'N/A'}</span>
+                                      <span>{quotation.entry_date ? formatDate(quotation.entry_date) : 'N/A'}</span>
                                     </div>
                                     {quotation.description && (
                                       <div className="mb-2">
@@ -499,11 +495,19 @@ const VehicleSearchPage = () => {
                                     )}
                                   </div>
                                   <div className="text-right">
+                                    <div className="space-y-1 text-sm">
+                                      <div className="text-sm text-muted-foreground">
+                                        Subtotal neto: {formatPrice(quotation.total_price / 1.19)}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        IVA (19%): {formatPrice(quotation.total_price * 0.19 / 1.19)}
+                                      </div>
+                                    </div>
                                     <div className="text-2xl font-bold text-primary">
                                       {formatPrice(quotation.total_price)}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                      Total de la Cotización
+                                      Total con IVA
                                     </div>
                                   </div>
                                 </div>
@@ -566,13 +570,13 @@ const VehicleSearchPage = () => {
                                   <div>
                                     <div className="flex justify-between items-center mb-2">
                                       <span className="font-medium">Estado:</span>
-                                      <Badge variant={getStatusBadge(workOrder.work_order_status || workOrder.work_order_status).variant}>
-                                        {getStatusBadge(workOrder.work_order_status || workOrder.work_order_status).label}
+                                      <Badge variant={getStatusBadge(workOrder.order_status || 'not_started').variant}>
+                                        {getStatusBadge(workOrder.order_status || 'not_started').label}
                                       </Badge>
                                     </div>
                                     <div className="flex justify-between mb-2">
                                       <span className="font-medium">Fecha:</span>
-                                      <span>{new Date(workOrder.entry_date || workOrder.entry_date).toLocaleDateString()}</span>
+                                      <span>{workOrder.order_date ? formatDate(workOrder.order_date) : 'N/A'}</span>
                                     </div>
                                     {workOrder.description && (
                                       <div className="mb-2">
@@ -590,11 +594,19 @@ const VehicleSearchPage = () => {
                                     )}
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-xl font-bold text-blue-600">
+                                    <div className="space-y-1 text-sm">
+                                      <div className="text-sm text-muted-foreground">
+                                        Subtotal neto: {formatPrice((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) / 1.19)}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        IVA (19%): {formatPrice((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) * 0.19 / 1.19)}
+                                      </div>
+                                    </div>
+                                    <div className="text-xl font-bold text-primary">
                                       {formatPrice(workOrder.total_amount || (workOrder.quotation?.total_price || 0))}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {workOrder.quotation ? 'Costo del Trabajo' : 'Total de la Orden'}
+                                      {workOrder.quotation ? 'Total con IVA' : 'Total con IVA'}
                                     </div>
                                   </div>
                                 </div>
