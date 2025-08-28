@@ -12,7 +12,7 @@ export class Person {
     @IsString()
     @Length(8, 9, { message: "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión" })
     @Matches(/^[0-9kK]{8,9}$/, { message: "Formato de RUT inválido" })
-    rut!: string;
+    rut?: string;
 
     @Column({ length: 50 })
     @IsString()
@@ -36,7 +36,7 @@ export class Person {
     @Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? undefined : value))
     @IsEmail({}, { message: "Email inválido" })
     @Length(5, 100, { message: "Email debe tener entre 5 y 100 caracteres" })
-    email!: string;
+    email?: string;
 
     @Column({ length: 15 })
     @IsString()

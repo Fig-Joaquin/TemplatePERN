@@ -51,7 +51,10 @@ const ClientList: React.FC<ClientListProps> = ({
                 </TableCell>
                 <TableCell>+{person.number_phone}</TableCell>
                 <TableCell>
-                  <VehicleList vehicles={vehiclesMap[person.person_id] || []} />
+                  <VehicleList
+                    vehicles={vehiclesMap[person.person_id] || []}
+                    personId={person.person_id}
+                  />
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">

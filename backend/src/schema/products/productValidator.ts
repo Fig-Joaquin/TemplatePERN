@@ -25,7 +25,7 @@ export const ProductSchema = z.object({
     sale_price: z.number()
         .min(0, "El precio de venta no puede ser negativo"),
     
-    description: z.string(),
+    description: z.string().optional(),
     
     product_quantity: z.number()
         .int()

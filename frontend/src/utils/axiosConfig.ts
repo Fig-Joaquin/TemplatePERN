@@ -11,5 +11,17 @@ const api = axios.create({
   withCredentials: true, // ✅ Necesario para que las cookies funcionen
 })
 
+// Interceptor para respuestas de error  
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Log para debugging en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.error("API Error:", error.response?.data || error.message);
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { Car, Save, ArrowLeft, Plus, Clock } from "lucide-react";
@@ -9,12 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import {
   Dialog,
@@ -25,10 +25,10 @@ import {
 import { NumberInput } from "@/components/numberInput";
 import ClientForm from "@/components/clientForm";
 import CompanyForm from "@/components/CompanyForm";
-import { 
+import {
   fetchVehicleId,
-  createVehicle, 
-  updateVehicle 
+  createVehicle,
+  updateVehicle
 } from "@/services/vehicleService";
 import { fetchPersonsClient, createPerson } from "@/services/personService";
 import { fetchCompanies, createCompany } from "@/services/work/companiesList";
@@ -38,6 +38,7 @@ import type { Person, Vehicle, Brand, Model, Company } from "@/types/interfaces"
 
 export default function VehicleFormPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const isEditMode = !!id;
   const navigate = useNavigate();
 
@@ -47,7 +48,7 @@ export default function VehicleFormPage() {
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState<{
     license_plate: string;
     year: number | undefined;
@@ -111,7 +112,7 @@ export default function VehicleFormPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Cargar datos necesarios
         const [personsData, companiesData, brandsData, modelsData] = await Promise.all([
           fetchPersonsClient(),
@@ -119,7 +120,7 @@ export default function VehicleFormPage() {
           fetchVehicleBrands(),
           fetchVehicleModels(),
         ]);
-        
+
         setPersons(personsData);
         setCompanies(companiesData);
         setBrands(brandsData);
@@ -140,6 +141,26 @@ export default function VehicleFormPage() {
             company_id: vehicleData.company?.company_id?.toString() || "",
             vehicle_status: vehicleData.vehicle_status || "running",
           });
+        } else {
+          // Si estamos creando un nuevo vehículo y hay un person_id o company_id en la URL, preseleccionarlo
+          const personIdFromUrl = searchParams.get("person_id");
+          const companyIdFromUrl = searchParams.get("company_id");
+
+          if (personIdFromUrl) {
+            setFormData(prev => ({
+              ...prev,
+              owner_type: "person",
+              person_id: personIdFromUrl,
+              company_id: ""
+            }));
+          } else if (companyIdFromUrl) {
+            setFormData(prev => ({
+              ...prev,
+              owner_type: "company",
+              person_id: "",
+              company_id: companyIdFromUrl
+            }));
+          }
         }
       } catch (error) {
         console.error("Error al cargar datos:", error);
@@ -168,8 +189,8 @@ export default function VehicleFormPage() {
   };
 
   const handleOwnerTypeChange = (value: "person" | "company") => {
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       owner_type: value,
       person_id: "",
       company_id: ""
@@ -187,19 +208,19 @@ export default function VehicleFormPage() {
     try {
       setCreatingPerson(true);
       const response = await createPerson(newPersonData);
-      
+
       // Manejar diferentes estructuras de respuesta del API
       const newPerson = response.data?.person || response.data || response;
-      
+
       // Actualizar la lista de personas
       setPersons(prev => [...prev, newPerson]);
-      
+
       // Activar el filtro de recientes para mostrar el nuevo cliente al principio
       setShowRecentPersons(true);
-      
+
       // Seleccionar automáticamente la nueva persona
       setFormData(prev => ({ ...prev, person_id: newPerson.person_id.toString() }));
-      
+
       // Limpiar el formulario y cerrar el modal
       setNewPersonData({
         rut: "",
@@ -232,19 +253,19 @@ export default function VehicleFormPage() {
     try {
       setCreatingCompany(true);
       const response = await createCompany(newCompanyData);
-      
+
       // Manejar diferentes estructuras de respuesta del API
       const newCompany = response;
-      
+
       // Actualizar la lista de empresas
       setCompanies(prev => [...prev, newCompany]);
-      
+
       // Activar el filtro de recientes para mostrar la nueva empresa al principio
       setShowRecentCompanies(true);
-      
+
       // Seleccionar automáticamente la nueva empresa
       setFormData(prev => ({ ...prev, company_id: newCompany.company_id.toString() }));
-      
+
       // Limpiar el formulario y cerrar el modal
       setNewCompanyData({
         rut: "",
@@ -265,10 +286,10 @@ export default function VehicleFormPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (
-      !formData.license_plate || 
-      !formData.vehicle_brand_id || 
+      !formData.license_plate ||
+      !formData.vehicle_brand_id ||
       !formData.vehicle_model_id ||
       (formData.owner_type === "person" && !formData.person_id) ||
       (formData.owner_type === "company" && !formData.company_id)
@@ -276,24 +297,24 @@ export default function VehicleFormPage() {
       toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      
+
       const vehicleData: Partial<Vehicle> = {
         license_plate: formData.license_plate,
         year: formData.year,
         color: formData.color,
         vehicle_model_id: parseInt(formData.vehicle_model_id),
         vehicle_status: formData.vehicle_status,
-        ...(formData.owner_type === "person" 
+        ...(formData.owner_type === "person"
           ? { person_id: parseInt(formData.person_id) }
           : { company_id: parseInt(formData.company_id) }
         ),
         // Agregar kilometraje tanto en creación como en edición
         mileageHistory: formData.mileage
       };
-      
+
       if (isEditMode) {
         await updateVehicle(parseInt(id), vehicleData);
         toast.success("Vehículo actualizado correctamente");
@@ -301,12 +322,12 @@ export default function VehicleFormPage() {
         await createVehicle(vehicleData);
         toast.success("Vehículo creado correctamente");
       }
-      
+
       navigate("/admin/vehiculos");
     } catch (error: any) {
       console.error("Error al guardar vehículo:", error);
       toast.error(
-        error.response?.data?.message || 
+        error.response?.data?.message ||
         "Error al guardar el vehículo"
       );
     } finally {
@@ -315,10 +336,10 @@ export default function VehicleFormPage() {
   };
 
   // Filtrar modelos basado en la marca seleccionada
-  const filteredModels = models.filter(model => 
-    formData.vehicle_brand_id ? 
-    model.brand?.vehicle_brand_id?.toString() === formData.vehicle_brand_id : 
-    true
+  const filteredModels = models.filter(model =>
+    formData.vehicle_brand_id ?
+      model.brand?.vehicle_brand_id?.toString() === formData.vehicle_brand_id :
+      true
   );
 
   // Filtrar personas basado en el término de búsqueda y filtro de recientes
@@ -399,7 +420,7 @@ export default function VehicleFormPage() {
                 <h3 className="text-lg font-semibold text-primary mb-1">Información del Vehículo</h3>
                 <p className="text-sm text-gray-600">Complete los datos técnicos y características del vehículo</p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="license_plate" className="text-sm font-medium text-gray-700">
@@ -417,45 +438,45 @@ export default function VehicleFormPage() {
                 </div>
 
                 <div>
-                    <Label htmlFor="year">Año</Label>
-                    <Input
-                        id="year"
-                        name="year"
-                        type="number"
-                        value={formData.year || ""}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            const maxYear = new Date().getFullYear() + 1;
-                            
-                            // Permitir campo vacío
-                            if (value === "") {
-                                setFormData(prev => ({ ...prev, year: undefined }));
-                                return;
-                            }
-                            
-                            // Limitar a 4 dígitos máximo
-                            if (value.length > 4) {
-                                return;
-                            }
-                            
-                            const numValue = parseInt(value);
-                            
-                            // Permitir valores parciales mientras se escribe
-                            if (value.length < 4) {
-                                setFormData(prev => ({ ...prev, year: numValue }));
-                                return;
-                            }
-                            
-                            // Solo validar rango cuando tiene 4 dígitos
-                            if (!isNaN(numValue) && numValue >= 1900 && numValue <= maxYear) {
-                                setFormData(prev => ({ ...prev, year: numValue }));
-                            }
-                        }}
-                        min={1900}
-                        max={new Date().getFullYear() + 1}
-                        placeholder="2023"
-                        className="w-full"
-                    />
+                  <Label htmlFor="year">Año</Label>
+                  <Input
+                    id="year"
+                    name="year"
+                    type="number"
+                    value={formData.year || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const maxYear = new Date().getFullYear() + 1;
+
+                      // Permitir campo vacío
+                      if (value === "") {
+                        setFormData(prev => ({ ...prev, year: undefined }));
+                        return;
+                      }
+
+                      // Limitar a 4 dígitos máximo
+                      if (value.length > 4) {
+                        return;
+                      }
+
+                      const numValue = parseInt(value);
+
+                      // Permitir valores parciales mientras se escribe
+                      if (value.length < 4) {
+                        setFormData(prev => ({ ...prev, year: numValue }));
+                        return;
+                      }
+
+                      // Solo validar rango cuando tiene 4 dígitos
+                      if (!isNaN(numValue) && numValue >= 1900 && numValue <= maxYear) {
+                        setFormData(prev => ({ ...prev, year: numValue }));
+                      }
+                    }}
+                    min={1900}
+                    max={new Date().getFullYear() + 1}
+                    placeholder="2023"
+                    className="w-full"
+                  />
                 </div>
 
                 <div>
@@ -558,7 +579,7 @@ export default function VehicleFormPage() {
                 <h3 className="text-lg font-semibold text-primary mb-1">Información del Propietario</h3>
                 <p className="text-sm text-gray-600">Seleccione el tipo de propietario y complete los datos correspondientes</p>
               </div>
-              
+
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   Tipo de Propietario <span className="text-red-500">*</span>
@@ -624,12 +645,12 @@ export default function VehicleFormPage() {
                           onChange={(e) => setPersonSearchTerm(e.target.value)}
                           className="mb-0"
                         />
-                        <div 
+                        <div
                           onClick={() => setShowRecentPersons(!showRecentPersons)}
                           className={`
                             group relative w-full px-4 py-3 rounded-xl transition-all duration-300 ease-in-out cursor-pointer overflow-hidden
-                            ${showRecentPersons 
-                              ? "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-1 ring-primary/20" 
+                            ${showRecentPersons
+                              ? "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-1 ring-primary/20"
                               : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-50 hover:shadow-md"
                             }
                           `}
@@ -638,8 +659,8 @@ export default function VehicleFormPage() {
                             <div className="flex items-center gap-3">
                               <div className={`
                                 p-2 rounded-xl transition-all duration-300 transform group-hover:scale-110
-                                ${showRecentPersons 
-                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30" 
+                                ${showRecentPersons
+                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30"
                                   : "bg-gradient-to-br from-gray-200 to-gray-300 text-gray-600 group-hover:from-gray-300 group-hover:to-gray-400"
                                 }
                               `}>
@@ -648,8 +669,8 @@ export default function VehicleFormPage() {
                               <div className="flex flex-col">
                                 <span className={`
                                   text-sm font-semibold transition-colors duration-200
-                                  ${showRecentPersons 
-                                    ? "text-primary" 
+                                  ${showRecentPersons
+                                    ? "text-primary"
                                     : "text-gray-700 group-hover:text-gray-900"
                                   }
                                 `}>
@@ -657,8 +678,8 @@ export default function VehicleFormPage() {
                                 </span>
                                 <span className={`
                                   text-xs transition-colors duration-200
-                                  ${showRecentPersons 
-                                    ? "text-primary/70" 
+                                  ${showRecentPersons
+                                    ? "text-primary/70"
                                     : "text-gray-500"
                                   }
                                 `}>
@@ -668,15 +689,15 @@ export default function VehicleFormPage() {
                             </div>
                             <div className={`
                               relative w-14 h-7 rounded-full transition-all duration-300
-                              ${showRecentPersons 
-                                ? "bg-gradient-to-r from-primary to-primary/80 shadow-inner shadow-primary/50" 
+                              ${showRecentPersons
+                                ? "bg-gradient-to-r from-primary to-primary/80 shadow-inner shadow-primary/50"
                                 : "bg-gray-300 group-hover:bg-gray-400"
                               }
                             `}>
                               <div className={`
                                 absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 transform
-                                ${showRecentPersons 
-                                  ? "left-8 shadow-primary/20" 
+                                ${showRecentPersons
+                                  ? "left-8 shadow-primary/20"
                                   : "left-1 shadow-gray-400/30"
                                 }
                               `}>
@@ -771,12 +792,12 @@ export default function VehicleFormPage() {
                           onChange={(e) => setCompanySearchTerm(e.target.value)}
                           className="mb-0"
                         />
-                        <div 
+                        <div
                           onClick={() => setShowRecentCompanies(!showRecentCompanies)}
                           className={`
                             group relative w-full px-4 py-3 rounded-xl transition-all duration-300 ease-in-out cursor-pointer overflow-hidden
-                            ${showRecentCompanies 
-                              ? "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-1 ring-primary/20" 
+                            ${showRecentCompanies
+                              ? "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-1 ring-primary/20"
                               : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-50 hover:shadow-md"
                             }
                           `}
@@ -785,8 +806,8 @@ export default function VehicleFormPage() {
                             <div className="flex items-center gap-3">
                               <div className={`
                                 p-2 rounded-xl transition-all duration-300 transform group-hover:scale-110
-                                ${showRecentCompanies 
-                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30" 
+                                ${showRecentCompanies
+                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30"
                                   : "bg-gradient-to-br from-gray-200 to-gray-300 text-gray-600 group-hover:from-gray-300 group-hover:to-gray-400"
                                 }
                               `}>
@@ -795,8 +816,8 @@ export default function VehicleFormPage() {
                               <div className="flex flex-col">
                                 <span className={`
                                   text-sm font-semibold transition-colors duration-200
-                                  ${showRecentCompanies 
-                                    ? "text-primary" 
+                                  ${showRecentCompanies
+                                    ? "text-primary"
                                     : "text-gray-700 group-hover:text-gray-900"
                                   }
                                 `}>
@@ -804,8 +825,8 @@ export default function VehicleFormPage() {
                                 </span>
                                 <span className={`
                                   text-xs transition-colors duration-200
-                                  ${showRecentCompanies 
-                                    ? "text-primary/70" 
+                                  ${showRecentCompanies
+                                    ? "text-primary/70"
                                     : "text-gray-500"
                                   }
                                 `}>
@@ -815,15 +836,15 @@ export default function VehicleFormPage() {
                             </div>
                             <div className={`
                               relative w-14 h-7 rounded-full transition-all duration-300
-                              ${showRecentCompanies 
-                                ? "bg-gradient-to-r from-primary to-primary/80 shadow-inner shadow-primary/50" 
+                              ${showRecentCompanies
+                                ? "bg-gradient-to-r from-primary to-primary/80 shadow-inner shadow-primary/50"
                                 : "bg-gray-300 group-hover:bg-gray-400"
                               }
                             `}>
                               <div className={`
                                 absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 transform
-                                ${showRecentCompanies 
-                                  ? "left-8 shadow-primary/20" 
+                                ${showRecentCompanies
+                                  ? "left-8 shadow-primary/20"
                                   : "left-1 shadow-gray-400/30"
                                 }
                               `}>

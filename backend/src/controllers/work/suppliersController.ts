@@ -120,6 +120,29 @@ export const deleteSupplier = async (req: Request, res: Response, _next: NextFun
             return;
         }
 
+        // Verificar si el proveedor existe y tiene productos asociados
+        const supplier = await supplierRepository.findOne({
+            where: { supplier_id: id },
+            relations: ["products"]
+        });
+
+        if (!supplier) {
+            res.status(404).json({ message: "Proveedor no encontrado" });
+            return;
+        }
+
+        // Verificar si tiene productos asociados
+        if (supplier.products && supplier.products.length > 0) {
+            res.status(409).json({ 
+                message: `No se puede eliminar el proveedor porque tiene ${supplier.products.length} producto(s) asociado(s). Debe reasignar o eliminar estos productos primero.`,
+                details: {
+                    associatedProducts: supplier.products.length,
+                    productNames: supplier.products.map(p => p.product_name).slice(0, 5) // Mostrar máximo 5 nombres
+                }
+            });
+            return;
+        }
+
         const result = await supplierRepository.delete(id);
         if (result.affected === 0) {
             res.status(404).json({ message: "Proveedor no encontrado" });
@@ -127,7 +150,17 @@ export const deleteSupplier = async (req: Request, res: Response, _next: NextFun
         }
 
         res.json({ message: "Proveedor eliminado exitosamente" });
-    } catch (error) {
-        res.status(500).json({ message: "Error al eliminar el proveedor", error });
+    } catch (error: any) {
+        console.error("Error al eliminar proveedor:", error);
+        
+        // Manejo específico de errores de restricción de clave foránea
+        if (error.code === "23503" || error.code === "23505") {
+            res.status(409).json({ 
+                message: "No se puede eliminar el proveedor porque tiene productos asociados. Debe reasignar o eliminar estos productos primero." 
+            });
+            return;
+        }
+        
+        res.status(500).json({ message: "Error al eliminar el proveedor", error: error.message });
     }
 };

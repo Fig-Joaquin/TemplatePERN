@@ -6,13 +6,15 @@ import {
   getUserById, 
   updateUser, 
   deleteUser, 
-  loginUser 
+  loginUser,
+  createUserWithPerson
 } from "../controllers/userController";
 
 const userRoutes = Router();
 
 // Rutas para manejo de usuarios
-userRoutes.post("/", createUser);        // Crear usuario
+userRoutes.post("/", createUser);        // Crear usuario (con person_id existente)
+userRoutes.post("/create-with-person", createUserWithPerson); // Crear usuario con persona nueva
 userRoutes.get("/", getAllUsers);          // Listar todos los usuarios
 userRoutes.get("/:id", getUserById);       // Obtener usuario por ID
 userRoutes.put("/:id", updateUser);        // Actualizar usuario

@@ -57,7 +57,7 @@ const ProductCreatePage = () => {
       (type) =>
         type.category.product_category_id.toString() === selectedCategory
     )
-    : productTypes
+    : [] // Retornamos array vacío si no hay categoría seleccionada
 
   // Función para calcular el precio con margen (solo para mostrar)
   const calculatePriceWithMargin = () => {
@@ -69,6 +69,19 @@ const ProductCreatePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
+    // Validar que se haya seleccionado una categoría y tipo de producto
+    if (!selectedCategory) {
+      toast.error("Debe seleccionar una categoría")
+      setLoading(false)
+      return
+    }
+
+    if (!selectedProductType) {
+      toast.error("Debe seleccionar un tipo de producto")
+      setLoading(false)
+      return
+    }
 
     if (
       Number(lastPurchasePrice) === 0 ||
@@ -88,7 +101,7 @@ const ProductCreatePage = () => {
         profit_margin: Number(profitMargin),
         last_purchase_price: Number(lastPurchasePrice),
         sale_price: Number(lastPurchasePrice), // Usar el mismo valor que lastPurchasePrice
-        description,
+        description: description.trim() || undefined, // Solo enviar descripción si no está vacía
         product_quantity: Number(stockQuantity),
       }
 
@@ -182,19 +195,35 @@ const ProductCreatePage = () => {
                     <Select
                       value={selectedProductType}
                       onValueChange={setSelectedProductType}
+                      disabled={!selectedCategory} // Deshabilitar si no hay categoría seleccionada
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccione un tipo" />
+                        <SelectValue
+                          placeholder={
+                            !selectedCategory
+                              ? "Primero seleccione una categoría"
+                              : "Seleccione un tipo"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        {filteredProductTypes.map((type) => (
-                          <SelectItem
-                            key={type.product_type_id}
-                            value={type.product_type_id.toString()}
-                          >
-                            {type.type_name}
-                          </SelectItem>
-                        ))}
+                        {filteredProductTypes.length > 0 ? (
+                          filteredProductTypes.map((type) => (
+                            <SelectItem
+                              key={type.product_type_id}
+                              value={type.product_type_id.toString()}
+                            >
+                              {type.type_name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            {!selectedCategory
+                              ? "Seleccione una categoría primero"
+                              : "No hay tipos disponibles para esta categoría"
+                            }
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -221,14 +250,13 @@ const ProductCreatePage = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descripción</Label>
+                    <Label htmlFor="description">Descripción (Opcional)</Label>
                     <Input
                       id="description"
                       type="text"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      required
-                      placeholder="Descripción del producto"
+                      placeholder="Descripción del producto (opcional)"
                       className="w-full"
                     />
                   </div>

@@ -12,17 +12,17 @@ export class Supplier {
     @IsString()
     name!: string;
 
-    @Column({ length: 255 , nullable: true})
+    @Column({ length: 255, nullable: true })
     @IsString()
-    address!: string;
+    address?: string;
 
-    @Column({ length: 100 })
+    @Column({ length: 100, nullable: true })
     @IsString()
-    city!: string;
+    city?: string;
 
     @Column({ length: 500, nullable: true })
     @IsString()
-    description!: string;
+    description?: string;
 
     /* 
     ! +56912345678 ❌ (No permitimos el +) 

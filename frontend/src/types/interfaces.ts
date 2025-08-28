@@ -11,10 +11,11 @@ export interface Person {
 }
 
 export interface User {
-  id: number
+  user_id: number
   username: string
-  userRole: string
+  user_role: string
   person: Person
+  password?: string // Solo para creación/edición
 }
 
 export interface ClientFormProps {
@@ -126,7 +127,7 @@ export interface Product {
   profit_margin: number
   last_purchase_price: number
   sale_price: number
-  description: string
+  description?: string // Hacer la descripción opcional
   product_quantity: number
   type: ProductType
   supplier?: Supplier
@@ -136,9 +137,9 @@ export interface Product {
 export interface Supplier {
   supplier_id: number
   name: string
-  adress: string
-  city: string
-  description: string
+  address?: string
+  city?: string
+  description?: string
   phone: string
 }
 
@@ -290,6 +291,31 @@ export interface WorkPayment {
   payment_status: string;
   amount_paid: number | string; // Puede venir como string desde el backend
   payment_date: Date | string;
+}
+
+export interface Debtor {
+  debtor_id: number;
+  workOrder: WorkOrder;
+  work_order_id?: number; // Para creación/edición
+  description: string;
+  total_amount?: number;
+  paid_amount?: number;
+  payment_status?: string; // 'pending', 'partial', 'paid'
+  created_at: Date | string;
+}
+
+export interface DebtorInput {
+  work_order_id: number;
+  description: string;
+  total_amount?: number;
+  paid_amount?: number;
+  payment_status?: string;
+}
+
+export interface PaymentInput {
+  payment_amount: number;
+  payment_date?: string;
+  payment_type_id?: number;
 }
 
 

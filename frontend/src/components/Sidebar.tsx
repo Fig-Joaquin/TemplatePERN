@@ -28,6 +28,7 @@ const sidebarStructure = [
     title: "Personas y Empresas ",
     items: [
       { name: "Clientes", path: "/admin/clientes" },
+      { name: "Proveedores", path: "/admin/proveedores" },
       { name: "Trabajadores", path: "/admin/trabajadores" },
       { name: "Empresas", path: "/admin/empresas" },
     ],
@@ -65,8 +66,8 @@ const sidebarStructure = [
     title: "Finanzas",
     items: [
       { name: "Pagos de clientes", path: "/admin/finanzas/pagos" },
-      { name: "Impuestos", path: "/admin/finanzas/impuestos" },
       { name: "Registro de Gastos", path: "/admin/finanzas/gastos" },
+      { name: "Deudores", path: "/admin/finanzas/deudores" },
     ],
   },
   {
@@ -78,9 +79,11 @@ const sidebarStructure = [
       { name: "Marcas de Vehículos", path: "/admin/marcas-vehiculos" },
       { name: "Modelos de Vehículos", path: "/admin/modelos-vehiculos" },
       { name: "Categorías de productos", path: "/admin/categorias-productos" },
+      { name: "Impuestos", path: "/admin/finanzas/impuestos" },
       { name: "Tipos de productos", path: "/admin/tipo-productos" },
       { name: "Tipos de Gasto", path: "/admin/finanzas/tipos-gasto" },
       { name: "Tipos de Pago", path: "/admin/finanzas/tipos-pago" },
+
     ],
   },
 ]

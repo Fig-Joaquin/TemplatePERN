@@ -47,9 +47,9 @@ export class Product {
     @Min(0, { message: "El precio de venta no puede ser negativo" })
     sale_price!: number;
 
-    @Column({ type: "text" })
+    @Column({ type: "text", nullable: true })
     @IsString()
-    description!: string;
+    description?: string;
 
     @Column()
     @IsNumber()

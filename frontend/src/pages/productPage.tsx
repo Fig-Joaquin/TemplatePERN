@@ -31,6 +31,7 @@ const ProductPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [productTypes, setProductTypes] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
   const navigate = useNavigate()
 
   // Edit form state
@@ -40,6 +41,7 @@ const ProductPage = () => {
   const [editDescription, setEditDescription] = useState("")
   const [editSelectedProductType, setEditSelectedProductType] = useState("")
   const [editSelectedSupplier, setEditSelectedSupplier] = useState("")
+  const [editSelectedCategory, setEditSelectedCategory] = useState("")
   const [editProfitMargin, setEditProfitMargin] = useState("")
   const [editLastPurchasePrice, setEditLastPurchasePrice] = useState(0)
 
@@ -60,18 +62,27 @@ const ProductPage = () => {
 
     const fetchData = async () => {
       try {
+        const categoriesResponse = await api.get("/productCategories")
+        setCategories(categoriesResponse.data)
         const typesResponse = await api.get("/productTypes")
         setProductTypes(typesResponse.data)
         const suppliersResponse = await api.get("/suppliers")
         setSuppliers(suppliersResponse.data)
       } catch (error) {
-        toast.error("Error al cargar product types y suppliers")
+        toast.error("Error al cargar categorías, product types y suppliers")
       }
     }
     fetchData()
   }, [])
 
   const filteredProducts = products.filter((p) => p.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  // Filtrar los tipos de producto según la categoría seleccionada en el formulario de edición
+  const filteredEditProductTypes = editSelectedCategory
+    ? productTypes.filter(
+      (type) => type.category?.product_category_id.toString() === editSelectedCategory
+    )
+    : []
 
   const openModal = (type: "edit" | "delete", product: Product) => {
     setModalType(type)
@@ -82,6 +93,7 @@ const ProductPage = () => {
       setEditStockQuantity(Number(product.stock?.quantity) || 0)
       setEditDescription(product.description || "")
       setEditSelectedProductType(product.type.product_type_id.toString())
+      setEditSelectedCategory(product.type.category?.product_category_id.toString() || "")
       setEditSelectedSupplier(product.supplier?.supplier_id ? product.supplier.supplier_id.toString() : "none")
       setEditProfitMargin(product.profit_margin?.toString() || "")
       setEditLastPurchasePrice(Number(product.last_purchase_price) || 0)
@@ -97,6 +109,18 @@ const ProductPage = () => {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedProduct) return
+
+    // Validar que se haya seleccionado una categoría y tipo de producto
+    if (!editSelectedCategory) {
+      toast.error("Debe seleccionar una categoría")
+      return
+    }
+
+    if (!editSelectedProductType) {
+      toast.error("Debe seleccionar un tipo de producto")
+      return
+    }
+
     setLoading(true)
     try {
       const updatedProduct = {
@@ -106,7 +130,7 @@ const ProductPage = () => {
         profit_margin: Number(editProfitMargin),
         last_purchase_price: Number(editLastPurchasePrice),
         sale_price: Number(editSalePrice),
-        description: editDescription,
+        description: editDescription.trim() || undefined, // Solo enviar descripción si no está vacía
         product_quantity: Number(editStockQuantity),
       }
 
@@ -302,6 +326,27 @@ const ProductPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="editProductCategory">Categoría</Label>
+                  <select
+                    id="editProductCategory"
+                    value={editSelectedCategory}
+                    onChange={(e) => {
+                      setEditSelectedCategory(e.target.value)
+                      // Reiniciar el tipo de producto al cambiar la categoría
+                      setEditSelectedProductType("")
+                    }}
+                    className="w-full p-2 border border-input bg-background text-sm rounded-md"
+                    required
+                  >
+                    <option value="">Seleccione una categoría</option>
+                    {categories.map((category) => (
+                      <option key={category.product_category_id} value={category.product_category_id}>
+                        {category.category_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="editProductType">Tipo de Producto</Label>
                   <select
                     id="editProductType"
@@ -309,9 +354,15 @@ const ProductPage = () => {
                     onChange={(e) => setEditSelectedProductType(e.target.value)}
                     className="w-full p-2 border border-input bg-background text-sm rounded-md"
                     required
+                    disabled={!editSelectedCategory}
                   >
-                    <option value="">Seleccione un tipo</option>
-                    {productTypes.map((type) => (
+                    <option value="">
+                      {!editSelectedCategory
+                        ? "Primero seleccione una categoría"
+                        : "Seleccione un tipo"
+                      }
+                    </option>
+                    {filteredEditProductTypes.map((type) => (
                       <option key={type.product_type_id} value={type.product_type_id}>
                         {type.type_name}
                       </option>
@@ -377,13 +428,13 @@ const ProductPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="editDescription">Descripción</Label>
+                  <Label htmlFor="editDescription">Descripción (Opcional)</Label>
                   <Input
                     id="editDescription"
                     type="text"
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    required
+                    placeholder="Descripción del producto (opcional)"
                   />
                 </div>
               </div>

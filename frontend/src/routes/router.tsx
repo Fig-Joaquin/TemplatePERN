@@ -28,6 +28,11 @@ import WorkPaymentPage from "@/pages/work/workPayment";
 import WorkPaymentFormPage from "@/pages/work/workPaymentFormPage";
 import PaymentTypePage from "@/pages/work/paymentType";
 import VehicleFormPage from "@/pages/vehicleFormPage";
+import TaxesPage from "@/pages/work/Taxes";
+import SupplierPage from "@/pages/SupplierPage";
+import UsersPage from "@/pages/UsersPage";
+import DebtorsPage from "@/pages/DebtorsPage";
+import DebtorFormPage from "@/pages/DebtorFormPage";
 
 
 const router = createBrowserRouter([
@@ -52,6 +57,7 @@ const router = createBrowserRouter([
       { path: "vehiculos/nuevo", element: <VehicleFormPage />, handle: { title: "Nuevo Vehículo" } },
       { path: "vehiculos/editar/:id", element: <VehicleFormPage />, handle: { title: "Editar Vehículo" } },
       { path: "clientes", element: <ClientPage />, handle: { title: "Clientes" } },
+      { path: "proveedores", element: <SupplierPage />, handle: { title: "Proveedores" } },
       { path: "cotizaciones", element: <QuotationPage />, handle: { title: "Cotizaciones" } },
       { path: "cotizaciones/nuevo", element: <QuotationCreatePage />, handle: { title: "Nueva Cotización" } },
       { path: "cotizaciones/editar/:id", element: <EditQuotationPage />, handle: { title: "Editar Cotización" } },
@@ -74,6 +80,11 @@ const router = createBrowserRouter([
       { path: "finanzas/pagos/nuevo", element: <WorkPaymentFormPage />, handle: { title: "Nuevo Pago" } },
       { path: "finanzas/pagos/editar/:id", element: <WorkPaymentFormPage />, handle: { title: "Editar Pago" } },
       { path: "finanzas/tipos-pago", element: <PaymentTypePage />, handle: { title: "Tipos de Pago" } },
+      { path: "finanzas/impuestos", element: <TaxesPage />, handle: { title: "Impuestos" } },
+      { path: "finanzas/deudores", element: <DebtorsPage />, handle: { title: "Deudores" } },
+      { path: "finanzas/deudores/nuevo", element: <DebtorFormPage />, handle: { title: "Nuevo Deudor" } },
+      { path: "finanzas/deudores/editar/:id", element: <DebtorFormPage />, handle: { title: "Editar Deudor" } },
+      { path: "configuracion/usuarios", element: <UsersPage />, handle: { title: "Usuarios" } },
       { path: "*", element: <h1>Not Found</h1> },
     ],
   },

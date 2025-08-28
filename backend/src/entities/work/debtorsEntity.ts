@@ -1,6 +1,6 @@
 // Entidad de Deudores
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { IsString } from "class-validator";
+import { IsString, IsNumber, IsOptional } from "class-validator";
 import { WorkOrder } from "..";
 
 @Entity("debtors")
@@ -18,4 +18,19 @@ export class Debtor {
     @Column({ length: 255 })
     @IsString()
     description!: string;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+    @IsOptional()
+    @IsNumber()
+    total_amount?: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    @IsOptional()
+    @IsNumber()
+    paid_amount?: number;
+
+    @Column({ type: "varchar", length: 50, default: "pending" })
+    @IsOptional()
+    @IsString()
+    payment_status?: string; // 'pending', 'partial', 'paid'
 }

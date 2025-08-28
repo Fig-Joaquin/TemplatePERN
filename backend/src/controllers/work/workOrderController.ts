@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { WorkOrderSchema, WorkOrderUpdateSchema } from "../../schema/work/workOrderValidator";
 import { DeepPartial } from "typeorm";
-import { WorkOrder, Vehicle, Quotation, Notification, WorkProductDetail, WorkOrderTechnician } from "../../entities";
+import { WorkOrder, Vehicle, Quotation, Notification, WorkProductDetail, WorkOrderTechnician, StockProduct } from "../../entities";
 
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 const vehicleRepository = AppDataSource.getRepository(Vehicle);
@@ -12,6 +12,7 @@ const notifRepo = AppDataSource.getRepository(Notification);
 // Se importa el repositorio de detalles de producto para actualizar los registros existentes.
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
 const workOrderTechnicianRepository = AppDataSource.getRepository(WorkOrderTechnician);
+const stockProductRepository = AppDataSource.getRepository(StockProduct);
 
 
 export const getAllWorkOrders = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
@@ -208,6 +209,28 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
       }
   
       console.log("work_order_id:", id);
+
+      // 0. IMPORTANTE: Obtener los detalles de productos antes de eliminarlos para restaurar el stock
+      const productDetails = await workProductDetailRepository.find({
+        where: { work_order: { work_order_id: id } },
+        relations: ["product"]
+      });
+
+      // Restaurar el stock de cada producto
+      for (const detail of productDetails) {
+        if (detail.product && detail.quantity) {
+          const stockProduct = await stockProductRepository.findOne({
+            where: { product: { product_id: detail.product.product_id } }
+          });
+
+          if (stockProduct) {
+            // Recuperar la cantidad que se había descontado
+            stockProduct.quantity += Number(detail.quantity);
+            await stockProductRepository.save(stockProduct);
+            console.log(`Stock restaurado para producto ${detail.product.product_id}: +${detail.quantity} (nuevo stock: ${stockProduct.quantity})`);
+          }
+        }
+      }
   
       // 1. Eliminar manualmente los técnicos asociados a la orden
       await workOrderTechnicianRepository
@@ -244,7 +267,10 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
         return;
       }
   
-      res.json({ message: "Orden de trabajo eliminada exitosamente" });
+      res.json({ 
+        message: "Orden de trabajo eliminada exitosamente y stock restaurado",
+        restoredProducts: productDetails.length
+      });
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error en deleteWorkOrder:", error.stack);

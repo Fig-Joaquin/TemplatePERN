@@ -1,5 +1,5 @@
 // src/components/companyList.tsx
-import type { Company, brand } from "../../types/interfaces";
+import type { Company, Brand } from "../../types/interfaces";
 import { Button } from "@/components/ui/button";
 import VehicleList from "../vehicleList";
 import RutFormatter from "../RutFormatter";
@@ -10,7 +10,7 @@ interface CompanyListProps {
   companies: Company[];
   handleEdit: (company: Company) => void;
   handleDelete: (companyId: number) => void;
-  brands?: brand[];
+  brands?: Brand[];
 }
 
 const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handleDelete, brands }) => {
@@ -38,9 +38,17 @@ const CompanyList: React.FC<CompanyListProps> = ({ companies, handleEdit, handle
               <TableCell>+{company.phone ?? "No hay información"}</TableCell>
               <TableCell>
                 {company.vehicles && company.vehicles.length > 0 ? (
-                  <VehicleList vehicles={company.vehicles} brands={brands} />
+                  <VehicleList
+                    vehicles={company.vehicles}
+                    brands={brands}
+                    companyId={company.company_id}
+                  />
                 ) : (
-                  "No hay vehículos"
+                  <VehicleList
+                    vehicles={[]}
+                    brands={brands}
+                    companyId={company.company_id}
+                  />
                 )}
               </TableCell>
               <TableCell className="text-center">

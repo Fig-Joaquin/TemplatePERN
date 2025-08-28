@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
-import { TipoGasto } from "../entities/tipoGasto";
+import { ExpenseType } from "../entities/tipoGasto";
 import { TipoGastoSchema } from "../schema/work/tipoGastoValidator";
 
-const tipoGastoRepository = AppDataSource.getRepository(TipoGasto);
+const tipoGastoRepository = AppDataSource.getRepository(ExpenseType);
 
 export const getAllTiposGasto = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
