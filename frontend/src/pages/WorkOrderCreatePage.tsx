@@ -1,45 +1,41 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, } from "react";
+import { useLocation } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WorkOrderWithQuotation from "@/components/workOrders/WorkOrderWithQuotation";
 import WorkOrderWithoutQuotation from "@/components/workOrders/WorkOrderWithoutQuotation";
 import { motion } from "framer-motion";
 
 const WorkOrderCreatePage = () => {
-  const [selectedFlow, setSelectedFlow] = useState<"withQuotation" | "withoutQuotation" | null>(null);
-
-  if (!selectedFlow) {
-    return (
-      <motion.div 
-        className="container mx-auto p-6 flex flex-col items-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-2xl font-bold mb-4">Selecciona el tipo de orden de trabajo</h2>
-        <motion.div 
-          className="space-x-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <Button onClick={() => setSelectedFlow("withQuotation")}>Con Cotización</Button>
-          <Button onClick={() => setSelectedFlow("withoutQuotation")}>Sin Cotización</Button>
-        </motion.div>
-      </motion.div>
-    );
-  }
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const vehicleIdFromUrl = queryParams.get('vehicleId');
+  const withoutQuotation = queryParams.get('withoutQuotation') === 'true';
+  
+  const [activeTab, setActiveTab] = useState(withoutQuotation ? "without" : "with");
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      className="container mx-auto p-6"
     >
-      {selectedFlow === "withQuotation" ? (
-        <WorkOrderWithQuotation />
-      ) : (
-        <WorkOrderWithoutQuotation />
-      )}
+      <h1 className="text-3xl font-bold mb-6">Crear Orden de Trabajo</h1>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger className={activeTab === "with" ? "bg-primary text-destructive-foreground font-bold scale-105 shadow-md" : ""} value="with">Con Cotización</TabsTrigger>
+          <TabsTrigger className={activeTab === "without" ? "bg-primary text-destructive-foreground font-bold scale-105 shadow-md" : ""} value="without">Sin Cotización</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="with">
+          <WorkOrderWithQuotation preselectedVehicleId={vehicleIdFromUrl ? Number(vehicleIdFromUrl) : undefined} />
+        </TabsContent>
+        
+        <TabsContent value="without">
+          <WorkOrderWithoutQuotation preselectedVehicleId={vehicleIdFromUrl ? Number(vehicleIdFromUrl) : undefined} />
+        </TabsContent>
+      </Tabs>
     </motion.div>
   );
 };

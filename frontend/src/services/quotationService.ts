@@ -1,7 +1,7 @@
 import api from "../utils/axiosConfig"
 import type { Quotation } from "../types/interfaces"
 
-export const fetchQuotations = async (): Promise<Quotation[]> => {
+export const fetchQuotations = async (_quotationsData: Quotation[]): Promise<Quotation[]> => {
   const { data } = await api.get<Quotation[]>("/quotations")
   return data
 }

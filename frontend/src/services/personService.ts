@@ -35,3 +35,7 @@ export const getPersonById = async (id: number): Promise<Person> => {
   return response.data;
 };
 
+export const deletePerson = async (id: number) => {
+  return await api.delete(`/persons/${id}`);
+};
+

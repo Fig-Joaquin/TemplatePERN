@@ -6,7 +6,7 @@ import { Plus, Search, Users } from "lucide-react"
 import ClientList from "../components/clientList"
 import ClientForm from "../components/clientForm"
 import type { Person, Vehicle } from "../types/interfaces"
-import { createPerson, updatePerson, fetchPersonsClient } from "../services/personService"
+import { createPerson, updatePerson, fetchPersonsClient, deletePerson } from "../services/personService"
 import { fetchVehiclesByPersonId } from "../services/vehicleService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -164,7 +164,7 @@ const ClientPage = () => {
   const handleConfirmDelete = async () => {
     if (clientToDelete !== null) {
       try {
-        await updatePerson(clientToDelete, { person_type: "inactive" })
+        await deletePerson(clientToDelete)
         toast.success("Cliente eliminado exitosamente")
         fetchData()
       } catch (error: any) {
@@ -276,15 +276,28 @@ const ClientPage = () => {
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar Eliminación</DialogTitle>
+            <DialogTitle className="text-red-600">¡Advertencia! Eliminación Permanente</DialogTitle>
           </DialogHeader>
-          <p className="text-center">¿Estás seguro de eliminar este cliente?</p>
+          <div className="space-y-4">
+            <p className="text-center font-medium">¿Estás seguro de eliminar este cliente?</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
+              <p><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Todos los datos personales del cliente</li>
+                <li>Todos sus vehículos registrados</li>
+                <li>Historiales de kilometraje</li>
+                <li>Cotizaciones y órdenes de trabajo asociadas</li>
+                <li>Pagos y registros de deudores</li>
+              </ul>
+              <p className="mt-2 font-semibold">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
           <div className="flex justify-end mt-4 gap-2">
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
-              Eliminar
+              Eliminar permanentemente
             </Button>
           </div>
         </DialogContent>
