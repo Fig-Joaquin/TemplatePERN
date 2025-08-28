@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { Person } from "../entities/personsEntity";
 import { PersonSchema, UpdatePersonSchema } from "../schema/personsValidator";
+import { Vehicle } from "../entities/vehicles/vehicleEntity";
 
 const personRepository = AppDataSource.getRepository(Person);
 
@@ -133,34 +134,110 @@ export const updatePerson = async (req: Request, res: Response, _next: NextFunct
 };
 
 export const deletePerson = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
     try {
         const { id } = req.params;
+        const personId = parseInt(id);
         
-        // Delete associated mileage_history for the vehicles of the person
-        await AppDataSource.createQueryBuilder()
-            .delete()
-            .from("mileage_history")
-            .where("vehicle_id IN (SELECT vehicle_id FROM vehicles WHERE person_id = :id)", { id: parseInt(id) })
-            .execute();
+        // 1. Obtener todos los vehículos de la persona
+        const vehicleRepository = AppDataSource.getRepository(Vehicle);
+        const vehicles = await vehicleRepository.find({
+            where: { owner: { person_id: personId } }
+        });
         
-        // Delete associated vehicles
-        await AppDataSource.createQueryBuilder()
-            .delete()
-            .from("vehicles")
-            .where("person_id = :id", { id: parseInt(id) })
-            .execute();
+        const vehicleIds = vehicles.map(v => v.vehicle_id);
         
-        const result = await personRepository.delete(parseInt(id));
+        if (vehicleIds.length > 0) {
+            // 2. Eliminar registros de kilometraje
+            await queryRunner.manager.query(
+                `DELETE FROM mileage_history WHERE vehicle_id IN (${vehicleIds.join(',')})`
+            );
+            
+            // 3. Eliminar pagos relacionados con órdenes de trabajo
+            await queryRunner.manager.query(
+                `DELETE FROM work_payments 
+                 WHERE work_order_id IN (
+                     SELECT work_order_id FROM work_orders WHERE vehicle_id IN (${vehicleIds.join(',')})
+                 )`
+            );
+            
+            // 4. Eliminar deudores relacionados con órdenes de trabajo
+            await queryRunner.manager.query(
+                `DELETE FROM debtors 
+                 WHERE work_order_id IN (
+                     SELECT work_order_id FROM work_orders WHERE vehicle_id IN (${vehicleIds.join(',')})
+                 )`
+            );
+            
+            // 5. Eliminar registros de técnicos asignados a órdenes de trabajo
+            await queryRunner.manager.query(
+                `DELETE FROM work_order_technicians 
+                 WHERE work_order_id IN (
+                     SELECT work_order_id FROM work_orders WHERE vehicle_id IN (${vehicleIds.join(',')})
+                 )`
+            );
+            
+            // 6. Eliminar detalles de productos de trabajo relacionados con órdenes de trabajo
+            await queryRunner.manager.query(
+                `DELETE FROM work_product_details 
+                 WHERE work_order_id IN (
+                     SELECT work_order_id FROM work_orders WHERE vehicle_id IN (${vehicleIds.join(',')})
+                 )`
+            );
+            
+            // 7. Primero eliminar órdenes de trabajo (antes que las cotizaciones)
+            await queryRunner.manager.query(
+                `DELETE FROM work_orders WHERE vehicle_id IN (${vehicleIds.join(',')})`
+            );
+            
+            // 8. Eliminar detalles de productos de trabajo relacionados con cotizaciones
+            await queryRunner.manager.query(
+                `DELETE FROM work_product_details 
+                 WHERE quotation_id IN (
+                     SELECT quotation_id FROM quotations WHERE vehicle_id IN (${vehicleIds.join(',')})
+                 )`
+            );
+            
+            // 9. Ahora sí eliminar cotizaciones (después de eliminar órdenes de trabajo)
+            await queryRunner.manager.query(
+                `DELETE FROM quotations WHERE vehicle_id IN (${vehicleIds.join(',')})`
+            );
+            
+            // 10. Finalmente eliminar los vehículos
+            await queryRunner.manager.query(
+                `DELETE FROM vehicles WHERE vehicle_id IN (${vehicleIds.join(',')})`
+            );
+        }
+        
+        // 11. Eliminar la persona
+        const result = await queryRunner.manager.delete("persons", { person_id: personId });
+        
+        // Confirmar la transacción
+        await queryRunner.commitTransaction();
         
         if (result.affected === 0) {
             res.status(404).json({ message: "Persona no encontrada" });
             return;
         }
 
-        res.status(204).send();
-        return;
+        res.status(200).json({ 
+            message: "Cliente y todos sus datos asociados eliminados exitosamente",
+            deletedVehicles: vehicles.length
+        });
     } catch (error) {
-        res.status(500).json({ message: "Error al eliminar persona", error });
-        return;
+        // Si hay algún error, deshacer todos los cambios
+        await queryRunner.rollbackTransaction();
+        
+        console.error("Error al eliminar persona:", error);
+        res.status(500).json({ 
+            message: "Error al eliminar persona", 
+            error: error instanceof Error ? error.message : String(error)
+        });
+    } finally {
+        // Liberar el queryRunner
+        await queryRunner.release();
     }
 };

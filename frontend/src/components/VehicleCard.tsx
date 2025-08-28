@@ -1,73 +1,83 @@
-import type { Quotation } from "../types/interfaces"
+import { Car, Edit, Trash2, FileText, Wrench } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Car } from "lucide-react"
-import { formatQuantity } from "@/utils/formatQuantity"
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import type { Vehicle } from "../types/interfaces"
+import { useNavigate } from "react-router-dom"
 
 interface VehicleCardProps {
-  vehicle: Quotation["vehicle"]
+  vehicle: Vehicle
   onEdit?: () => void
   onDelete?: () => void
   showActions?: boolean
 }
 
-export const VehicleCard = ({ vehicle, onEdit, onDelete, showActions = false }: VehicleCardProps) => {
-  if (!vehicle) return null
+export function VehicleCard({ vehicle, onEdit, onDelete, showActions = false }: VehicleCardProps) {
+  const navigate = useNavigate()
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="bg-primary/10">
-        <CardTitle className="flex items-center gap-2">
-          <Car className="w-5 h-5" />
-          {vehicle.license_plate}
-          <Badge variant="secondary">
-            {vehicle.model.brand.brand_name} {vehicle.model.model_name}
+    <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+      <CardContent className="flex-1 p-6">
+        <div className="mb-4 flex justify-between items-center">
+          <Badge variant="outline" className="text-lg font-semibold px-3 py-1 flex items-center gap-2">
+            <Car className="w-4 h-4" />
+            {vehicle.license_plate}
           </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-4 space-y-2">
-        {vehicle.year && (
-          <p className="text-sm">
-            <span className="font-medium">Año:</span> {vehicle.year}
-          </p>
-        )}
-        <p className="text-sm">
-          <span className="font-medium">Color:</span> {vehicle.color}
-        </p>
-        <p className="text-sm">
-          <span className="font-medium">Estado:</span>{" "}
           <Badge variant={vehicle.vehicle_status === "running" ? "secondary" : "destructive"}>
             {vehicle.vehicle_status === "running" ? "Funcionando" : "Averiado"}
           </Badge>
-        </p>
-        <p className="text-sm">
-          <span className="font-medium">Propietario:</span>
-          {vehicle.owner
-            ? ` ${vehicle.owner.name} ${vehicle.owner.first_surname}`
-            : ` Empresa: ${vehicle.company?.name}`}
-        </p>
-        <p className="text-sm">
-          <span className="font-medium">Kilometraje actual:</span>{" "}
-          {vehicle.mileage_history && vehicle.mileage_history.length > 0
-            ? formatQuantity(vehicle.mileage_history[vehicle.mileage_history.length - 1].current_mileage) + " km"
-            : "N/A"}
-        </p>
+        </div>
+
+        <div className="space-y-2">
+          <p className="font-medium">
+            {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {vehicle.owner
+              ? `Dueño: ${vehicle.owner.name} ${vehicle.owner.first_surname || ""}`
+              : vehicle.company
+              ? `Empresa: ${vehicle.company.name}`
+              : "Sin propietario"}
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {vehicle.year && <Badge variant="outline">Año: {vehicle.year}</Badge>}
+            {vehicle.color && <Badge variant="outline">Color: {vehicle.color}</Badge>}
+          </div>
+        </div>
       </CardContent>
+
       {showActions && (
-        <CardFooter className="flex justify-end space-x-2 bg-muted/50">
-          {onEdit && (
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit className="w-4 h-4 mr-2" />
+        <CardFooter className="border-t p-4 bg-muted/5 flex-wrap gap-2">
+          <div className="flex gap-2 flex-wrap w-full">
+            <Button variant="default" size="sm" onClick={onEdit} className="flex-1">
+              <Edit className="w-4 h-4 mr-1" />
               Editar
             </Button>
-          )}
-          {onDelete && (
-            <Button variant="destructive" size="sm" onClick={onDelete}>
-              <Trash2 className="w-4 h-4 mr-2" />
+            <Button variant="destructive" size="sm" onClick={onDelete} className="flex-1">
+              <Trash2 className="w-4 h-4 mr-1" />
               Eliminar
             </Button>
-          )}
+
+            {/* Nuevos botones para crear cotización y orden de trabajo */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2 bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+              onClick={() => navigate(`/admin/cotizaciones/nuevo?vehicleId=${vehicle.vehicle_id}`)}
+            >
+              <FileText className="w-4 h-4 mr-1" />
+              Crear Cotización
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-1 bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+              onClick={() => navigate(`/admin/nueva-orden-trabajo?vehicleId=${vehicle.vehicle_id}&withoutQuotation=true`)}
+            >
+              <Wrench className="w-4 h-4 mr-1" />
+              Crear Orden de Trabajo
+            </Button>
+          </div>
         </CardFooter>
       )}
     </Card>

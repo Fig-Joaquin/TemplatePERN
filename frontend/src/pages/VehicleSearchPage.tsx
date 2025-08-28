@@ -29,6 +29,7 @@ const VehicleSearchPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedQuotations, setExpandedQuotations] = useState<Set<number>>(new Set());
   const [expandedWorkOrders, setExpandedWorkOrders] = useState<Set<number>>(new Set());
+  const [activeTab, setActiveTab] = useState<string>("quotations");
 
   const handleSearch = async () => {
     if (!licensePlate.trim()) {
@@ -447,14 +448,13 @@ const VehicleSearchPage = () => {
               </CardContent>
             </Card>
 
-            {/* Tabs para cotizaciones y órdenes de trabajo */}
-            <Tabs defaultValue="quotations" className="w-full">
+            <Tabs defaultValue="quotations" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="quotations" className="flex items-center gap-2">
+                <TabsTrigger className={activeTab === 'quotations' ? 'bg-primary text-destructive-foreground font-bold scale-105 shadow-md' : ''} value="quotations" >
                   <FileText className="w-4 h-4" />
                   Cotizaciones ({quotations.length})
                 </TabsTrigger>
-                <TabsTrigger value="workorders" className="flex items-center gap-2">
+                <TabsTrigger className={activeTab === 'workorders' ? 'bg-primary text-destructive-foreground font-bold scale-105 shadow-md' : ''} value="workorders" >
                   <Wrench className="w-4 h-4" />
                   Órdenes de Trabajo ({workOrders.length})
                 </TabsTrigger>

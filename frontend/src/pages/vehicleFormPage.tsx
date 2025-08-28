@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { Car, Save, ArrowLeft, Plus, Clock } from "lucide-react";
+import { Car, Save, ArrowLeft, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -76,8 +76,8 @@ export default function VehicleFormPage() {
   // Estados para búsqueda
   const [personSearchTerm, setPersonSearchTerm] = useState("");
   const [companySearchTerm, setCompanySearchTerm] = useState("");
-  const [showRecentPersons, setShowRecentPersons] = useState(false);
-  const [showRecentCompanies, setShowRecentCompanies] = useState(false);
+  // const [showRecentPersons, setShowRecentPersons] = useState(false);
+  // const [showRecentCompanies, setShowRecentCompanies] = useState(false);
 
   // Estados para modales de creación
   const [createPersonModalOpen, setCreatePersonModalOpen] = useState(false);
@@ -231,8 +231,20 @@ export default function VehicleFormPage() {
         number_phone: "",
         person_type: "cliente"
       });
+
+      // Luego cerrar el modal
       setCreatePersonModalOpen(false);
-      toast.success("Cliente creado exitosamente y seleccionado automáticamente");
+
+      // IMPORTANTE: Actualizar la selección después de un pequeño retraso
+      // para asegurar que el UI se ha actualizado correctamente
+      setTimeout(() => {
+        setFormData(prev => ({
+          ...prev,
+          person_id: newPerson.person_id.toString()
+        }));
+        toast.success("Cliente creado exitosamente y seleccionado automáticamente");
+      }, 100);
+
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || "Error al crear cliente"
@@ -273,8 +285,20 @@ export default function VehicleFormPage() {
         email: "",
         phone: ""
       });
+
+      // Luego cerrar el modal
       setCreateCompanyModalOpen(false);
-      toast.success("Empresa creada exitosamente y seleccionada automáticamente");
+
+      // IMPORTANTE: Actualizar la selección después de un pequeño retraso
+      // para asegurar que el UI se ha actualizado correctamente
+      setTimeout(() => {
+        setFormData(prev => ({
+          ...prev,
+          company_id: newCompany.company_id.toString()
+        }));
+        toast.success("Empresa creada exitosamente y seleccionada automáticamente");
+      }, 100);
+
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || "Error al crear empresa"
@@ -342,41 +366,31 @@ export default function VehicleFormPage() {
       true
   );
 
-  // Filtrar personas basado en el término de búsqueda y filtro de recientes
+  // Modificar el filtrado de personas (sin ordenación especial por recientes)
   const filteredPersons = persons.filter((person) => {
     const searchValue = personSearchTerm.toLowerCase();
-    const matchesSearch = (
+    return (
       person.name?.toLowerCase().includes(searchValue) ||
       person.first_surname?.toLowerCase().includes(searchValue) ||
       person.second_surname?.toLowerCase().includes(searchValue) ||
       person.rut?.toLowerCase().includes(searchValue) ||
       person.number_phone?.toLowerCase().includes(searchValue)
     );
-    return matchesSearch;
   }).sort((a, b) => {
-    if (showRecentPersons) {
-      // Ordenar por ID descendente (más recientes primero)
-      return (b.person_id || 0) - (a.person_id || 0);
-    }
-    // Ordenar alfabéticamente por nombre
+    // Ordenar alfabéticamente por nombre (eliminar ordenación por recientes)
     return `${a.name} ${a.first_surname}`.localeCompare(`${b.name} ${b.first_surname}`);
   });
 
-  // Filtrar empresas basado en el término de búsqueda y filtro de recientes
+  // Modificar el filtrado de empresas (sin ordenación especial por recientes)
   const filteredCompanies = companies.filter((company) => {
     const searchValue = companySearchTerm.toLowerCase();
-    const matchesSearch = (
+    return (
       company.name?.toLowerCase().includes(searchValue) ||
       company.rut?.toLowerCase().includes(searchValue) ||
       company.phone?.toLowerCase().includes(searchValue)
     );
-    return matchesSearch;
   }).sort((a, b) => {
-    if (showRecentCompanies) {
-      // Ordenar por ID descendente (más recientes primero)
-      return (b.company_id || 0) - (a.company_id || 0);
-    }
-    // Ordenar alfabéticamente por nombre
+    // Ordenar alfabéticamente por nombre (eliminar ordenación por recientes)
     return a.name.localeCompare(b.name);
   });
 
@@ -637,7 +651,7 @@ export default function VehicleFormPage() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-[400px]">
-                      <div className="p-3 sticky top-0 bg-card z-10 border-b space-y-3">
+                      <div className="p-3 sticky top-0 bg-card z-10 border-b">
                         <Input
                           type="text"
                           placeholder="Buscar por nombre, RUT, teléfono..."
@@ -784,7 +798,7 @@ export default function VehicleFormPage() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-[400px]">
-                      <div className="p-3 sticky top-0 bg-card z-10 border-b space-y-3">
+                      <div className="p-3 sticky top-0 bg-card z-10 border-b">
                         <Input
                           type="text"
                           placeholder="Buscar por nombre, RUT, teléfono..."

@@ -21,7 +21,7 @@ export class WorkProductDetail {
     @RelationId((detail: WorkProductDetail) => detail.work_order)
     work_order_id!: number;
 
-    @ManyToOne(() => Product, { nullable: false })
+    @ManyToOne(() => Product, { nullable: false, onDelete: "RESTRICT" })
     @JoinColumn({ name: "product_id" })
     product!: Product;
     

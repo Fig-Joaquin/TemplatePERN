@@ -18,6 +18,7 @@ import { FileText, Plus, Edit } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
+import { Badge } from "@/components/ui/badge"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
@@ -29,17 +30,17 @@ export default function QuotationPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [quotationToDelete, setQuotationToDelete] = useState<number | null>(null)
 
-  // Helper function to translate status
-  const translateStatus = (status: string): string => {
+  // Helper function to translate status - vamos a modificar esto para que también devuelva la variante
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'Aprobada';
+        return { label: 'Aprobada', variant: 'success', className: 'bg-[#16a34a] text-white border-[#16a34a]' };
       case 'rejected':
-        return 'Rechazada';
+        return { label: 'Rechazada', variant: 'destructive', className: 'bg-[#ef4444] text-white border-[#ef4444]' };
       case 'pending':
-        return 'Pendiente';
+        return { label: 'Pendiente', variant: 'warning', className: 'bg-[#fbbf24] text-white border-[#fbbf24]' };
       default:
-        return status;
+        return { label: status, variant: 'default', className: '' };
     }
   }
 
@@ -109,85 +110,93 @@ export default function QuotationPage() {
                 <DialogTrigger asChild>
                   <Button variant="outline">Ver detalles</Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card text-card-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="bg-card text-card-foreground max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Detalles de la Cotización</DialogTitle>
                   </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-bold mb-2">Información de la cotización</h4>
-                      <p>ID: {quotation.quotation_id}</p>
-                      <p>Descripción: {quotation.description}</p>
-                      <p>Estado: {translateStatus(quotation.quotation_status)}</p>
-                      <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
-                      <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-bold mb-2">Información del vehículo</h4>
-                      <VehicleCard vehicle={quotation.vehicle} />
-                    </div>
-                    <div className="col-span-2">
-                      <h4 className="font-bold mb-2">Detalles de productos</h4>
-                      <ScrollArea className="h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Producto</TableHead>
-                              <TableHead>Cantidad</TableHead>
-                              <TableHead>Precio Unitario</TableHead>
-                              <TableHead>Mano de Obra</TableHead>
-                              <TableHead>Subtotal</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {quotation.details.map((detail, index) => {
-                              // Get tax rate from detail
-                              const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
-                              // Get profit margin from product
-                              const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
+                  
+                  {/* Contenido principal con scroll */}
+                  <div className="overflow-y-auto flex-1 pr-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-bold mb-2">Información de la cotización</h4>
+                        <p>ID: {quotation.quotation_id}</p>
+                        <p>Descripción: {quotation.description}</p>
+                        <p>Estado: <Badge className={getStatusBadge(quotation.quotation_status).className}>
+                          {getStatusBadge(quotation.quotation_status).label}
+                        </Badge></p>
+                        <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
+                        <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold mb-2">Información del vehículo</h4>
+                        <VehicleCard vehicle={quotation.vehicle} />
+                      </div>
+                      <div className="col-span-2">
+                        <h4 className="font-bold mb-2">Detalles de productos</h4>
+                        <ScrollArea className="h-[300px]">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Producto</TableHead>
+                                <TableHead>Cantidad</TableHead>
+                                <TableHead>Precio Unitario</TableHead>
+                                <TableHead>Mano de Obra</TableHead>
+                                <TableHead>Subtotal</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {quotation.details.map((detail, index) => {
+                                // Get tax rate from detail
+                                const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+                                // Get profit margin from product
+                                const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
 
-                              // Calculate base price with profit margin
-                              const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
+                                // Calculate base price with profit margin
+                                const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
 
-                              // Calculate subtotal before tax (including quantity and labor)
-                              const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
+                                // Calculate subtotal before tax (including quantity and labor)
+                                const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
 
-                              // Calculate final price with tax
-                              const finalPrice = subtotalBeforeTax * (1 + taxRate);
+                                // Calculate final price with tax
+                                const finalPrice = subtotalBeforeTax * (1 + taxRate);
 
-                              return (
-                                <TableRow key={index}>
-                                  <TableCell>{detail.product?.product_name ?? "N/A"}</TableCell>
-                                  <TableCell>{detail.quantity}</TableCell>
-                                  <TableCell>{formatPriceCLP(priceWithMargin)}</TableCell>
-                                  <TableCell>{formatPriceCLP(Number(detail.labor_price))}</TableCell>
-                                  <TableCell>
-                                    {formatPriceCLP(finalPrice)}
-                                    <span className="text-xs text-gray-500 block">(IVA incluido)</span>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                            <TableRow className="font-bold bg-muted/50">
-                              <TableCell colSpan={4} className="text-right">Total con IVA:</TableCell>
-                              <TableCell>
-                                {formatPriceCLP(
-                                  quotation.details.reduce((total, detail) => {
-                                    const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
-                                    const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
-                                    const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
-                                    const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
-                                    return total + (subtotalBeforeTax * (1 + taxRate));
-                                  }, 0)
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </ScrollArea>
+                                return (
+                                  <TableRow key={index}>
+                                    <TableCell>{detail.product?.product_name ?? "N/A"}</TableCell>
+                                    <TableCell>{detail.quantity}</TableCell>
+                                    <TableCell>{formatPriceCLP(priceWithMargin)}</TableCell>
+                                    <TableCell>{formatPriceCLP(Number(detail.labor_price))}</TableCell>
+                                    <TableCell>
+                                      {formatPriceCLP(finalPrice)}
+                                      <span className="text-xs text-gray-500 block">(IVA incluido)</span>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              <TableRow className="font-bold bg-muted/50">
+                                <TableCell colSpan={4} className="text-right">Total con IVA:</TableCell>
+                                <TableCell>
+                                  {formatPriceCLP(
+                                    quotation.details.reduce((total, detail) => {
+                                      const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
+                                      const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+                                      const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
+                                      const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
+                                      return total + (subtotalBeforeTax * (1 + taxRate));
+                                    }, 0)
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                  
+                  {/* Botones siempre visibles al final del modal */}
+                  <div className="mt-4 flex justify-end gap-2 pt-4 border-t">
                     <Button
                       variant="outline"
                       onClick={async () => {

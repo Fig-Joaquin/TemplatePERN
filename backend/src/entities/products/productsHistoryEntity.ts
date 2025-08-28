@@ -7,7 +7,7 @@ export class ProductHistory {
     @PrimaryGeneratedColumn()
     product_history_id!: number;
 
-    @ManyToOne(() => Product, (product) => product.history, { nullable: false })
+    @ManyToOne(() => Product, (product) => product.history, { nullable: false, onDelete: "CASCADE" })
     @JoinColumn({ name: "product_id" })
     product!: Product;
 

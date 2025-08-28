@@ -1,13 +1,15 @@
 /* eslint-disable no-console */
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
-import { Product, ProductType, Supplier, StockProduct } from "../../entities";
+import { Product, ProductType, Supplier, StockProduct, WorkProductDetail, ProductPurchase } from "../../entities";
 import { ProductSchema } from "../../schema/products/productValidator";
 
 const productRepository = AppDataSource.getRepository(Product);
 const productTypeRepository = AppDataSource.getRepository(ProductType);
 const supplierRepository = AppDataSource.getRepository(Supplier);
 const stockProductRepository = AppDataSource.getRepository(StockProduct);
+const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
+const productPurchaseRepository = AppDataSource.getRepository(ProductPurchase);
 
 export const getAllProducts = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -137,13 +139,82 @@ export const updateProduct = async (req: Request, res: Response, _next: NextFunc
 export const deleteProduct = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         const id = parseInt(req.params.id);
-        const result = await productRepository.delete(id);
-        if (result.affected === 0) {
+        
+        // Buscar el producto con todas sus relaciones
+        const product = await productRepository.findOne({
+            where: { product_id: id },
+            relations: ["stock", "history"]
+        });
+        
+        if (!product) {
             res.status(404).json({ message: "Producto no encontrado" });
             return;
         }
+
+        // Verificar si el producto está siendo usado en detalles de trabajo
+        const workDetails = await workProductDetailRepository.find({
+            where: { product: { product_id: id } },
+            relations: ["quotation", "work_order"]
+        });
+        
+        if (workDetails.length > 0) {
+            // Construir mensaje específico sobre dónde se está usando
+            const quotationCount = workDetails.filter(detail => detail.quotation).length;
+            const workOrderCount = workDetails.filter(detail => detail.work_order).length;
+            
+            let usageMessage = "No se puede eliminar el producto porque está siendo usado en: ";
+            const usages = [];
+            
+            if (quotationCount > 0) {
+                usages.push(`${quotationCount} cotización(es)`);
+            }
+            if (workOrderCount > 0) {
+                usages.push(`${workOrderCount} orden(es) de trabajo`);
+            }
+            
+            usageMessage += usages.join(" y ");
+            
+            res.status(409).json({ 
+                message: usageMessage,
+                details: {
+                    quotations: quotationCount,
+                    workOrders: workOrderCount,
+                    total: workDetails.length
+                }
+            });
+            return;
+        }
+
+        // Verificar si el producto está siendo usado en compras
+        const productPurchases = await productPurchaseRepository.find({
+            where: { product: { product_id: id } }
+        });
+        
+        if (productPurchases.length > 0) {
+            res.status(409).json({ 
+                message: "No se puede eliminar el producto porque tiene historial de compras asociado" 
+            });
+            return;
+        }
+
+        // Eliminar el historial del producto manualmente si existe
+        if (product.history && product.history.length > 0) {
+            for (const historyItem of product.history) {
+                await productRepository.manager.remove(historyItem);
+            }
+        }
+
+        // Eliminar el stock del producto manualmente si existe
+        if (product.stock) {
+            await stockProductRepository.remove(product.stock);
+        }
+
+        // Ahora eliminar el producto
+        await productRepository.remove(product);
+        
         res.status(204).send();
     } catch (error) {
+        console.error("Error al eliminar producto:", error);
         res.status(500).json({ message: "Error interno al eliminar el producto", error });
     }
 };

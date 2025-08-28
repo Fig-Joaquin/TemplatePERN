@@ -9,7 +9,21 @@ import { VehicleCard } from "@/components/VehicleCard"
 import { Badge } from "@/components/ui/badge"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 
-// Function to translate status to Spanish
+// Función auxiliar para obtener información del estado con estilos
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'approved':
+      return { label: 'Aprobado', className: 'bg-[#16a34a] text-white border-[#16a34a]' };
+    case 'rejected':
+      return { label: 'Rechazado', className: 'bg-[#ef4444] text-white border-[#ef4444]' };
+    case 'pending':
+      return { label: 'Pendiente', className: 'bg-[#fbbf24] text-white border-[#fbbf24]' };
+    default:
+      return { label: status, className: '' };
+  }
+}
+
+// Function to translate status to Spanish (mantenemos esta por compatibilidad)
 const translateStatus = (status: string): string => {
   const translations: Record<string, string> = {
     "approved": "Aprobado",
@@ -37,7 +51,8 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
     header: "Estado",
     cell: ({ row }) => {
       const status = row.getValue("quotation_status") as string
-      return <Badge variant={status === "approved" ? "default" : "secondary"}>{translateStatus(status)}</Badge>
+      const badge = getStatusBadge(status)
+      return <Badge className={badge.className}>{badge.label}</Badge>
     },
   },
   {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { toast } from "react-toastify"
 import { Check, ChevronsUpDown, FileText, Car, Package, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -51,37 +51,48 @@ interface SelectedProduct {
 }
 
 const QuotationCreatePage = () => {
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
-  const [vehicleQuery] = useState("")
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [stockProducts, setStockProducts] = useState<StockProduct[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
-  const [showProductModal, setShowProductModal] = useState(false)
-  const [description, setDescription] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [open, setOpen] = useState(false)
-  const [taxRate, setTaxRate] = useState<number>(0)
-  const navigate = useNavigate()
-
-  const [selectedTabIndex, setSelectedTabIndex] = useState(0)
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const vehicleIdFromUrl = queryParams.get('vehicleId');
+  
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [vehicleQuery] = useState("");
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [taxRate, setTaxRate] = useState<number>(0);
+  const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
   useEffect(() => {
     const fetchVehiclesData = async () => {
       try {
-        const res = await fetchVehicles()
-        setVehicles(res)
+        const res = await fetchVehicles();
+        setVehicles(res);
+        
+        // Si hay un vehicleId en la URL, seleccionar ese vehículo
+        if (vehicleIdFromUrl) {
+          const vehicleFromUrl = res.find(v => v.vehicle_id === Number(vehicleIdFromUrl));
+          if (vehicleFromUrl) {
+            setSelectedVehicle(vehicleFromUrl);
+          }
+        }
       } catch (error) {
-        toast.error("Error al cargar vehículos")
+        toast.error("Error al cargar vehículos");
       }
-    }
-
+    };
+    
     const fetchProductsData = async () => {
       try {
-        const res = await fetchProducts()
-        setProducts(res)
+        const res = await fetchProducts();
+        setProducts(res);
       } catch (error) {
-        toast.error("Error al cargar productos")
+        toast.error("Error al cargar productos");
       }
     }
 
@@ -94,15 +105,15 @@ const QuotationCreatePage = () => {
       }
     }
 
-    fetchVehiclesData()
-    fetchProductsData()
-    fetchStockProductsData()
+    fetchVehiclesData();
+    fetchProductsData();
+    fetchStockProductsData();
     fetchTax().then((rate) => {
       if (rate !== undefined) {
-        setTaxRate(rate)
+        setTaxRate(rate);
       }
-    })
-  }, [])
+    });
+  }, [vehicleIdFromUrl]);
 
   const filteredVehicles = vehicles.filter((v) => {
     const matchesQuery =
@@ -231,10 +242,16 @@ const QuotationCreatePage = () => {
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="0" className="data-[state=active]:bg-primary">
+                  <TabsTrigger 
+                    value="0" 
+                    className={selectedTabIndex === 0 ? "bg-primary text-destructive-foreground font-bold scale-105 shadow-md" : ""}
+                  >
                     Personas
                   </TabsTrigger>
-                  <TabsTrigger value="1" className="data-[state=active]:bg-primary">
+                  <TabsTrigger 
+                    value="1" 
+                    className={selectedTabIndex === 1 ? "bg-primary text-destructive-foreground font-bold scale-105 shadow-md" : ""}
+                  >
                     Empresas
                   </TabsTrigger>
                 </TabsList>

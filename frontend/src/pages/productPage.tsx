@@ -179,11 +179,28 @@ const ProductPage = () => {
       setProducts(products.filter((p) => p.product_id !== selectedProduct.product_id))
     } catch (error: any) {
       console.log(error)
-      toast.error(
-        [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
-          .filter(Boolean)
-          .join(", ") || "Error al eliminar el producto",
-      )
+      
+      // Manejar específicamente el error 409 (conflicto)
+      if (error.response?.status === 409) {
+        const errorMessage = error.response?.data?.message || "No se puede eliminar el producto porque está siendo usado"
+        const details = error.response?.data?.details
+        
+        let toastMessage = errorMessage
+        if (details) {
+          toastMessage += `. Total de referencias: ${details.total}`
+        }
+        
+        toast.error(toastMessage, {
+          autoClose: 5000, // 5 segundos para leer el mensaje completo
+        })
+      } else {
+        // Para otros errores, mostrar el mensaje genérico
+        toast.error(
+          [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
+            .filter(Boolean)
+            .join(", ") || "Error al eliminar el producto",
+        )
+      }
     }
     closeModal()
   }

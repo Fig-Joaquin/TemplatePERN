@@ -28,7 +28,11 @@ interface SelectedProduct {
   laborPrice: number;
 }
 
-const WorkOrderWithoutQuotation = () => {
+interface WorkOrderWithoutQuotationProps {
+  preselectedVehicleId?: number;
+}
+
+const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuotationProps) => {
   const navigate = useNavigate();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicleQuery, setVehicleQuery] = useState("");
@@ -46,12 +50,21 @@ const WorkOrderWithoutQuotation = () => {
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
-  // Cargar vehículos, productos y stock
+  // Cargar vehículos y otros datos
   useEffect(() => {
     const fetchData = async () => {
       try {
         const vehiclesData = await fetchVehicles();
         setVehicles(vehiclesData);
+        
+        // Si hay un ID de vehículo preseleccionado, seleccionarlo
+        if (preselectedVehicleId) {
+          const preselectedVehicle = vehiclesData.find(v => v.vehicle_id === preselectedVehicleId);
+          if (preselectedVehicle) {
+            setSelectedVehicle(preselectedVehicle);
+          }
+        }
+        
         const productsData = await fetchProducts();
         setProducts(productsData);
         const stockData = await getStockProducts();
@@ -61,12 +74,13 @@ const WorkOrderWithoutQuotation = () => {
         const tax = await getTaxById(1); // IVA standard tax
         setTaxRate(tax.tax_rate / 100);
       } catch (error) {
-        toast.error("Error al cargar los datos iniciales");
+        toast.error("Error al cargar datos iniciales");
       }
     };
+    
     fetchData();
-  }, []);
-
+  }, [preselectedVehicleId]);
+  
   // Calcular totales
   const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
     const product = products.find((p) => p.product_id === productId);

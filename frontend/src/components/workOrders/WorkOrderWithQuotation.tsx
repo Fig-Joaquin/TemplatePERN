@@ -18,7 +18,11 @@ import { getTaxById } from "@/services/taxService";
 import { getChileanISOString, formatChileanDate } from "@/utils/dateUtils";
 import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput, StockProduct } from "../../types/interfaces";
 
-const WorkOrderWithQuotation = () => {
+interface WorkOrderWithQuotationProps {
+  preselectedVehicleId?: number;
+}
+
+const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotationProps) => {
   const navigate = useNavigate();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicleQuery, setVehicleQuery] = useState("");
@@ -41,17 +45,26 @@ const WorkOrderWithQuotation = () => {
       try {
         const vehiclesData = await fetchVehicles();
         setVehicles(vehiclesData);
-
-        // Fetch stock products as well
+        
+        // Si hay un ID de vehículo preseleccionado, seleccionarlo
+        if (preselectedVehicleId) {
+          const preselectedVehicle = vehiclesData.find(v => v.vehicle_id === preselectedVehicleId);
+          if (preselectedVehicle) {
+            setSelectedVehicle(preselectedVehicle);
+          }
+        }
+        
+        // Resto de la carga de datos...
         const stockData = await getStockProducts();
         setStockProducts(stockData);
       } catch (error) {
         toast.error("Error al cargar datos iniciales");
       }
     };
+    
     fetchData();
-  }, []);
-
+  }, [preselectedVehicleId]);
+  
   // Carga del tax rate
   useEffect(() => {
     const fetchTax = async () => {
@@ -69,7 +82,7 @@ const WorkOrderWithQuotation = () => {
   // Carga de cotizaciones para el vehículo seleccionado y las ordena por fecha descendente
   useEffect(() => {
     if (selectedVehicle) {
-      fetchQuotations()
+      fetchQuotations([])
         .then((allQuotations) => {
           const filtered = allQuotations.filter((q) => {
             const qVehicleId = q.vehicle_id || (q.vehicle && q.vehicle.vehicle_id);
