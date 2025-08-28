@@ -8,7 +8,7 @@ export const DebtorSchema = z.object({
     description: z.string().min(1, { message: "La descripción no puede estar vacía" }).max(255, { message: "La descripción no puede exceder los 255 caracteres" }),
     total_amount: z.number().positive().optional(),
     paid_amount: z.number().min(0).optional(),
-    payment_status: z.enum(["pending", "partial", "paid"]).optional(),
+    payment_status: z.enum(["pendiente", "parcial", "pagado"]).optional(),
     created_at: z.date().optional()
 });
 

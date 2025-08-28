@@ -26,6 +26,7 @@ export const getAllWorkOrders = async (_req: Request, res: Response, _next: Next
               "vehicle.company",
               "quotation",
               "debtors",
+              "payments",                    // Pagos asociados a la orden
               "productDetails",              // Detalles de productos asociados a la orden
               "productDetails.product",      // Producto de cada detalle
               "productDetails.quotation",    // Cotización asociada al detalle (si existe)
@@ -36,6 +37,49 @@ export const getAllWorkOrders = async (_req: Request, res: Response, _next: Next
         res.json(workOrders);
     } catch (error) {
         res.status(500).json({ message: "Error al obtener las órdenes de trabajo", error });
+    }
+};
+
+// Nuevo endpoint para obtener órdenes de trabajo disponibles para crear deudores
+export const getAvailableWorkOrdersForDebtors = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const workOrders = await workOrderRepository.find({
+            relations: [
+              "vehicle",
+              "vehicle.model",
+              "vehicle.model.brand",
+              "vehicle.owner",
+              "vehicle.company",
+              "quotation",
+              "debtors",
+              "payments"
+            ]
+        });
+
+        // Filtrar órdenes que no estén completamente pagadas
+        const availableWorkOrders = workOrders.filter(workOrder => {
+            const totalAmount = Number(workOrder.total_amount) || 0;
+            
+            // Si no hay monto total, la orden está disponible
+            if (totalAmount === 0) return true;
+            
+            // Calcular el total pagado de todos los pagos de esta orden
+            const totalPaid = workOrder.payments?.reduce((sum, payment) => {
+                const paymentAmount = Number(payment.amount_paid) || 0;
+                // Solo contar pagos que no estén cancelados
+                if (payment.payment_status !== "cancelado") {
+                    return sum + paymentAmount;
+                }
+                return sum;
+            }, 0) || 0;
+            
+            // La orden está disponible si no está completamente pagada
+            return totalPaid < totalAmount;
+        });
+
+        res.json(availableWorkOrders);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener las órdenes de trabajo disponibles", error });
     }
 };
 
