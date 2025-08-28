@@ -137,17 +137,17 @@ const QuotationCreatePage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedVehicle || !description || selectedProducts.length === 0) {
-      toast.error("Todos los campos son obligatorios")
+    if (!selectedVehicle || selectedProducts.length === 0) {
+      toast.error("Debe seleccionar un vehículo y al menos un producto")
       return
     }
     setLoading(true)
     try {
       const newQuotation: Quotation = {
         vehicle_id: selectedVehicle.vehicle_id,
-        description,
         quotation_status: "pending",
         total_price: Math.trunc(totalPrice),
+        ...(description && description.trim() !== "" && { description }),
       }
 
       const createdQuotation = await createQuotation(newQuotation)
@@ -334,7 +334,13 @@ const QuotationCreatePage = () => {
                               {/* Se muestra el margen de ganancia del producto */}
                               <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                               <p className="text-sm text-muted-foreground">
-                                Precio: {formatPriceCLP(Number(product?.sale_price))} - Stock: {stockProduct?.quantity}
+                                Precio: {formatPriceCLP(Number(product?.sale_price))} - Stock: {stockProduct?.quantity || 0}
+                                {(!stockProduct || stockProduct.quantity === 0) && (
+                                  <span className="text-red-500 font-medium ml-1">(Sin stock)</span>
+                                )}
+                                {stockProduct && stockProduct.quantity > 0 && stockProduct.quantity < quantity && (
+                                  <span className="text-orange-500 font-medium ml-1">(Stock insuficiente)</span>
+                                )}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
@@ -347,7 +353,6 @@ const QuotationCreatePage = () => {
                                   value={quantity}
                                   onChange={(newValue) => handleProductChange(productId, newValue, laborPrice)}
                                   min={1}
-                                  max={stockProduct?.quantity}
                                   className="w-20"
                                 />
                               </div>
@@ -457,14 +462,6 @@ const QuotationCreatePage = () => {
                     <CommandGroup heading="Productos disponibles">
                       <ScrollArea className="h-[200px]">
                         {products
-                          .filter(product => {
-                            // Find the stock for this product
-                            const stockProduct = stockProducts.find(
-                              sp => sp.product?.product_id === product.product_id
-                            );
-                            // Only include products with stock quantity > 0
-                            return stockProduct && stockProduct.quantity > 0;
-                          })
                           .map((product) => {
                             const stockProduct = stockProducts.find(
                               (sp) => sp.product?.product_id === product.product_id,
@@ -501,39 +498,6 @@ const QuotationCreatePage = () => {
                                     <p className="text-sm text-muted-foreground">
                                       Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
                                       {stockProduct?.quantity || 0}
-                                    </p>
-                                  </div>
-                                </div>
-                              </CommandItem>
-                            )
-                          })}
-                      </ScrollArea>
-                    </CommandGroup>
-                    <CommandGroup heading="Productos sin stock">
-                      <ScrollArea className="h-[200px]">
-                        {products
-                          .filter(product => {
-                            // Find the stock for this product
-                            const stockProduct = stockProducts.find(
-                              sp => sp.product?.product_id === product.product_id
-                            );
-                            // Only include products with stock quantity = 0
-                            return !stockProduct || stockProduct.quantity <= 0;
-                          })
-                          .map((product) => {
-                            return (
-                              <CommandItem
-                                key={product.product_id}
-                                className="flex items-center justify-between p-2 cursor-not-allowed opacity-50"
-                                disabled={true}
-                              >
-                                <div className="flex items-center space-x-4 flex-1">
-                                  <Checkbox disabled checked={false} />
-                                  <div className="flex-1">
-                                    <p className="font-medium">{product.product_name}</p>
-                                    <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Precio: {formatPriceCLP(Number(product.sale_price))} - Stock: 0
                                     </p>
                                   </div>
                                 </div>

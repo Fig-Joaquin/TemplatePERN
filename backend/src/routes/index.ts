@@ -48,8 +48,8 @@ router.use("/companies", Companies);
 router.use("/chatbot", chatbotRoute);
 router.use("/workOrderTechnicians", workOrderTechnicianRoutes);
 router.use("/notifications", notificationRoutes);
-router.use("/gastos", gastoRoutes);
-router.use("/tiposGasto", tipoGastoRoutes);
+router.use("/company-expenses", gastoRoutes);
+router.use("/expense-types", tipoGastoRoutes);
 router.use("/paymentTypes", paymentTypeRoutes);
 router.use("/workPayments", workPaymentRoutes);
 

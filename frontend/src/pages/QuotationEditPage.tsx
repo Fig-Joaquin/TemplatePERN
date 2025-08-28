@@ -91,7 +91,7 @@ export default function EditQuotationPage() {
                 setOriginalQuotation(quotationData)
 
                 // Set form fields
-                setDescription(quotationData.description)
+                setDescription(quotationData.description || "")
                 setStatus(quotationData.quotation_status as "pending" | "approved" | "rejected")
 
                 const vehicleId = quotationData.vehicle_id || (quotationData.vehicle && quotationData.vehicle.vehicle_id)
@@ -218,33 +218,9 @@ export default function EditQuotationPage() {
         totalPrice,
     })
 
-    // Check stock availability before submitting
+    // No stock validation for quotations
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        // Validate stock for all selected products
-        for (const selectedProduct of selectedProducts) {
-            const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(selectedProduct.productId))
-            if (!stockProduct) continue
-
-            if (selectedProduct.workProductDetailId) {
-                // Para productos existentes, validar solo la diferencia
-                const originalQuantity = selectedProduct.originalQuantity || 0
-                const quantityChange = selectedProduct.quantity - originalQuantity
-
-                // Solo validamos si hay un incremento en la cantidad
-                if (quantityChange > 0 && quantityChange > stockProduct.quantity) {
-                    toast.error(`No hay suficiente stock para el producto ${products.find(p => p.product_id === selectedProduct.productId)?.product_name}`)
-                    return
-                }
-            } else {
-                // Para productos nuevos, validar la cantidad total
-                if (selectedProduct.quantity > stockProduct.quantity) {
-                    toast.error(`No hay suficiente stock para el producto ${products.find(p => p.product_id === selectedProduct.productId)?.product_name}`)
-                    return
-                }
-            }
-        }
 
         try {
             setSubmitting(true)
@@ -353,15 +329,8 @@ export default function EditQuotationPage() {
         setShowProductModal(true)
     }
 
-    // Update temp product management with stock validation
+    // Update temp product management (stock validation removed for quotations)
     const handleTempProductChange = (productId: number, quantity: number, laborPrice: number) => {
-        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
-
-        // Validate stock quantity
-        if (stockProduct && quantity > stockProduct.quantity) {
-            toast.error("No hay suficiente stock disponible")
-            return
-        }
 
         setTempSelectedProducts((prevSelectedProducts) => {
             const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
@@ -505,7 +474,7 @@ export default function EditQuotationPage() {
                         <CardContent>
                             <ScrollArea className="h-[300px] pr-4">
                                 <ul className="space-y-3">
-                                    {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice, originalQuantity, workProductDetailId }) => {
+                                    {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice, workProductDetailId }) => {
                                         const product = products.find((p) => p.product_id === Number(productId))
                                         const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
 
@@ -518,7 +487,6 @@ export default function EditQuotationPage() {
 
                                         // Calculate if this is an existing product
                                         const isExistingProduct = workProductDetailId !== undefined
-                                        const originalQty = originalQuantity || 0
 
                                         return (
                                             <li
@@ -537,7 +505,13 @@ export default function EditQuotationPage() {
                                                     </div>
                                                     <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Precio: {formatPriceCLP(unitPrice)} - Stock: {stockProduct?.quantity}
+                                                        Precio: {formatPriceCLP(unitPrice)} - Stock: {stockProduct?.quantity || 0}
+                                                        {(!stockProduct || stockProduct.quantity === 0) && (
+                                                            <span className="text-red-500 font-medium ml-1">(Sin stock)</span>
+                                                        )}
+                                                        {stockProduct && stockProduct.quantity > 0 && stockProduct.quantity < quantity && (
+                                                            <span className="text-orange-500 font-medium ml-1">(Stock insuficiente)</span>
+                                                        )}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center space-x-4">
@@ -550,9 +524,6 @@ export default function EditQuotationPage() {
                                                             value={quantity}
                                                             onChange={(newValue) => handleProductChange(productId, newValue, laborPrice)}
                                                             min={1}
-                                                            max={isExistingProduct
-                                                                ? (stockProduct?.quantity ?? 0) + originalQty // Para productos existentes, permito hasta stock actual + original
-                                                                : (stockProduct?.quantity ?? 0)} // Para nuevos, solo hasta el stock disponible
                                                             className="w-20"
                                                             disabled={submitting}
                                                         />
@@ -675,12 +646,6 @@ export default function EditQuotationPage() {
                                 <CommandGroup heading="Productos disponibles">
                                     <ScrollArea className="h-[200px]">
                                         {products
-                                            .filter((product) => {
-                                                // Find the stock for this product
-                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
-                                                // Only include products with stock quantity > 0
-                                                return stockProduct && stockProduct.quantity > 0
-                                            })
                                             .map((product) => {
                                                 const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
                                                 const selectedProduct = tempSelectedProducts.find((sp) => sp.productId === product.product_id)
@@ -714,39 +679,6 @@ export default function EditQuotationPage() {
                                                                 <p className="text-sm text-muted-foreground">
                                                                     Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
                                                                     {stockProduct?.quantity || 0}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                )
-                                            })}
-                                    </ScrollArea>
-                                </CommandGroup>
-
-                                {/* Unavailable products section */}
-                                <CommandGroup heading="Productos sin stock">
-                                    <ScrollArea className="h-[200px]">
-                                        {products
-                                            .filter((product) => {
-                                                // Find the stock for this product
-                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
-                                                // Only include products with stock quantity = 0
-                                                return !stockProduct || stockProduct.quantity <= 0
-                                            })
-                                            .map((product) => {
-                                                return (
-                                                    <CommandItem
-                                                        key={product.product_id}
-                                                        className="flex items-center justify-between p-2 cursor-not-allowed opacity-50"
-                                                        disabled={true}
-                                                    >
-                                                        <div className="flex items-center space-x-4 flex-1">
-                                                            <Checkbox disabled checked={false} />
-                                                            <div className="flex-1">
-                                                                <p className="font-medium">{product.product_name}</p>
-                                                                <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Precio: {formatPriceCLP(Number(product.sale_price))} - Stock: 0
                                                                 </p>
                                                             </div>
                                                         </div>

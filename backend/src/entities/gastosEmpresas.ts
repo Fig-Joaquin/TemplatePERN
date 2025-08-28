@@ -1,30 +1,30 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { IsString, IsNumber, Min, IsDate } from "class-validator";
-import { TipoGasto } from "./tipoGasto";
+import { ExpenseType } from "./tipoGasto";
 
-@Entity("GastoEmpresa")
-export class GastoEmpresa {
+@Entity("company_expenses")
+export class CompanyExpense {
     @PrimaryGeneratedColumn()
-    id_gasto_empresa!: number;
+    company_expense_id!: number;
 
-    @ManyToOne(() => TipoGasto, { nullable: false })
-    @JoinColumn({ name: "id_tipo_gasto" })
-    tipo_gasto!: TipoGasto;
+    @ManyToOne(() => ExpenseType, { nullable: false })
+    @JoinColumn({ name: "expense_type_id" })
+    expense_type!: ExpenseType;
 
     @Column({ type: "text" })
     @IsString()
-    descripcion!: string;
+    description!: string;
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
     @IsNumber()
-    @Min(0, { message: "El monto no puede ser negativo" })
-    monto!: number;
+    @Min(0, { message: "Amount cannot be negative" })
+    amount!: number;
 
     @Column()
     @IsDate()
-    fecha_gasto!: Date;
+    expense_date!: Date;
 
     @Column({ length: 50, nullable: true })
     @IsString()
-    numero_boleta?: string;
+    receipt_number?: string;
 }

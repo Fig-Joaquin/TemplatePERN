@@ -1,21 +1,21 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { IsString, Length } from "class-validator";
-import { GastoEmpresa } from "./gastosEmpresas"; // Adjust the import path as necessary
+import { CompanyExpense } from "./gastosEmpresas";
 
-@Entity("TipoGasto")
-export class TipoGasto {
+@Entity("expense_types")
+export class ExpenseType {
     @PrimaryGeneratedColumn()
-    id_tipo_gasto!: number;
+    expense_type_id!: number;
 
     @Column({ length: 100 })
     @IsString()
-    @Length(2, 100, { message: "El nombre del tipo de gasto debe tener entre 2 y 100 caracteres" })
-    nombre_tipo_gasto!: string;
+    @Length(2, 100, { message: "Expense type name must be between 2 and 100 characters" })
+    expense_type_name!: string;
 
     @Column({ type: "text", nullable: true })
     @IsString()
-    descripcion?: string;
+    description?: string;
 
-    @OneToMany(() => GastoEmpresa, gasto => gasto.tipo_gasto)
-    gastos!: GastoEmpresa[];
+    @OneToMany(() => CompanyExpense, (expense: CompanyExpense) => expense.expense_type)
+    expenses!: CompanyExpense[];
 }

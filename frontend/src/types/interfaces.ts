@@ -83,7 +83,7 @@ export interface Quotation {
   vehicle?: Vehicle
   quotation_id?: number
   vehicle_id: number
-  description: string
+  description?: string
   quotation_status: QuotationStatus
   total_price: number
   details?: WorkProductDetail[];
@@ -251,17 +251,28 @@ export interface WorkOrderTechnician {
 }
 
 export interface TipoGasto {
+  expense_type_id?: number;
+  expense_type_name: string;
+  description?: string;
+  // Mantener compatibilidad con código existente
   id_tipo_gasto?: number;
-  nombre_tipo_gasto: string;
+  nombre_tipo_gasto?: string;
   descripcion?: string;
 }
 
 export interface Gasto {
+  company_expense_id?: number;
+  expense_type: TipoGasto;
+  description: string;
+  amount: number | string; // Puede venir como string desde el backend
+  expense_date: Date | string;
+  receipt_number?: string;
+  // Mantener compatibilidad con código existente
   id_gasto_empresa?: number;
-  tipo_gasto: TipoGasto;
-  descripcion: string;
-  monto: number | string; // Puede venir como string desde el backend
-  fecha_gasto: Date | string;
+  tipo_gasto?: TipoGasto;
+  descripcion?: string;
+  monto?: number | string;
+  fecha_gasto?: Date | string;
   numero_boleta?: string;
 }
 

@@ -1,27 +1,27 @@
 import { Router } from "express";
 import {
-    getAllGastos,
-    getGastoById,
-    createGasto,
-    updateGasto,
-    deleteGasto
+    getAllCompanyExpenses,
+    getCompanyExpenseById,
+    createCompanyExpense,
+    updateCompanyExpense,
+    deleteCompanyExpense
 } from "../controllers/gastoController";
 
 const router = Router();
 
-// Obtener todos los gastos
-router.get("/", getAllGastos);
+// Get all company expenses
+router.get("/", getAllCompanyExpenses);
 
-// Obtener un gasto por ID
-router.get("/:id", getGastoById);
+// Get a company expense by ID
+router.get("/:id", getCompanyExpenseById);
 
-// Crear un nuevo gasto
-router.post("/", createGasto);
+// Create a new company expense
+router.post("/", createCompanyExpense);
 
-// Actualizar un gasto existente
-router.put("/:id", updateGasto);
+// Update an existing company expense
+router.put("/:id", updateCompanyExpense);
 
-// Eliminar un gasto
-router.delete("/:id", deleteGasto);
+// Delete a company expense
+router.delete("/:id", deleteCompanyExpense);
 
 export default router;
