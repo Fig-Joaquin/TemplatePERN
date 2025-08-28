@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from "typeorm";
 import { IsString, IsNumber, Min } from "class-validator";
-import { Vehicle, Quotation, Debtor, WorkProductDetail } from "..";
+import { Vehicle, Quotation, Debtor, WorkProductDetail, WorkPayment } from "..";
 import { WorkOrderTechnician } from "./workOrderTechnician";
 
 @Entity("work_orders")
@@ -10,6 +10,9 @@ export class WorkOrder {
 
     @OneToMany(() => Debtor, (debtor) => debtor.workOrder, { cascade: true, onDelete: "CASCADE" })
     debtors!: Debtor[];
+
+    @OneToMany(() => WorkPayment, (payment) => payment.work_order, { cascade: true, onDelete: "CASCADE" })
+    payments!: WorkPayment[];
 
     @ManyToOne(() => Vehicle, { nullable: false })
     @JoinColumn({ name: "vehicle_id" })

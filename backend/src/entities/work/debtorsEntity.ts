@@ -29,8 +29,8 @@ export class Debtor {
     @IsNumber()
     paid_amount?: number;
 
-    @Column({ type: "varchar", length: 50, default: "pending" })
+    @Column({ type: "varchar", length: 50, default: "pendiente" })
     @IsOptional()
     @IsString()
-    payment_status?: string; // 'pending', 'partial', 'paid'
+    payment_status?: string; // 'pendiente', 'parcial', 'pagado'
 }

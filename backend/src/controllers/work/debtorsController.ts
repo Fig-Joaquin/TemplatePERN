@@ -214,16 +214,16 @@ export const processPayment = async (req: Request, res: Response, _next: NextFun
         }
 
         // Determinar el nuevo estado
-        let newStatus = "pending";
+        let newStatus = "pendiente";
         if (totalAmount > 0) {
             if (newPaidAmount >= totalAmount) {
-                newStatus = "paid";
+                newStatus = "pagado";
             } else if (newPaidAmount > 0) {
-                newStatus = "partial";
+                newStatus = "parcial";
             }
         } else {
             // Si no hay monto total definido, considerar como pago parcial
-            newStatus = newPaidAmount > 0 ? "partial" : "pending";
+            newStatus = newPaidAmount > 0 ? "parcial" : "pendiente";
         }
 
         // Buscar o crear un tipo de pago por defecto para deudores
@@ -242,29 +242,16 @@ export const processPayment = async (req: Request, res: Response, _next: NextFun
             }
         }
 
-        // Crear o actualizar el pago de cliente (WorkPayment)
-        let workPayment = await workPaymentRepository.findOne({
-            where: { work_order: { work_order_id: debtor.workOrder.work_order_id } }
+        // Crear un nuevo pago de cliente (WorkPayment) para cada transacción
+        // Esto permite mantener un historial completo de pagos individuales
+        const workPayment = workPaymentRepository.create({
+            payment_type: paymentType,
+            work_order: debtor.workOrder,
+            payment_status: "pagado", // Cada pago individual está pagado
+            amount_paid: Number(payment_amount),
+            payment_date: new Date()
         });
-
-        if (workPayment) {
-            // Actualizar el pago existente sumando el nuevo monto
-            const currentAmountPaid = Number(workPayment.amount_paid) || 0;
-            workPayment.amount_paid = currentAmountPaid + Number(payment_amount);
-            workPayment.payment_status = newStatus;
-            workPayment.payment_date = new Date();
-            await workPaymentRepository.save(workPayment);
-        } else {
-            // Crear un nuevo pago de cliente
-            workPayment = workPaymentRepository.create({
-                payment_type: paymentType,
-                work_order: debtor.workOrder,
-                payment_status: newStatus,
-                amount_paid: Number(payment_amount),
-                payment_date: new Date()
-            });
-            await workPaymentRepository.save(workPayment);
-        }
+        await workPaymentRepository.save(workPayment);
 
         // Actualizar la deuda
         await debtorRepository.update(id, {
