@@ -18,6 +18,7 @@ import { FileText, Plus, Edit } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
+import { Badge } from "@/components/ui/badge"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
@@ -29,17 +30,17 @@ export default function QuotationPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [quotationToDelete, setQuotationToDelete] = useState<number | null>(null)
 
-  // Helper function to translate status
-  const translateStatus = (status: string): string => {
+  // Helper function to translate status - vamos a modificar esto para que también devuelva la variante
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'Aprobada';
+        return { label: 'Aprobada', variant: 'success', className: 'bg-[#16a34a] text-white border-[#16a34a]' };
       case 'rejected':
-        return 'Rechazada';
+        return { label: 'Rechazada', variant: 'destructive', className: 'bg-[#ef4444] text-white border-[#ef4444]' };
       case 'pending':
-        return 'Pendiente';
+        return { label: 'Pendiente', variant: 'warning', className: 'bg-[#fbbf24] text-white border-[#fbbf24]' };
       default:
-        return status;
+        return { label: status, variant: 'default', className: '' };
     }
   }
 
@@ -118,7 +119,7 @@ export default function QuotationPage() {
                       <h4 className="font-bold mb-2">Información de la cotización</h4>
                       <p>ID: {quotation.quotation_id}</p>
                       <p>Descripción: {quotation.description}</p>
-                      <p>Estado: {translateStatus(quotation.quotation_status)}</p>
+                      <p>Estado: <Badge className={getStatusBadge(quotation.quotation_status).className}>{getStatusBadge(quotation.quotation_status).label}</Badge></p>
                       <p>Fecha de entrada: {quotation.entry_date ? formatDate(quotation.entry_date) : ""}</p>
                       <p>Precio Total: {formatPriceCLP(Number(quotation.total_price))}</p>
                     </div>

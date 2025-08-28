@@ -12,7 +12,7 @@ export class ProductPurchase {
     product_purchase_id!: number;
 
 
-    @ManyToOne(() => Product, { nullable: false })
+    @ManyToOne(() => Product, { nullable: false, onDelete: "RESTRICT" })
     @JoinColumn({ name: "product_id" })
     product!: Product;
 
