@@ -22,7 +22,7 @@ export const getTipoGastoById = async (req: Request, res: Response, _next: NextF
             return;
         }
 
-        const tipoGasto = await tipoGastoRepository.findOneBy({ id_tipo_gasto: id });
+        const tipoGasto = await tipoGastoRepository.findOneBy({ expense_type_id: id });
         if (!tipoGasto) {
             res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;
@@ -48,12 +48,12 @@ export const createTipoGasto = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        const { nombre_tipo_gasto } = validationResult.data;
+        const { expense_type_name } = validationResult.data;
         
         // Verificar si ya existe un tipo de gasto con el mismo nombre
-        const existingTipoGasto = await tipoGastoRepository.findOneBy({ nombre_tipo_gasto });
+        const existingTipoGasto = await tipoGastoRepository.findOneBy({ expense_type_name: expense_type_name });
         if (existingTipoGasto) {
-            res.status(409).json({ message: `El tipo de gasto '${nombre_tipo_gasto}' ya existe.` });
+            res.status(409).json({ message: `El tipo de gasto '${expense_type_name}' ya existe.` });
             return;
         }
 
@@ -74,7 +74,7 @@ export const updateTipoGasto = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        const tipoGasto = await tipoGastoRepository.findOneBy({ id_tipo_gasto: id });
+        const tipoGasto = await tipoGastoRepository.findOneBy({ expense_type_id: id });
         if (!tipoGasto) {
             res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;
@@ -93,14 +93,14 @@ export const updateTipoGasto = async (req: Request, res: Response, _next: NextFu
         }
 
         // Si se está actualizando el nombre, verificar que no exista otro tipo con ese nombre
-        if (validationResult.data.nombre_tipo_gasto && 
-            validationResult.data.nombre_tipo_gasto !== tipoGasto.nombre_tipo_gasto) {
+        if (validationResult.data.expense_type_name && 
+            validationResult.data.expense_type_name !== tipoGasto.expense_type_name) {
             const existingTipoGasto = await tipoGastoRepository.findOneBy({ 
-                nombre_tipo_gasto: validationResult.data.nombre_tipo_gasto 
+                expense_type_name: validationResult.data.expense_type_name 
             });
             if (existingTipoGasto) {
                 res.status(409).json({ 
-                    message: `El tipo de gasto '${validationResult.data.nombre_tipo_gasto}' ya existe.` 
+                    message: `El tipo de gasto '${validationResult.data.expense_type_name}' ya existe.` 
                 });
                 return;
             }
@@ -125,7 +125,7 @@ export const deleteTipoGasto = async (req: Request, res: Response, _next: NextFu
 
         // Verificar si existen gastos asociados a este tipo
         const tipoGasto = await tipoGastoRepository.findOne({
-            where: { id_tipo_gasto: id },
+            where: { expense_type_id: id },
             relations: ["gastos"]
         });
 
@@ -134,14 +134,14 @@ export const deleteTipoGasto = async (req: Request, res: Response, _next: NextFu
             return;
         }
 
-        if (tipoGasto.gastos && tipoGasto.gastos.length > 0) {
+        if (tipoGasto.expenses && tipoGasto.expenses.length > 0) {
             res.status(409).json({ 
                 message: "No se puede eliminar este tipo de gasto porque tiene gastos asociados" 
             });
             return;
         }
 
-        const result = await tipoGastoRepository.delete(id);
+        const result = await tipoGastoRepository.delete({ expense_type_id: id });
         if (result.affected === 0) {
             res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;

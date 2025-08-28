@@ -72,8 +72,8 @@ export default function TipoGastoPage() {
     
     try {
       await createTipoGasto({ 
-        nombre_tipo_gasto: nombreTipoGasto, 
-        descripcion: descripcion || undefined 
+        expense_type_name: nombreTipoGasto, 
+        description: descripcion || undefined 
       });
       toast.success("Tipo de gasto creado exitosamente");
       setIsCreateModalOpen(false);
@@ -94,9 +94,9 @@ export default function TipoGastoPage() {
     }
     
     try {
-      await updateTipoGasto(editingTipoGasto.id_tipo_gasto!, {
-        nombre_tipo_gasto: nombreTipoGasto,
-        descripcion: descripcion || undefined
+      await updateTipoGasto(editingTipoGasto.expense_type_id!, {
+        expense_type_name: nombreTipoGasto,
+        description: descripcion || undefined
       });
       toast.success("Tipo de gasto actualizado correctamente");
       setIsEditModalOpen(false);
@@ -114,7 +114,7 @@ export default function TipoGastoPage() {
     if (!deletingTipoGasto) return;
     
     try {
-      await deleteTipoGasto(deletingTipoGasto.id_tipo_gasto!);
+      await deleteTipoGasto(deletingTipoGasto.expense_type_id!);
       toast.success("Tipo de gasto eliminado correctamente");
       setIsDeleteModalOpen(false);
       resetForm();
@@ -129,8 +129,8 @@ export default function TipoGastoPage() {
 
   const handleEdit = (tipoGasto: TipoGasto) => {
     setEditingTipoGasto(tipoGasto);
-    setNombreTipoGasto(tipoGasto.nombre_tipo_gasto);
-    setDescripcion(tipoGasto.descripcion || "");
+    setNombreTipoGasto(tipoGasto.expense_type_name || "");
+    setDescripcion(tipoGasto.description || "");
     setIsEditModalOpen(true);
   };
 
@@ -140,8 +140,8 @@ export default function TipoGastoPage() {
   };
 
   const filteredTiposGasto = tiposGasto.filter(tipo =>
-    tipo.nombre_tipo_gasto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (tipo.descripcion && tipo.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+    tipo.expense_type_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (tipo.description && tipo.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -183,7 +183,7 @@ export default function TipoGastoPage() {
           <AnimatePresence>
             {filteredTiposGasto.map((tipo) => (
               <motion.div
-                key={tipo.id_tipo_gasto}
+                key={tipo.expense_type_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -192,16 +192,16 @@ export default function TipoGastoPage() {
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <h3 className="font-semibold text-lg">{tipo.nombre_tipo_gasto}</h3>
+                      <h3 className="font-semibold text-lg">{tipo.expense_type_name}</h3>
                       <Badge variant="outline" className="ml-2">
-                        {tipo.id_tipo_gasto}
+                        {tipo.expense_type_id}
                       </Badge>
                     </div>
 
-                    {tipo.descripcion && (
+                    {tipo.description && (
                       <div className="mb-4 flex gap-2 items-start">
                         <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <p className="text-muted-foreground text-sm">{tipo.descripcion}</p>
+                        <p className="text-muted-foreground text-sm">{tipo.description}</p>
                       </div>
                     )}
 
@@ -323,8 +323,8 @@ export default function TipoGastoPage() {
             <DialogTitle>Confirmar Eliminación</DialogTitle>
           </DialogHeader>
           <p>
-            ¿Estás seguro de que deseas eliminar el tipo de gasto 
-            <span className="font-semibold"> "{deletingTipoGasto?.nombre_tipo_gasto}"</span>? 
+            ¿Estás seguro de que deseas eliminar el tipo de gasto
+            <span className="font-semibold"> "{deletingTipoGasto?.expense_type_name}"</span>?
             Esta acción no se puede deshacer.
           </p>
           <DialogFooter className="mt-6">

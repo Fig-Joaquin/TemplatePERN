@@ -255,10 +255,6 @@ export interface TipoGasto {
   expense_type_id?: number;
   expense_type_name: string;
   description?: string;
-  // Mantener compatibilidad con código existente
-  id_tipo_gasto?: number;
-  nombre_tipo_gasto?: string;
-  descripcion?: string;
 }
 
 export interface Gasto {
