@@ -9,35 +9,37 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { NumberInput } from "@/components/numberInput";
-import { 
-  fetchWorkPaymentById, 
-  createWorkPayment, 
-  updateWorkPayment 
+import {
+  fetchWorkPaymentById,
+  createWorkPayment,
+  updateWorkPayment
 } from "@/services/work/workPayment";
 import { fetchPaymentTypes } from "@/services/work/paymentType";
 import { fetchWorkOrders } from "@/services/workOrderService";
 import type { PaymentType, WorkOrder, WorkPayment } from "@/types/interfaces";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDateForInput } from "@/utils/formatDateForInput";
+import { usePaymentContext } from "@/contexts/PaymentContext";
 
 export default function WorkPaymentFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
   const navigate = useNavigate();
+  const { refreshPayments } = usePaymentContext();
 
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState<{
     payment_type_id: string;
     work_order_id: string;
@@ -83,7 +85,7 @@ export default function WorkPaymentFormPage() {
             amount_paid: Number(paymentData.amount_paid),
             payment_date: formatDateForInput(new Date(paymentData.payment_date)),
           });
-          
+
           // Actualizar el monto total de la orden seleccionada
           const orderTotal = Number(paymentData.work_order.total_amount) || 0;
           setSelectedOrderTotal(orderTotal);
@@ -109,14 +111,14 @@ export default function WorkPaymentFormPage() {
   // Actualiza esta función para establecer el monto total al seleccionar una orden
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Si es la orden de trabajo la que cambia, actualizar el monto total
     if (name === "work_order_id") {
       const selectedOrder = workOrders.find(order => order.work_order_id?.toString() === value);
       if (selectedOrder) {
         const orderTotal = Number(selectedOrder.total_amount) || 0;
         setSelectedOrderTotal(orderTotal);
-        
+
         // Actualizar automáticamente el estado según el monto pagado
         updatePaymentStatus(formData.amount_paid, orderTotal);
       }
@@ -126,9 +128,9 @@ export default function WorkPaymentFormPage() {
   // Modifica la función updatePaymentStatus para aceptar un parámetro que permita forzar la actualización
   const updatePaymentStatus = (amountPaid: number, total: number = selectedOrderTotal, forceUpdate: boolean = false) => {
     if (total <= 0) return; // Evitar división por cero o valores negativos
-    
+
     let newStatus = formData.payment_status;
-    
+
     if (amountPaid <= 0) {
       newStatus = "pendiente";
     } else if (amountPaid >= total) {
@@ -136,7 +138,7 @@ export default function WorkPaymentFormPage() {
     } else {
       newStatus = "parcial";
     }
-    
+
     // Actualizar si no está cancelado o si estamos forzando la actualización
     if (formData.payment_status !== "cancelado" || forceUpdate) {
       setFormData(prev => ({ ...prev, payment_status: newStatus }));
@@ -155,20 +157,20 @@ export default function WorkPaymentFormPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (
-      !formData.payment_type_id || 
-      !formData.work_order_id || 
-      !formData.payment_status || 
+      !formData.payment_type_id ||
+      !formData.work_order_id ||
+      !formData.payment_status ||
       formData.amount_paid < 0
     ) {
       toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      
+
       const paymentData: Partial<WorkPayment> = {
         payment_status: formData.payment_status,
         amount_paid: formData.amount_paid,
@@ -176,7 +178,7 @@ export default function WorkPaymentFormPage() {
         payment_type_id: parseInt(formData.payment_type_id),
         work_order_id: parseInt(formData.work_order_id)
       };
-      
+
       if (isEditMode) {
         await updateWorkPayment(parseInt(id), paymentData);
         toast.success("Pago actualizado correctamente");
@@ -184,12 +186,13 @@ export default function WorkPaymentFormPage() {
         await createWorkPayment(paymentData);
         toast.success("Pago creado correctamente");
       }
-      
+
+      refreshPayments(); // Notificar al dashboard para que se actualice
       navigate("/admin/finanzas/pagos");
     } catch (error: any) {
       console.error("Error al guardar pago:", error);
       toast.error(
-        error.response?.data?.message || 
+        error.response?.data?.message ||
         "Error al guardar el pago"
       );
     } finally {
@@ -286,15 +289,15 @@ export default function WorkPaymentFormPage() {
                       {filteredWorkOrders.length > 0 ? (
                         filteredWorkOrders.map((order) => {
                           // Determinar el nombre del cliente (persona o empresa)
-                          const clientName = order.vehicle?.owner 
+                          const clientName = order.vehicle?.owner
                             ? `${order.vehicle.owner.name || ""} ${order.vehicle.owner.first_surname || ""}`
                             : order.vehicle?.company?.name || "Sin cliente";
-                            
+
                           // Formatear la fecha
-                          const orderDate = order.entry_date 
+                          const orderDate = order.entry_date
                             ? new Date(order.entry_date).toLocaleDateString('es-CL')
                             : "Sin fecha";
-                            
+
                           // Traducir el estado
                           const statusMap: Record<string, string> = {
                             "not_started": "No iniciado",
@@ -302,7 +305,7 @@ export default function WorkPaymentFormPage() {
                             "finished": "Finalizado"
                           };
                           const status = statusMap[order.work_order_status] || order.work_order_status;
-                          
+
                           return (
                             <SelectItem key={order.work_order_id} value={order.work_order_id!.toString()}>
                               <div className="flex flex-col">
@@ -347,37 +350,37 @@ export default function WorkPaymentFormPage() {
                 </Select>
               </div>
 
-                <div>
+              <div>
                 <Label htmlFor="payment_status">Estado del Pago*</Label>
                 {isEditMode ? (
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <div className="flex-1">
-                        <Input 
+                        <Input
                           value={
-                            formData.payment_status === "pendiente" ? "Pendiente" : 
-                            formData.payment_status === "parcial" ? "Parcial" : 
-                            formData.payment_status === "pagado" ? "Pagado" :
-                            formData.payment_status === "cancelado" ? "Cancelado" : 
-                            formData.payment_status
+                            formData.payment_status === "pendiente" ? "Pendiente" :
+                              formData.payment_status === "parcial" ? "Parcial" :
+                                formData.payment_status === "pagado" ? "Pagado" :
+                                  formData.payment_status === "cancelado" ? "Cancelado" :
+                                    formData.payment_status
                           }
                           disabled
                           className={`${formData.payment_status === "cancelado" ? "bg-red-100 text-red-700 border-red-300" : "bg-muted"}`}
                         />
                       </div>
                       {formData.payment_status !== "cancelado" ? (
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
                           onClick={() => handleSelectChange("payment_status", "cancelado")}
                         >
                           Cancelar pago
                         </Button>
                       ) : (
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           className="text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
                           onClick={() => {
                             // Restaurar el estado anterior basado en el monto, forzando la actualización
@@ -389,25 +392,25 @@ export default function WorkPaymentFormPage() {
                       )}
                     </div>
                     <p className={`text-xs ${formData.payment_status === "cancelado" ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
-                      {formData.payment_status === "cancelado" 
+                      {formData.payment_status === "cancelado"
                         ? "Este pago ha sido cancelado. Puede restaurarlo si lo desea."
                         : "El botón 'Cancelar pago' anulará este pago. Esta acción se puede revertir."}
                     </p>
                   </div>
                 ) : (
                   <div>
-                  <Input 
-                    value={formData.payment_status === "pendiente" ? "Pendiente" : 
-                       formData.payment_status === "parcial" ? "Parcial" : "Pagado"}
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    El estado se actualiza automáticamente según el monto pagado.
-                  </p>
+                    <Input
+                      value={formData.payment_status === "pendiente" ? "Pendiente" :
+                        formData.payment_status === "parcial" ? "Parcial" : "Pagado"}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      El estado se actualiza automáticamente según el monto pagado.
+                    </p>
                   </div>
                 )}
-                </div>
+              </div>
 
               <div>
                 <Label htmlFor="amount_paid">Monto Pagado*</Label>
@@ -422,9 +425,9 @@ export default function WorkPaymentFormPage() {
                 />
                 {selectedOrderTotal > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Total de la orden: {formatPriceCLP(selectedOrderTotal)} | 
-                    {formData.amount_paid < selectedOrderTotal ? 
-                      `Falta: ${formatPriceCLP(selectedOrderTotal - formData.amount_paid)}` : 
+                    Total de la orden: {formatPriceCLP(selectedOrderTotal)} |
+                    {formData.amount_paid < selectedOrderTotal ?
+                      `Falta: ${formatPriceCLP(selectedOrderTotal - formData.amount_paid)}` :
                       'Monto completo'}
                   </p>
                 )}
@@ -432,11 +435,11 @@ export default function WorkPaymentFormPage() {
 
               <div>
                 <Label htmlFor="payment_date">Fecha de Pago*</Label>
-                <Input 
-                  id="payment_date" 
-                  name="payment_date" 
-                  type="date" 
-                  value={formData.payment_date} 
+                <Input
+                  id="payment_date"
+                  name="payment_date"
+                  type="date"
+                  value={formData.payment_date}
                   onChange={handleChange}
                   required
                 />

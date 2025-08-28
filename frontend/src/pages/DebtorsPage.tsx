@@ -12,6 +12,7 @@ import { formatDate } from "@/utils/formDate";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatChileanPhone, getFullName, getCurrentMileage } from "@/utils/formatPhone";
 import { useNavigate } from "react-router-dom";
+import { usePaymentContext } from "@/contexts/PaymentContext";
 import {
   Dialog,
   DialogContent,
@@ -45,14 +46,14 @@ const calculatePaymentPercentage = (paid: number = 0, total: number = 0): number
 };
 
 // Función para obtener el estado de la deuda
-const getDebtStatus = (status: string = "pending"): {
+const getDebtStatus = (status: string = "pendiente"): {
   variant: "destructive" | "secondary" | "default",
   label: string
 } => {
   switch (status) {
-    case "paid":
+    case "pagado":
       return { variant: "default", label: "Pagado" };
-    case "partial":
+    case "parcial":
       return { variant: "secondary", label: "Parcial" };
     default:
       return { variant: "destructive", label: "Pendiente" };
@@ -95,7 +96,7 @@ const DebtorCard = ({ debtor, onEdit, onDelete, onPay }: {
           </div>
         </div>
         <div className="flex space-x-2">
-          {debtor.payment_status !== "paid" && (
+          {debtor.payment_status !== "pagado" && (
             <Button
               variant="outline"
               size="sm"
@@ -192,6 +193,8 @@ const DebtorCard = ({ debtor, onEdit, onDelete, onPay }: {
 };
 
 const DebtorsPage = () => {
+  const navigate = useNavigate();
+  const { refreshPayments } = usePaymentContext();
   const [debtors, setDebtors] = useState<Debtor[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -212,8 +215,6 @@ const DebtorsPage = () => {
   const [showClientDialog, setShowClientDialog] = useState<boolean>(false);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [selectedClient, setSelectedClient] = useState<any>(null);
-
-  const navigate = useNavigate();
 
   // Función para cargar deudores
   const fetchDebtors = async () => {
@@ -302,6 +303,18 @@ const DebtorsPage = () => {
       return;
     }
 
+    // Validar que no se exceda el monto restante
+    if (debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0) {
+      const totalAmount = Number(debtorToPay.total_amount);
+      const paidAmount = Number(debtorToPay.paid_amount) || 0;
+      const remainingAmount = totalAmount - paidAmount;
+
+      if (amount > remainingAmount) {
+        toast.error(`El monto no puede ser mayor al restante: ${formatPriceCLP(remainingAmount)}`);
+        return;
+      }
+    }
+
     try {
       setProcessingPayment(true);
       const paymentData: any = {
@@ -332,6 +345,7 @@ const DebtorsPage = () => {
       setPaymentAmount("");
       setSelectedPaymentType("");
       fetchDebtors(); // Refrescar los datos
+      refreshPayments(); // Notificar al dashboard para que se actualice
     } catch (error: any) {
       console.error("Error al procesar pago:", error);
       if (error.response?.data?.message) {
@@ -342,6 +356,24 @@ const DebtorsPage = () => {
     } finally {
       setProcessingPayment(false);
     }
+  };
+
+  // Validar si el monto de pago excede el restante
+  const isPaymentAmountValid = () => {
+    if (!paymentAmount || !debtorToPay) return true;
+
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) return false;
+
+    if (debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0) {
+      const totalAmount = Number(debtorToPay.total_amount);
+      const paidAmount = Number(debtorToPay.paid_amount) || 0;
+      const remainingAmount = totalAmount - paidAmount;
+
+      return amount <= remainingAmount;
+    }
+
+    return true;
   };
 
   // Funciones para manejar clics en elementos
@@ -589,7 +621,7 @@ const DebtorsPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center space-x-2">
-                            {debtor.payment_status !== "paid" && (
+                            {debtor.payment_status !== "pagado" && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -761,6 +793,11 @@ const DebtorsPage = () => {
 
             <div>
               <Label htmlFor="payment-amount">Monto a pagar</Label>
+              {debtorToPay && debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0 && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Máximo permitido: {formatPriceCLP(Number(debtorToPay.total_amount) - (Number(debtorToPay.paid_amount) || 0))}
+                </p>
+              )}
               <Input
                 id="payment-amount"
                 type="number"
@@ -768,8 +805,20 @@ const DebtorsPage = () => {
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 min="0.01"
+                max={debtorToPay && debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0
+                  ? (Number(debtorToPay.total_amount) - (Number(debtorToPay.paid_amount) || 0)).toString()
+                  : undefined}
                 step="0.01"
+                className={!isPaymentAmountValid() ? "border-red-500" : ""}
               />
+              {paymentAmount && !isPaymentAmountValid() && (
+                <p className="text-xs text-red-500 mt-1">
+                  {debtorToPay && debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0
+                    ? `El monto no puede ser mayor a ${formatPriceCLP(Number(debtorToPay.total_amount) - (Number(debtorToPay.paid_amount) || 0))}`
+                    : "Ingrese un monto válido"
+                  }
+                </p>
+              )}
             </div>
 
             <div>
@@ -803,7 +852,7 @@ const DebtorsPage = () => {
             </Button>
             <Button
               onClick={handlePayment}
-              disabled={processingPayment || !paymentAmount}
+              disabled={processingPayment || !paymentAmount || !isPaymentAmountValid()}
               className="bg-green-600 hover:bg-green-700"
             >
               {processingPayment ? (

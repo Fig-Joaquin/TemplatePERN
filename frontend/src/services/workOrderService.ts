@@ -7,6 +7,11 @@ export const getAllWorkOrders = async (): Promise<WorkOrder[]> => {
   return response.data;
 };
 
+export const getAvailableWorkOrdersForDebtors = async (): Promise<WorkOrder[]> => {
+  const response = await api.get("/workOrders/available-for-debtors");
+  return response.data;
+};
+
 export const getWorkOrderById = async (id: number): Promise<WorkOrder> => {
   const response = await api.get(`/workOrders/${id}`);
   return response.data;
