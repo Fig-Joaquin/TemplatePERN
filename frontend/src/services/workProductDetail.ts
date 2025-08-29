@@ -63,6 +63,20 @@ export const updateWorkProductDetail = async (id: number, workProductDetail: Par
  * Elimina un detalle de producto
  */
 export const deleteWorkProductDetail = async (id: number): Promise<void> => {
-  await api.delete(`/workProductDetails/${id}`);
+  try {
+    console.log(`Attempting to delete work product detail with ID: ${id}`);
+    await api.delete(`/workProductDetails/${id}`);
+    console.log(`Successfully deleted work product detail with ID: ${id}`);
+  } catch (error: any) {
+    console.error(`Error deleting work product detail ${id}:`, error);
+    
+    // If it's a 404, provide a more descriptive error
+    if (error.response?.status === 404) {
+      throw new Error(`Work product detail with ID ${id} not found`);
+    }
+    
+    // For other errors, throw the original error
+    throw error;
+  }
 };
 
