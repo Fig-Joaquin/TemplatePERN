@@ -22,7 +22,7 @@ import {
   updateDebtor,
   getDebtorById
 } from "@/services/debtorService";
-import { getAllWorkOrders } from "@/services/workOrderService";
+import { getAllWorkOrders, getAvailableWorkOrdersForDebtors } from "@/services/workOrderService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import type { WorkOrder } from "@/types/interfaces";
 
@@ -78,7 +78,10 @@ export default function DebtorFormPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const workOrdersData = await getAllWorkOrders();
+        // Usar el nuevo servicio que filtra órdenes ya pagadas completamente
+        const workOrdersData = isEditMode
+          ? await getAllWorkOrders() // En modo edición, mostrar todas para permitir ver la orden actual
+          : await getAvailableWorkOrdersForDebtors(); // En modo creación, solo mostrar disponibles
         setWorkOrders(workOrdersData);
 
         if (isEditMode && id) {
