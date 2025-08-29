@@ -37,17 +37,17 @@ export default function GastoFormPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<{
-    id_tipo_gasto: string;
-    descripcion: string;
-    monto: number;
-    fecha_gasto: string;
-    numero_boleta: string;
+    expense_type_id: string;
+    description: string;
+    amount: number;
+    expense_date: string;
+    receipt_number: string;
   }>({
-    id_tipo_gasto: "",
-    descripcion: "",
-    monto: 0,
-    fecha_gasto: formatDateForInput(new Date()), // Corregido para usar formatDateForInput
-    numero_boleta: ""
+    expense_type_id: "",
+    description: "",
+    amount: 0,
+    expense_date: formatDateForInput(new Date()), // Corregido para usar formatDateForInput
+    receipt_number: ""
   });
 
   useEffect(() => {
@@ -60,11 +60,13 @@ export default function GastoFormPage() {
         if (isEditMode) {
           const gastoData = await fetchGastoById(parseInt(id));
           setFormData({
-            id_tipo_gasto: gastoData.tipo_gasto.id_tipo_gasto!.toString(),
-            descripcion: gastoData.descripcion,
-            monto: Number(gastoData.monto),
-            fecha_gasto: formatDateForInput(new Date(gastoData.fecha_gasto)),
-            numero_boleta: gastoData.numero_boleta || ""
+            expense_type_id: (gastoData.expense_type?.expense_type_id ?? "").toString(),
+            description: gastoData.description,
+            amount: Number(gastoData.amount),
+            expense_date: formatDateForInput(
+              gastoData.expense_date ? new Date(gastoData.expense_date) : new Date()
+            ),
+            receipt_number: gastoData.receipt_number || ""
           });
         }
       } catch (error) {
@@ -90,36 +92,42 @@ export default function GastoFormPage() {
   };
 
   const handleMontoChange = (value: number) => {
-    setFormData(prev => ({ ...prev, monto: value }));
+    setFormData(prev => ({ ...prev, amount: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!formData.id_tipo_gasto || !formData.descripcion || formData.monto <= 0) {
+    if (!formData.expense_type_id || !formData.description || formData.amount <= 0) {
       toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
 
-    try {
-      setSubmitting(true);
+      try {
+        setSubmitting(true);
 
-      // No necesitamos manipular la fecha de nuevo, ya está en formato correcto
-      // Simplemente usar el valor del input directamente
-      const fechaISOString = formData.fecha_gasto;
-
+        // No necesitamos manipular la fecha de nuevo, ya está en formato correcto
+        // Simplemente usar el valor del input directamente
+        const fechaISOString = formData.expense_date;      // Encontrar el tipo de gasto seleccionado para obtener su nombre
+      const selectedTipoGasto = tiposGasto.find(
+        tipo => tipo.expense_type_id === parseInt(formData.expense_type_id)
+      );
+      
       const gastoData: Partial<Gasto> = {
-        descripcion: formData.descripcion,
-        monto: formData.monto,
-        fecha_gasto: fechaISOString,
-        numero_boleta: formData.numero_boleta || undefined
+        description: formData.description,
+        amount: formData.amount,
+        expense_date: fechaISOString,
+        receipt_number: formData.receipt_number || undefined,
+        expense_type: {
+          expense_type_id: parseInt(formData.expense_type_id),
+          expense_type_name: selectedTipoGasto?.expense_type_name || ""
+        }
       };
 
-      // Agregar id_tipo_gasto como propiedad separada para la API
-      const dataToSend = {
-        ...gastoData,
-        id_tipo_gasto: parseInt(formData.id_tipo_gasto)
-      };
+      // Enviamos directamente el gastoData sin modificaciones
+      const dataToSend = gastoData;
+      
+      console.log('Datos a enviar:', dataToSend);
 
       if (isEditMode) {
         await updateGasto(parseInt(id), dataToSend);
@@ -177,10 +185,10 @@ export default function GastoFormPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="id_tipo_gasto">Tipo de Gasto*</Label>
+                <Label htmlFor="expense_type_id">Tipo de Gasto*</Label>
                 <Select
-                  value={formData.id_tipo_gasto}
-                  onValueChange={(value) => handleSelectChange("id_tipo_gasto", value)}
+                  value={formData.expense_type_id}
+                  onValueChange={(value) => handleSelectChange("expense_type_id", value)}
                   required
                 >
                   <SelectTrigger className="w-full">
@@ -189,34 +197,34 @@ export default function GastoFormPage() {
                   <SelectContent>
                     {tiposGasto.map((tipo) => (
                       <SelectItem
-                        key={tipo.id_tipo_gasto}
-                        value={tipo.id_tipo_gasto!.toString()}
+                        key={tipo.expense_type_id}
+                        value={tipo.expense_type_id!.toString()}
                       >
-                        {tipo.nombre_tipo_gasto}
+                        {tipo.expense_type_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="descripcion">Descripción*</Label>
+                <div>
+                <Label htmlFor="description">Descripción*</Label>
                 <Textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={formData.descripcion}
+                  id="description"
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
                   placeholder="Descripción del gasto"
                   rows={3}
                   required
                 />
-              </div>
+                </div>
 
               <div>
                 <Label htmlFor="monto">Monto*</Label>
                 <NumberInput
                   id="monto"
-                  value={formData.monto}
+                  value={formData.amount}
                   onChange={handleMontoChange}
                   min={1}
                   isPrice
@@ -229,9 +237,9 @@ export default function GastoFormPage() {
                 <Label htmlFor="fecha_gasto">Fecha*</Label>
                 <Input
                   id="fecha_gasto"
-                  name="fecha_gasto"
+                  name="expense_date"
                   type="date"
-                  value={formData.fecha_gasto}
+                  value={formData.expense_date}
                   onChange={handleChange}
                   required
                 />
@@ -241,8 +249,8 @@ export default function GastoFormPage() {
                 <Label htmlFor="numero_boleta">Número de Boleta/Factura</Label>
                 <Input
                   id="numero_boleta"
-                  name="numero_boleta"
-                  value={formData.numero_boleta}
+                  name="receipt_number"
+                  value={formData.receipt_number}
                   onChange={handleChange}
                   placeholder="Opcional"
                 />

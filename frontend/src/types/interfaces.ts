@@ -264,13 +264,6 @@ export interface Gasto {
   amount: number | string; // Puede venir como string desde el backend
   expense_date: Date | string;
   receipt_number?: string;
-  // Mantener compatibilidad con código existente
-  id_gasto_empresa?: number;
-  tipo_gasto?: TipoGasto;
-  descripcion?: string;
-  monto?: number | string;
-  fecha_gasto?: Date | string;
-  numero_boleta?: string;
 }
 
 export interface PaymentType {

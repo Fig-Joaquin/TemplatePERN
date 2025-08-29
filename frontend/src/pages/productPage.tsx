@@ -137,7 +137,9 @@ const ProductPage = () => {
       // Update the stock using stock_product_id when available
       if (selectedProduct.stock?.stock_product_id) {
         const stockProduct = {
-          quantity: Number(editStockQuantity)
+          quantity: Number(editStockQuantity),
+          // Usamos Date para cumplir con el tipo esperado (StockProduct.updated_at es Date)
+          updated_at: new Date()
         }
 
         await updateStockProduct(

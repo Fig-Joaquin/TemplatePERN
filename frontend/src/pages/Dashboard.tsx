@@ -10,8 +10,10 @@ import {
   DollarSign,
   Package,
   FileText,
+  Info,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Eye
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,13 +26,21 @@ import { fetchNotifications } from "@/services/notification/notificationService"
 import { fetchVehicles } from "@/services/vehicleService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
+import { getCompleteWorkOrderById } from "@/services/workOrderService";
 import { WorkPayment, Gasto, WorkOrder, Quotation, StockProduct, Vehicle } from "@/types/interfaces";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "react-toastify";
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const [, setPayments] = useState<WorkPayment[]>([]);
-  const [, setGastos] = useState<Gasto[]>([]);
+  const [payments, setPayments] = useState<WorkPayment[]>([]);
+  const [gastos, setGastos] = useState<Gasto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [recentWorkOrders, setRecentWorkOrders] = useState<WorkOrder[]>([]);
   const [recentQuotations, setRecentQuotations] = useState<Quotation[]>([]);
@@ -56,6 +66,28 @@ export const Dashboard = () => {
     totalQuotations: 0
   });
 
+  // Nuevo estado para los detalles del balance
+  const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false);
+  const [, setDetailsType] = useState<"daily" | "monthly" | "annual">("daily");
+  const [detailsData, setDetailsData] = useState<{
+    period: string;
+    income: number;
+    expenses: number;
+    balance: number;
+    incomeTransactions: WorkPayment[];
+    expenseTransactions: Gasto[];
+  }>({
+    period: "",
+    income: 0,
+    expenses: 0,
+    balance: 0,
+    incomeTransactions: [],
+    expenseTransactions: []
+  });
+
+  // Estado para el modal de detalle de orden de trabajo
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -72,7 +104,7 @@ export const Dashboard = () => {
           fetchWorkPayments(),
           fetchGastos(),
           getAllWorkOrders(),
-          fetchQuotations(),
+          fetchQuotations([]),
           getStockProducts(),
           fetchNotifications(),
           fetchVehicles()
@@ -333,12 +365,12 @@ export const Dashboard = () => {
       // Obtener la fecha como string YYYY-MM-DD
       let gastoDateStr: string;
       
-      if (typeof gasto.fecha_gasto === 'string') {
+      if (typeof gasto.expense_date === 'string') {
         // Si es string, extraer la parte de fecha
-        gastoDateStr = gasto.fecha_gasto.split('T')[0];
+        gastoDateStr = gasto.expense_date.split('T')[0];
       } else {
         // Si ya es Date, convertirlo a string YYYY-MM-DD
-        gastoDateStr = getLocalDateString(gasto.fecha_gasto);
+        gastoDateStr = getLocalDateString(gasto.expense_date);
       }
       
       // Para rangos de fechas: incluye start, excluye end
@@ -348,8 +380,8 @@ export const Dashboard = () => {
     });
     
     const result = filteredGastos.reduce((sum, gasto) => {
-      // Asegurar que gasto.monto sea tratado como número
-      const montoNumerico = typeof gasto.monto === 'string' ? parseFloat(gasto.monto) : Number(gasto.monto);
+      // Asegurar que gasto.amount sea tratado como número
+      const montoNumerico = typeof gasto.amount === 'string' ? parseFloat(gasto.amount) : Number(gasto.amount);
       return sum + montoNumerico;
     }, 0);
     return result;
@@ -373,7 +405,105 @@ export const Dashboard = () => {
     return Math.max(-999, Math.min(999, percentageChange));
   };
 
+  // Función para abrir el diálogo de detalles
+  const openDetailsDialog = (type: "daily" | "monthly" | "annual") => {
+    const now = new Date();
+    let periodName = "";
+    let incomeAmount = 0;
+    let expensesAmount = 0;
+    let filteredIncome: WorkPayment[] = [];
+    let filteredExpenses: Gasto[] = [];
+    
+    // Configurar fechas según el tipo de período
+    if (type === "daily") {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      
+      periodName = `Día ${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+      filteredIncome = filterPaymentsByDateRange(payments, today, tomorrow);
+      filteredExpenses = filterGastosByDateRange(gastos, today, tomorrow);
+      incomeAmount = calculateIncomeInRange(payments, today, tomorrow);
+      expensesAmount = calculateExpensesInRange(gastos, today, tomorrow);
+    } 
+    else if (type === "monthly") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      
+      periodName = `Mes de ${new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(now)} ${now.getFullYear()}`;
+      filteredIncome = filterPaymentsByDateRange(payments, startOfMonth, startOfNextMonth);
+      filteredExpenses = filterGastosByDateRange(gastos, startOfMonth, startOfNextMonth);
+      incomeAmount = calculateIncomeInRange(payments, startOfMonth, startOfNextMonth);
+      expensesAmount = calculateExpensesInRange(gastos, startOfMonth, startOfNextMonth);
+    } 
+    else if (type === "annual") {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
+      
+      periodName = `Año ${now.getFullYear()}`;
+      filteredIncome = filterPaymentsByDateRange(payments, startOfYear, startOfNextYear);
+      filteredExpenses = filterGastosByDateRange(gastos, startOfYear, startOfNextYear);
+      incomeAmount = calculateIncomeInRange(payments, startOfYear, startOfNextYear);
+      expensesAmount = calculateExpensesInRange(gastos, startOfYear, startOfNextYear);
+    }
+    
+    setDetailsType(type);
+    setDetailsData({
+      period: periodName,
+      income: incomeAmount,
+      expenses: expensesAmount,
+      balance: incomeAmount - expensesAmount,
+      incomeTransactions: filteredIncome,
+      expenseTransactions: filteredExpenses
+    });
+    setShowDetailsDialog(true);
+  };
 
+  // Funciones auxiliares para filtrar transacciones por rango de fechas
+  const filterPaymentsByDateRange = (payments: WorkPayment[], start: Date, end: Date): WorkPayment[] => {
+    const startDateStr = getLocalDateString(start);
+    const endDateStr = getLocalDateString(end);
+    
+    return payments.filter(payment => {
+      if (!payment.payment_date) return false;
+      
+      let paymentDateStr = typeof payment.payment_date === 'string'
+        ? payment.payment_date.split('T')[0]
+        : getLocalDateString(new Date(payment.payment_date));
+      
+      // Solo incluir pagos válidos
+      const isValidPaymentStatus = 
+        payment.payment_status === "pagado" || payment.payment_status === "parcial";
+      
+      return isValidPaymentStatus && paymentDateStr >= startDateStr && paymentDateStr < endDateStr;
+    });
+  };
+
+  const filterGastosByDateRange = (gastos: Gasto[], start: Date, end: Date): Gasto[] => {
+    const startDateStr = getLocalDateString(start);
+    const endDateStr = getLocalDateString(end);
+    
+    return gastos.filter(gasto => {
+      if (!gasto.expense_date) return false;
+      
+      let gastoDateStr = typeof gasto.expense_date === 'string'
+        ? gasto.expense_date.split('T')[0]
+        : getLocalDateString(new Date(gasto.expense_date));
+      
+      return gastoDateStr >= startDateStr && gastoDateStr < endDateStr;
+    });
+  };
+
+  // Función para cargar y mostrar detalles de una orden de trabajo
+  const handleViewWorkOrderDetails = async (workOrderId: number) => {
+    try {
+      // Obtenemos los detalles de la orden de trabajo completa
+      const workOrderData = await getCompleteWorkOrderById(workOrderId);
+      setSelectedWorkOrder(workOrderData);
+    } catch (error) {
+      console.error("Error al cargar detalles de la orden:", error);
+      toast.error("No se pudieron cargar los detalles de la orden");
+    }
+  };
 
   return (
     <motion.div 
@@ -428,7 +558,8 @@ export const Dashboard = () => {
                   title="Balance Diario" 
                   amount={formatPriceCLP(stats.daily.amount)} 
                   percentage={Math.round(stats.daily.percentage)} 
-                  trend={stats.daily.trend} 
+                  trend={stats.daily.trend}
+                  onViewDetails={() => openDetailsDialog("daily")}
                 />
               </motion.div>
               <motion.div
@@ -440,7 +571,8 @@ export const Dashboard = () => {
                   title="Balance Mensual" 
                   amount={formatPriceCLP(stats.monthly.amount)} 
                   percentage={Math.round(stats.monthly.percentage)} 
-                  trend={stats.monthly.trend} 
+                  trend={stats.monthly.trend}
+                  onViewDetails={() => openDetailsDialog("monthly")}
                 />
               </motion.div>
               <motion.div
@@ -452,7 +584,8 @@ export const Dashboard = () => {
                   title="Balance Anual" 
                   amount={formatPriceCLP(stats.annual.amount)} 
                   percentage={Math.round(stats.annual.percentage)} 
-                  trend={stats.annual.trend} 
+                  trend={stats.annual.trend}
+                  onViewDetails={() => openDetailsDialog("annual")}
                 />
               </motion.div>
             </AnimatePresence>
@@ -730,6 +863,458 @@ export const Dashboard = () => {
           </div>
         </>
       )}
+
+      {/* Diálogo de detalles del balance */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle className="text-xl">
+              Detalles de Balance: {detailsData.period}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto pr-6 pl-2 py-4 flex-1">
+            {/* Resumen */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-medium text-green-800 flex items-center gap-1">
+                    <ArrowUpIcon className="w-4 h-4" /> Ingresos
+                  </h3>
+                  <p className="text-xl font-bold text-green-600">{formatPriceCLP(detailsData.income)}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-red-50 border-red-200">
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-medium text-red-800 flex items-center gap-1">
+                    <ArrowDownIcon className="w-4 h-4" /> Gastos
+                  </h3>
+                  <p className="text-xl font-bold text-red-600">{formatPriceCLP(detailsData.expenses)}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-medium text-blue-800 flex items-center gap-1">
+                    Balance Neto
+                  </h3>
+                  <p className={`text-xl font-bold ${detailsData.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatPriceCLP(detailsData.balance)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Listado de ingresos */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Ingresos del período</h3>
+              {detailsData.incomeTransactions.length > 0 ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm">Fecha</th>
+                        <th className="px-4 py-2 text-left text-sm">Orden de Trabajo</th>
+                        <th className="px-4 py-2 text-left text-sm">Descripción</th>
+                        <th className="px-4 py-2 text-left text-sm">Estado</th>
+                        <th className="px-4 py-2 text-right text-sm">Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailsData.incomeTransactions.map((payment, index) => (
+                        <tr key={payment.work_payment_id || index} className="border-t">
+                          <td className="px-4 py-3 text-sm">
+                            {formatDate(payment.payment_date)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {payment.work_order ? (
+                              <Button 
+                                variant="link" 
+                                className="p-0 h-auto font-medium text-primary hover:text-primary/80 flex items-center gap-1"
+                                onClick={() => payment.work_order && handleViewWorkOrderDetails(payment.work_order.work_order_id)}
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                #{payment.work_order.work_order_id} 
+                                {payment.work_order.vehicle?.license_plate ? 
+                                 ` - ${payment.work_order.vehicle.license_plate}` : 
+                                 ""}
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground">Sin orden</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {payment.work_order?.description || `Pago #${payment.work_payment_id}`}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <Badge variant={payment.payment_status === "pagado" ? "default" : "secondary"}>
+                              {payment.payment_status === "pagado" ? "Pagado" : "Parcial"}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right font-medium">
+                            {formatPriceCLP(Number(payment.amount_paid))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4 bg-muted/20 rounded-lg">
+                  No hay ingresos registrados en este período
+                </p>
+              )}
+            </div>
+            
+            {/* Listado de gastos */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Gastos del período</h3>
+              {detailsData.expenseTransactions.length > 0 ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm">Fecha</th>
+                        <th className="px-4 py-2 text-left text-sm">Descripción</th>
+                        <th className="px-4 py-2 text-left text-sm">Tipo</th>
+                        <th className="px-4 py-2 text-right text-sm">Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailsData.expenseTransactions.map((gasto, index) => (
+                        <tr key={gasto.company_expense_id || index} className="border-t">
+                          <td className="px-4 py-3 text-sm">
+                            {formatDate(gasto.expense_date)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {gasto.description || "Sin descripción"}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {gasto.expense_type?.expense_type_name || "Otro"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right font-medium text-red-600">
+                            {formatPriceCLP(Number(gasto.amount))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4 bg-muted/20 rounded-lg">
+                  No hay gastos registrados en este período
+                </p>
+              )}
+            </div>
+          </div>
+          
+          {/* Botón para cerrar el diálogo */}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setShowDetailsDialog(false)}>
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Nuevo diálogo para mostrar detalles de la orden de trabajo */}
+      {selectedWorkOrder && (
+        <Dialog open={!!selectedWorkOrder} onOpenChange={(open) => !open && setSelectedWorkOrder(null)}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
+            <DialogHeader className="border-b pb-4">
+              <DialogTitle className="flex items-center gap-3 text-2xl">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Wrench className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <span className="text-primary">Orden de Trabajo</span>
+                  <span className="text-muted-foreground ml-2">#{selectedWorkOrder.work_order_id}</span>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="overflow-y-auto max-h-[75vh] pr-2">
+              <div className="space-y-6 py-4">
+                {/* Header con información principal */}
+                <div className="bg-gradient-to-r from-primary/5 to-blue-50 rounded-xl p-6 border border-primary/10">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        Fecha de creación
+                      </div>
+                      <p className="text-lg font-semibold">{formatDate(selectedWorkOrder.order_date)}</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Activity className="h-4 w-4" />
+                        Estado actual
+                      </div>
+                      <Badge 
+                        variant={
+                          selectedWorkOrder.order_status === "finished" ? "default" : 
+                          selectedWorkOrder.order_status === "in_progress" ? "secondary" : "outline"
+                        }
+                        className="text-sm px-3 py-1"
+                      >
+                        {selectedWorkOrder.order_status === "finished" ? "✅ Finalizado" : 
+                         selectedWorkOrder.order_status === "in_progress" ? "🔄 En Progreso" : "⏳ No Iniciado"}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        Valor total
+                      </div>
+                      <p className="text-2xl font-bold text-primary">{formatPriceCLP(Number(selectedWorkOrder.total_amount))}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información del vehículo y cliente */}
+                {selectedWorkOrder.vehicle && (
+                  <Card className="border-0 shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-t-lg">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Car className="h-5 w-5 text-blue-600" />
+                        Información del Vehículo
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-blue-700 font-bold text-sm">🚗</span>
+                            </div>
+                            <div>
+                              <p className="text-sm text-blue-700">Matrícula</p>
+                              <p className="font-semibold text-blue-900">{selectedWorkOrder.vehicle.license_plate}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                              <span className="text-purple-700 font-bold text-sm">🏭</span>
+                            </div>
+                            <div>
+                              <p className="text-sm text-purple-700">Marca / Modelo</p>
+                              <p className="font-semibold text-purple-900">
+                                {selectedWorkOrder.vehicle.model?.brand?.brand_name} {selectedWorkOrder.vehicle.model?.model_name}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                              <span className="text-green-700 font-bold text-sm">👤</span>
+                            </div>
+                            <div>
+                              <p className="text-sm text-green-700">Propietario</p>
+                              <p className="font-semibold text-green-900">
+                                {selectedWorkOrder.vehicle.owner?.name || selectedWorkOrder.vehicle.company?.name || "No especificado"}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {selectedWorkOrder.vehicle.year && (
+                            <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                <span className="text-orange-700 font-bold text-sm">📅</span>
+                              </div>
+                              <div>
+                                <p className="text-sm text-orange-700">Año</p>
+                                <p className="font-semibold text-orange-900">{selectedWorkOrder.vehicle.year}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Descripción del trabajo */}
+                <Card className="border-0 shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-lg">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <FileText className="h-5 w-5 text-indigo-600" />
+                      Descripción del Trabajo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="bg-gray-50 border-l-4 border-indigo-500 p-4 rounded-r-lg">
+                      <p className="text-gray-700 leading-relaxed">
+                        {selectedWorkOrder.description || "Sin descripción proporcionada"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Productos y servicios */}
+                {selectedWorkOrder.productDetails && selectedWorkOrder.productDetails.length > 0 ? (
+                  <Card className="border-0 shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-lg">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Package className="h-5 w-5 text-emerald-600" />
+                        Productos y Servicios ({selectedWorkOrder.productDetails.length} items)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-emerald-50">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-emerald-800">Producto</th>
+                              <th className="px-6 py-4 text-center text-sm font-semibold text-emerald-800">Cantidad</th>
+                              <th className="px-6 py-4 text-right text-sm font-semibold text-emerald-800">Precio Unit.</th>
+                              <th className="px-6 py-4 text-right text-sm font-semibold text-emerald-800">Mano de Obra</th>
+                              <th className="px-6 py-4 text-right text-sm font-semibold text-emerald-800">Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {selectedWorkOrder.productDetails.map((detail, index) => {
+                              const productName = detail.product?.product_name || `Producto #${detail.product_id}`;
+                              const productPrice = Number(detail.sale_price);
+                              const laborPrice = Number(detail.labor_price || 0);
+                              const quantity = Number(detail.quantity || 1);
+                              const subtotal = (productPrice * quantity) + laborPrice;
+                              
+                              return (
+                                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                        <Package className="h-4 w-4 text-emerald-600" />
+                                      </div>
+                                      <span className="font-medium text-gray-900">{productName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-center">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                      {quantity}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-right font-medium text-gray-900">
+                                    {formatPriceCLP(productPrice)}
+                                  </td>
+                                  <td className="px-6 py-4 text-right font-medium text-gray-900">
+                                    {formatPriceCLP(laborPrice)}
+                                  </td>
+                                  <td className="px-6 py-4 text-right font-bold text-emerald-600">
+                                    {formatPriceCLP(subtotal)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot className="bg-gradient-to-r from-emerald-100 to-teal-100">
+                            <tr>
+                              <td colSpan={4} className="px-6 py-4 text-right font-bold text-emerald-800 text-lg">
+                                TOTAL GENERAL:
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <span className="text-2xl font-bold text-emerald-800">
+                                  {formatPriceCLP(Number(selectedWorkOrder.total_amount))}
+                                </span>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="border-0 shadow-md border-l-4 border-l-yellow-400">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                          <Info className="h-6 w-6 text-yellow-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-yellow-800">Sin productos registrados</h3>
+                          <p className="text-sm text-yellow-700">
+                            Esta orden de trabajo no tiene productos o servicios asociados.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Técnicos asignados */}
+                {selectedWorkOrder.technicians && selectedWorkOrder.technicians.length > 0 && (
+                  <Card className="border-0 shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-lg">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Wrench className="h-5 w-5 text-cyan-600" />
+                        Técnicos Asignados ({selectedWorkOrder.technicians.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedWorkOrder.technicians.map((tech, index) => {
+                          let techName = `Técnico #${index + 1}`;
+                          
+                          if (tech && typeof tech === 'object') {
+                            if ('employee' in tech && tech.employee) {
+                              techName = typeof tech.employee === 'string' ? tech.employee : `Técnico #${index + 1}`;
+                            } else if ('name' in tech && tech.name) {
+                              techName = tech.name;
+                            } else if ('employee_id' in tech && tech.employee_id) {
+                              techName = `Técnico #${tech.employee_id}`;
+                            }
+                          }
+                          
+                          return (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-cyan-50 rounded-lg">
+                              <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center">
+                                <span className="text-cyan-700 font-bold text-sm">👨‍🔧</span>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-cyan-900">{techName}</p>
+                                <p className="text-sm text-cyan-700">Técnico especializado</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            {/* Footer con botones de acción */}
+            <div className="border-t pt-4 flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                Última actualización: {formatDate(selectedWorkOrder.order_date)}
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(`/admin/orden-trabajo/editar/${selectedWorkOrder.work_order_id}`)}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Editar Orden
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedWorkOrder(null)}
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </motion.div>
   );
 };
@@ -739,9 +1324,10 @@ interface DashboardCardProps {
   amount: string
   percentage: number
   trend: "up" | "down"
+  onViewDetails?: () => void
 }
 
-const DashboardCard: React.FC<DashboardCardProps> = ({ title, amount, percentage, trend }) => {
+const DashboardCard: React.FC<DashboardCardProps> = ({ title, amount, percentage, trend, onViewDetails }) => {
   return (
     <Card className="transition-all duration-300 hover:shadow-lg">
       <CardHeader>
@@ -749,15 +1335,29 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, amount, percentage
       </CardHeader>
       <CardContent>
         <p className="text-3xl font-bold text-primary">{amount}</p>
-        <div className="flex items-center mt-2">
-          {trend === "up" ? (
-            <ArrowUpIcon className="w-4 h-4 text-green-500 mr-1" />
-          ) : (
-            <ArrowDownIcon className="w-4 h-4 text-red-500 mr-1" />
+        <div className="flex justify-between items-center mt-2">
+          <div className="flex items-center">
+            {trend === "up" ? (
+              <ArrowUpIcon className="w-4 h-4 text-green-500 mr-1" />
+            ) : (
+              <ArrowDownIcon className="w-4 h-4 text-red-500 mr-1" />
+            )}
+            <p className={`text-sm ${trend === "up" ? "text-green-500" : "text-red-500"}`}>
+              {percentage}% {trend === "up" ? "Crecimiento" : "Disminución"}
+            </p>
+          </div>
+          
+          {onViewDetails && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onViewDetails}
+              className="flex items-center text-xs"
+            >
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              Ver detalles
+            </Button>
           )}
-          <p className={`text-sm ${trend === "up" ? "text-green-500" : "text-red-500"}`}>
-            {percentage}% {trend === "up" ? "Crecimiento" : "Disminución"}
-          </p>
         </div>
       </CardContent>
     </Card>

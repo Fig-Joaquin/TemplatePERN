@@ -85,18 +85,24 @@ export const updateStockProduct = async (req: Request, res: Response, _next: Nex
             return;
         }
         
-        // Extract only the quantity from the request body
-        // This simplifies handling complex nested objects
-        const { quantity } = req.body;
-        
+        // Extraer los datos relevantes del request
+        const { quantity, updated_at } = req.body;
+
+        // Actualizar los campos recibidos
         if (quantity !== undefined) {
-            // Update only the quantity field
             stockProduct.quantity = quantity;
-            await stockProductRepository.save(stockProduct);
-            res.json({ message: "Producto en stock actualizado exitosamente", stockProduct });
-        } else {
-            res.status(400).json({ message: "Se requiere el campo 'quantity' para actualizar el stock" });
         }
+        
+        // Actualizar explícitamente la fecha si se proporciona
+        if (updated_at) {
+            stockProduct.updated_at = new Date(updated_at);
+        } else {
+            // Si no se proporciona una fecha, actualizar a la fecha actual
+            stockProduct.updated_at = new Date();
+        }
+
+        await stockProductRepository.save(stockProduct);
+        res.json({ message: "Producto en stock actualizado exitosamente", stockProduct });
     } catch (error) {
         res.status(500).json({ message: "Error al actualizar el producto en stock", error });
     }

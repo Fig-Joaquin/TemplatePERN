@@ -76,8 +76,6 @@ export default function VehicleFormPage() {
   // Estados para búsqueda
   const [personSearchTerm, setPersonSearchTerm] = useState("");
   const [companySearchTerm, setCompanySearchTerm] = useState("");
-  // const [showRecentPersons, setShowRecentPersons] = useState(false);
-  // const [showRecentCompanies, setShowRecentCompanies] = useState(false);
 
   // Estados para modales de creación
   const [createPersonModalOpen, setCreatePersonModalOpen] = useState(false);
@@ -215,8 +213,6 @@ export default function VehicleFormPage() {
       // Actualizar la lista de personas
       setPersons(prev => [...prev, newPerson]);
 
-      // Activar el filtro de recientes para mostrar el nuevo cliente al principio
-      setShowRecentPersons(true);
 
       // Seleccionar automáticamente la nueva persona
       setFormData(prev => ({ ...prev, person_id: newPerson.person_id.toString() }));
@@ -272,8 +268,6 @@ export default function VehicleFormPage() {
       // Actualizar la lista de empresas
       setCompanies(prev => [...prev, newCompany]);
 
-      // Activar el filtro de recientes para mostrar la nueva empresa al principio
-      setShowRecentCompanies(true);
 
       // Seleccionar automáticamente la nueva empresa
       setFormData(prev => ({ ...prev, company_id: newCompany.company_id.toString() }));
@@ -366,7 +360,7 @@ export default function VehicleFormPage() {
       true
   );
 
-  // Modificar el filtrado de personas (sin ordenación especial por recientes)
+  // Filtrado de personas
   const filteredPersons = persons.filter((person) => {
     const searchValue = personSearchTerm.toLowerCase();
     return (
@@ -377,11 +371,11 @@ export default function VehicleFormPage() {
       person.number_phone?.toLowerCase().includes(searchValue)
     );
   }).sort((a, b) => {
-    // Ordenar alfabéticamente por nombre (eliminar ordenación por recientes)
+    // Ordenar alfabéticamente por nombre
     return `${a.name} ${a.first_surname}`.localeCompare(`${b.name} ${b.first_surname}`);
   });
 
-  // Modificar el filtrado de empresas (sin ordenación especial por recientes)
+  // Filtrado de empresas
   const filteredCompanies = companies.filter((company) => {
     const searchValue = companySearchTerm.toLowerCase();
     return (
@@ -390,7 +384,7 @@ export default function VehicleFormPage() {
       company.phone?.toLowerCase().includes(searchValue)
     );
   }).sort((a, b) => {
-    // Ordenar alfabéticamente por nombre (eliminar ordenación por recientes)
+    // Ordenar alfabéticamente por nombre
     return a.name.localeCompare(b.name);
   });
 
@@ -659,85 +653,6 @@ export default function VehicleFormPage() {
                           onChange={(e) => setPersonSearchTerm(e.target.value)}
                           className="mb-0"
                         />
-                        <div
-                          onClick={() => setShowRecentPersons(!showRecentPersons)}
-                          className={`
-                            group relative w-full px-4 py-3 rounded-xl transition-all duration-300 ease-in-out cursor-pointer overflow-hidden
-                            ${showRecentPersons
-                              ? "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-1 ring-primary/20"
-                              : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-50 hover:shadow-md"
-                            }
-                          `}
-                        >
-                          <div className="flex items-center justify-between relative z-10">
-                            <div className="flex items-center gap-3">
-                              <div className={`
-                                p-2 rounded-xl transition-all duration-300 transform group-hover:scale-110
-                                ${showRecentPersons
-                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30"
-                                  : "bg-gradient-to-br from-gray-200 to-gray-300 text-gray-600 group-hover:from-gray-300 group-hover:to-gray-400"
-                                }
-                              `}>
-                                <Clock className="h-4 w-4" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className={`
-                                  text-sm font-semibold transition-colors duration-200
-                                  ${showRecentPersons
-                                    ? "text-primary"
-                                    : "text-gray-700 group-hover:text-gray-900"
-                                  }
-                                `}>
-                                  Agregados recientemente
-                                </span>
-                                <span className={`
-                                  text-xs transition-colors duration-200
-                                  ${showRecentPersons
-                                    ? "text-primary/70"
-                                    : "text-gray-500"
-                                  }
-                                `}>
-                                  {showRecentPersons ? "Activo" : "Inactivo"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className={`
-                              relative w-14 h-7 rounded-full transition-all duration-300
-                              ${showRecentPersons
-                                ? "bg-gradient-to-r from-primary to-primary/80 shadow-inner shadow-primary/50"
-                                : "bg-gray-300 group-hover:bg-gray-400"
-                              }
-                            `}>
-                              <div className={`
-                                absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 transform
-                                ${showRecentPersons
-                                  ? "left-8 shadow-primary/20"
-                                  : "left-1 shadow-gray-400/30"
-                                }
-                              `}>
-                                {showRecentPersons && (
-                                  <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/20 to-transparent" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {showRecentPersons && (
-                            <div className="mt-3 pt-2 border-t border-primary/20">
-                              <div className="text-xs text-primary/80 flex items-center gap-2">
-                                <div className="flex gap-1">
-                                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" />
-                                  <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                                </div>
-                                Mostrando clientes ordenados por fecha de creación
-                              </div>
-                            </div>
-                          )}
-                          {/* Efecto de brillo sutil */}
-                          {showRecentPersons && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                          )}
-                        </div>
                       </div>
                       {filteredPersons.length > 0 ? (
                         filteredPersons.map((person) => (
@@ -806,85 +721,6 @@ export default function VehicleFormPage() {
                           onChange={(e) => setCompanySearchTerm(e.target.value)}
                           className="mb-0"
                         />
-                        <div
-                          onClick={() => setShowRecentCompanies(!showRecentCompanies)}
-                          className={`
-                            group relative w-full px-4 py-3 rounded-xl transition-all duration-300 ease-in-out cursor-pointer overflow-hidden
-                            ${showRecentCompanies
-                              ? "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-1 ring-primary/20"
-                              : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-50 hover:shadow-md"
-                            }
-                          `}
-                        >
-                          <div className="flex items-center justify-between relative z-10">
-                            <div className="flex items-center gap-3">
-                              <div className={`
-                                p-2 rounded-xl transition-all duration-300 transform group-hover:scale-110
-                                ${showRecentCompanies
-                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30"
-                                  : "bg-gradient-to-br from-gray-200 to-gray-300 text-gray-600 group-hover:from-gray-300 group-hover:to-gray-400"
-                                }
-                              `}>
-                                <Clock className="h-4 w-4" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className={`
-                                  text-sm font-semibold transition-colors duration-200
-                                  ${showRecentCompanies
-                                    ? "text-primary"
-                                    : "text-gray-700 group-hover:text-gray-900"
-                                  }
-                                `}>
-                                  Agregados recientemente
-                                </span>
-                                <span className={`
-                                  text-xs transition-colors duration-200
-                                  ${showRecentCompanies
-                                    ? "text-primary/70"
-                                    : "text-gray-500"
-                                  }
-                                `}>
-                                  {showRecentCompanies ? "Activo" : "Inactivo"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className={`
-                              relative w-14 h-7 rounded-full transition-all duration-300
-                              ${showRecentCompanies
-                                ? "bg-gradient-to-r from-primary to-primary/80 shadow-inner shadow-primary/50"
-                                : "bg-gray-300 group-hover:bg-gray-400"
-                              }
-                            `}>
-                              <div className={`
-                                absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 transform
-                                ${showRecentCompanies
-                                  ? "left-8 shadow-primary/20"
-                                  : "left-1 shadow-gray-400/30"
-                                }
-                              `}>
-                                {showRecentCompanies && (
-                                  <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/20 to-transparent" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {showRecentCompanies && (
-                            <div className="mt-3 pt-2 border-t border-primary/20">
-                              <div className="text-xs text-primary/80 flex items-center gap-2">
-                                <div className="flex gap-1">
-                                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" />
-                                  <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                                </div>
-                                Mostrando empresas ordenadas por fecha de creación
-                              </div>
-                            </div>
-                          )}
-                          {/* Efecto de brillo sutil */}
-                          {showRecentCompanies && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                          )}
-                        </div>
                       </div>
                       {filteredCompanies.length > 0 ? (
                         filteredCompanies.map((company) => (

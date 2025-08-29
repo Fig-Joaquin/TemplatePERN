@@ -50,7 +50,7 @@ export default function GastosPage() {
     if (gastoToDelete) {
       try {
         await deleteGasto(gastoToDelete);
-        setGastos(gastos.filter(gasto => gasto.id_gasto_empresa !== gastoToDelete));
+        setGastos(gastos.filter(gasto => gasto.company_expense_id !== gastoToDelete));
         toast.success("Gasto eliminado correctamente");
       } catch (error) {
         console.error("Error al eliminar el gasto:", error);
@@ -65,9 +65,9 @@ export default function GastosPage() {
   const filteredGastos = gastos.filter(gasto => {
     const searchTermLower = searchTerm.toLowerCase();
     return (
-      gasto.descripcion.toLowerCase().includes(searchTermLower) ||
-      gasto.tipo_gasto.nombre_tipo_gasto.toLowerCase().includes(searchTermLower) ||
-      (gasto.numero_boleta && gasto.numero_boleta.toLowerCase().includes(searchTermLower))
+      (gasto.description?.toLowerCase() ?? "").includes(searchTermLower) ||
+      (gasto.expense_type?.expense_type_name?.toLowerCase() ?? "").includes(searchTermLower) ||
+      (gasto.receipt_number != null && gasto.receipt_number.toString().toLowerCase().includes(searchTermLower))
     );
   });
 
@@ -117,7 +117,7 @@ export default function GastosPage() {
               <AnimatePresence>
                 {filteredGastos.map((gasto) => (
                   <motion.div
-                    key={gasto.id_gasto_empresa}
+                    key={gasto.company_expense_id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
@@ -127,24 +127,24 @@ export default function GastosPage() {
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="font-semibold text-lg line-clamp-1">{gasto.descripcion}</h3>
+                            <h3 className="font-semibold text-lg line-clamp-1">{gasto.description}</h3>
                             <p className="text-sm text-muted-foreground">
-                              <span className="font-medium">Fecha:</span> {formatDate(gasto.fecha_gasto)}
+                              <span className="font-medium">Fecha:</span> {formatDate(gasto.expense_date)}
                             </p>
                           </div>
-                          <Badge variant="outline">{gasto.tipo_gasto.nombre_tipo_gasto}</Badge>
+                          <Badge variant="outline">{gasto.expense_type?.expense_type_name}</Badge>
                         </div>
 
                         <div className="mb-4">
                           <div className="flex justify-between items-center">
                             <span className="font-medium">Monto:</span>
-                            <span className="text-lg font-bold text-primary">{formatPriceCLP(gasto.monto)}</span>
+                            <span className="text-lg font-bold text-primary">{formatPriceCLP(Number(gasto.amount ?? 0))}</span>
                           </div>
 
-                          {gasto.numero_boleta && (
+                          {gasto.receipt_number && (
                             <div className="flex justify-between items-center mt-1">
                               <span className="font-medium">Boleta:</span>
-                              <span>{gasto.numero_boleta}</span>
+                              <span>{gasto.receipt_number}</span>
                             </div>
                           )}
                         </div>
@@ -153,7 +153,7 @@ export default function GastosPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/admin/finanzas/gastos/editar/${gasto.id_gasto_empresa}`)}
+                            onClick={() => navigate(`/admin/finanzas/gastos/editar/${gasto.company_expense_id}`)}
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             Editar
@@ -162,7 +162,7 @@ export default function GastosPage() {
                             variant="ghost"
                             size="sm"
                             className="text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteClick(gasto.id_gasto_empresa!)}
+                            onClick={() => handleDeleteClick(gasto.company_expense_id!)}
                           >
                             <Trash className="h-4 w-4 mr-1" />
                             Eliminar
