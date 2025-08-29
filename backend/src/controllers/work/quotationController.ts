@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { Quotation } from "../../entities/work/quotationEntity";
-import { QuotationSchema } from "../../schema/work/quotationValidator";
+import { QuotationSchema, QuotationUpdateSchema } from "../../schema/work/quotationValidator";
 import { Vehicle } from "../../entities"; // <-- nueva importación
 import { WorkProductDetail } from "../../entities/work/workProductDetailEntity"; // <-- nueva importación
 
@@ -93,7 +93,7 @@ export const updateQuotation = async (req: Request, res: Response, _next: NextFu
             res.status(404).json({ message: "Cotización no encontrada" });
             return;
         }
-        const updateSchema = QuotationSchema.partial();
+        const updateSchema = QuotationUpdateSchema;
         const validationResult = updateSchema.safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({

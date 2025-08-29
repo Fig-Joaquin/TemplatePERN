@@ -60,12 +60,32 @@ export const createMileageHistory = async (req: Request, res: Response, _next: N
             return;
         }
 
-        const { vehicle: vehicle_id, current_mileage } = validationResult.data; // Eliminamos registration_date
+        const { vehicle: vehicle_id, current_mileage } = validationResult.data;
 
-        const vehicle = await AppDataSource.getRepository(Vehicle).findOne({ where: { vehicle_id: Number(vehicle_id) } });
+        const vehicle = await AppDataSource.getRepository(Vehicle).findOne({ 
+            where: { vehicle_id: Number(vehicle_id) },
+            relations: ["mileage_history"]
+        });
         if (!vehicle) {
-            res.status(404).json({ message: `El vehículo con ID '${vehicle_id}' no existe.` });
+            res.status(404).json({ message: `El vehículo con ID '${Number(vehicle_id)}' no existe.` });
             return;
+        }
+
+        // Validar que el nuevo kilometraje sea mayor o igual al último registrado
+        if (vehicle.mileage_history && vehicle.mileage_history.length > 0) {
+            // Ordenar por fecha de registro descendente para obtener el más reciente
+            const sortedHistory = [...vehicle.mileage_history].sort((a, b) => 
+                new Date(b.registration_date).getTime() - new Date(a.registration_date).getTime()
+            );
+            
+            const lastMileage = sortedHistory[0].current_mileage;
+            
+            if (current_mileage < lastMileage) {
+                res.status(400).json({ 
+                    message: `El nuevo kilometraje (${current_mileage} km) debe ser mayor o igual al último registrado (${lastMileage} km).` 
+                });
+                return;
+            }
         }
 
         const newHistory = mileageHistoryRepository.create({
@@ -89,7 +109,10 @@ export const updateMileageHistory = async (req: Request, res: Response, _next: N
             return;
         }
 
-        const history = await mileageHistoryRepository.findOneBy({ mileage_history_id: id });
+        const history = await mileageHistoryRepository.findOne({
+            where: { mileage_history_id: id },
+            relations: ["vehicle", "vehicle.mileage_history"]
+        });
         if (!history) {
             res.status(404).json({ message: "Historial de kilometraje no encontrado" });
             return;
@@ -99,6 +122,32 @@ export const updateMileageHistory = async (req: Request, res: Response, _next: N
         if (!validationResult.success) {
             res.status(400).json({ errors: validationResult.error.errors });
             return;
+        }
+
+        // Si se está actualizando el kilometraje, validar que sea mayor al anterior
+        if (validationResult.data.current_mileage !== undefined) {
+            const newMileage = validationResult.data.current_mileage;
+            
+            // Obtener todos los registros del vehículo excluyendo el actual
+            const otherRecords = history.vehicle.mileage_history.filter(
+                record => record.mileage_history_id !== id
+            );
+            
+            if (otherRecords.length > 0) {
+                // Ordenar por fecha de registro descendente para obtener el más reciente
+                const sortedHistory = [...otherRecords].sort((a, b) => 
+                    new Date(b.registration_date).getTime() - new Date(a.registration_date).getTime()
+                );
+                
+                const lastMileage = sortedHistory[0].current_mileage;
+                
+                if (newMileage < lastMileage) {
+                    res.status(400).json({ 
+                        message: `El kilometraje actualizado (${newMileage} km) debe ser mayor o igual al último registrado (${lastMileage} km).` 
+                    });
+                    return;
+                }
+            }
         }
 
         mileageHistoryRepository.merge(history, validationResult.data);

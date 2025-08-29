@@ -132,6 +132,7 @@ export const createVehicle = async (req: Request, res: Response, _next: NextFunc
         ];
         const vehicle = vehicleRepository.create({
             ...vehicleData,
+            license_plate: vehicleData.license_plate.toUpperCase(),
             model,
             ...(owner ? { owner } : {}),
             ...(company ? { company } : {}),
@@ -235,24 +236,52 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
         }
         
         // Actualizar los campos del vehículo
-        vehicleRepository.merge(vehicle, vehicleData);
+        const updatedVehicleData = {
+            ...vehicleData,
+            ...(vehicleData.license_plate && { license_plate: vehicleData.license_plate.toUpperCase() })
+        };
+        vehicleRepository.merge(vehicle, updatedVehicleData);
 
         // Guardar primero el vehículo actualizado para asegurar que tenga un vehicle_id válido
         const savedVehicle = await vehicleRepository.save(vehicle);
         
         // Procesar el historial de kilometraje solo después de guardar el vehículo
         if (mileageHistory) {
+            // Obtener el último kilometraje registrado para validación
+            const lastMileageRecord = await mileageHistoryRepository.findOne({
+                where: { vehicle: { vehicle_id: savedVehicle.vehicle_id } },
+                order: { registration_date: 'DESC' }
+            });
+
             if (Array.isArray(mileageHistory) && mileageHistory.length > 0) {
                 // Procesar array de registros
                 for (const record of mileageHistory) {
+                    const newMileage = typeof record === 'number' ? record : record.current_mileage;
+                    
+                    // Validar que el nuevo kilometraje sea mayor o igual al último registrado
+                    if (lastMileageRecord && newMileage < lastMileageRecord.current_mileage) {
+                        res.status(400).json({ 
+                            message: `El kilometraje nuevo (${newMileage} km) debe ser mayor o igual al último registrado (${lastMileageRecord.current_mileage} km)` 
+                        });
+                        return;
+                    }
+
                     const mileageRecord = mileageHistoryRepository.create({
                         vehicle: savedVehicle,
-                        current_mileage: typeof record === 'number' ? record : record.current_mileage,
+                        current_mileage: newMileage,
                         ...(typeof record !== 'number' ? record : {})
                     });
                     await mileageHistoryRepository.save(mileageRecord);
                 }
             } else if (typeof mileageHistory === 'number' && mileageHistory > 0) {
+                // Validar que el nuevo kilometraje sea mayor o igual al último registrado
+                if (lastMileageRecord && mileageHistory < lastMileageRecord.current_mileage) {
+                    res.status(400).json({ 
+                        message: `El kilometraje nuevo (${mileageHistory} km) debe ser mayor o igual al último registrado (${lastMileageRecord.current_mileage} km)` 
+                    });
+                    return;
+                }
+
                 // Procesar un único valor numérico
                 const mileageRecord = mileageHistoryRepository.create({
                     vehicle: savedVehicle,
@@ -283,11 +312,16 @@ export const updateVehicle = async (req: Request, res: Response, _next: NextFunc
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 
 export const deleteVehicle = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
         const { id } = req.params;
-        const vehicle = await vehicleRepository.findOne({
+
+        const vehicle = await queryRunner.manager.findOne(Vehicle, {
             where: { vehicle_id: parseInt(id) },
-            relations: ["mileage_history"]
+            relations: ["mileage_history", "owner", "company"]
         });
 
         if (!vehicle) {
@@ -295,62 +329,131 @@ export const deleteVehicle = async (req: Request, res: Response, _next: NextFunc
             return;
         }
 
-        // Verificar y eliminar los registros relacionados en "mileage_history"
+        // ORDEN CRÍTICO DE ELIMINACIÓN - RESPETAR DEPENDENCIAS DE CLAVES FORÁNEAS
+        // 1. Primero eliminar mileage_history (solo referencia vehicle)
+        // 2. Luego eliminar todas las tablas que referencian work_orders y quotations
+        // 3. Después eliminar work_orders y quotations
+        // 4. Finalmente eliminar vehicle
+
+        // Eliminar registros relacionados en "mileage_history"
         if (vehicle.mileage_history && vehicle.mileage_history.length > 0) {
-            await mileageHistoryRepository.createQueryBuilder()
+            await queryRunner.manager.createQueryBuilder()
                 .delete()
                 .from("mileage_history")
                 .where("vehicle_id = :id", { id: vehicle.vehicle_id })
                 .execute();
         }
 
-        // Verificar si existen órdenes de trabajo asociadas al vehículo y eliminarlas (cascade)
-        const workOrders = await workOrderRepository.find({
+        // Obtener órdenes de trabajo y cotizaciones asociadas al vehículo
+        const workOrders = await queryRunner.manager.find(WorkOrder, {
             where: {
                 vehicle: { vehicle_id: vehicle.vehicle_id }
             }
         });
+
+        const quotations = await queryRunner.manager.find(Quotation, {
+            where: {
+                vehicle: { vehicle_id: vehicle.vehicle_id }
+            }
+        });
+
+        // Eliminar work_product_details asociados a las órdenes de trabajo y cotizaciones
+        // Eliminar work_product_details de órdenes de trabajo
         if (workOrders.length > 0) {
-            await workOrderRepository.createQueryBuilder()
+            const workOrderIds = workOrders.map(wo => wo.work_order_id);
+            await queryRunner.manager.createQueryBuilder()
+                .delete()
+                .from("work_product_details")
+                .where("work_order_id IN (:...workOrderIds)", { workOrderIds })
+                .execute();
+        }
+
+        // Eliminar work_product_details de cotizaciones
+        if (quotations.length > 0) {
+            const quotationIds = quotations.map(q => q.quotation_id);
+            await queryRunner.manager.createQueryBuilder()
+                .delete()
+                .from("work_product_details")
+                .where("quotation_id IN (:...quotationIds)", { quotationIds })
+                .execute();
+        }
+
+        // Eliminar todas las tablas que referencian work_orders
+        if (workOrders.length > 0) {
+            const workOrderIds = workOrders.map(wo => wo.work_order_id);
+            
+            // Eliminar work_payments
+            await queryRunner.manager.createQueryBuilder()
+                .delete()
+                .from("work_payments")
+                .where("work_order_id IN (:...workOrderIds)", { workOrderIds })
+                .execute();
+
+            // Eliminar work_tickets
+            await queryRunner.manager.createQueryBuilder()
+                .delete()
+                .from("work_tickets")
+                .where("work_order_id IN (:...workOrderIds)", { workOrderIds })
+                .execute();
+
+            // Eliminar work_order_technicians
+            await queryRunner.manager.createQueryBuilder()
+                .delete()
+                .from("work_order_technicians")
+                .where("work_order_id IN (:...workOrderIds)", { workOrderIds })
+                .execute();
+
+            // Eliminar debtors
+            await queryRunner.manager.createQueryBuilder()
+                .delete()
+                .from("debtors")
+                .where("work_order_id IN (:...workOrderIds)", { workOrderIds })
+                .execute();
+        }
+
+        // Ahora eliminar órdenes de trabajo (ya no tienen referencias desde work_product_details)
+        if (workOrders.length > 0) {
+            await queryRunner.manager.createQueryBuilder()
                 .delete()
                 .from("work_orders")
                 .where("vehicle_id = :id", { id: vehicle.vehicle_id })
                 .execute();
         }
 
-        // Verificar si existen cotizaciones asociadas al vehículo y eliminarlas
-        const quotationRepository = AppDataSource.getRepository(Quotation);
-        const quotations = await quotationRepository.find({
-            where: {
-                vehicle: { vehicle_id: vehicle.vehicle_id }
-            }
-        });
+        // Eliminar cotizaciones (ya no tienen referencias desde work_product_details)
         if (quotations.length > 0) {
-            const workProductDetailsRepository = AppDataSource.getRepository(WorkProductDetail);
-            await workProductDetailsRepository.createQueryBuilder()
-                .delete()
-                .from("work_product_details")
-                .where("quotation_id IN (:...quotationIds)", { quotationIds: quotations.map(q => q.quotation_id) })
-                .execute();
-
-            await quotationRepository.createQueryBuilder()
+            await queryRunner.manager.createQueryBuilder()
                 .delete()
                 .from("quotations")
                 .where("vehicle_id = :id", { id: vehicle.vehicle_id })
                 .execute();
         }
 
-        // Ahora eliminar el vehículo
-        await vehicleRepository.createQueryBuilder()
+        // Eliminar el vehículo
+        await queryRunner.manager.createQueryBuilder()
             .delete()
             .from("vehicles")
             .where("vehicle_id = :id", { id: vehicle.vehicle_id })
             .execute();
 
-        res.json({ message: "Vehículo, su historial de kilometraje, órdenes de trabajo y cotizaciones eliminados exitosamente" });
+        // Confirmar la transacción
+        await queryRunner.commitTransaction();
+
+        res.json({ 
+            message: "Vehículo eliminado exitosamente",
+            deletedVehicle: {
+                vehicle_id: vehicle.vehicle_id,
+                license_plate: vehicle.license_plate
+            }
+        });
     } catch (error) {
+        // Revertir la transacción en caso de error
+        await queryRunner.rollbackTransaction();
         console.error("Error al eliminar vehículo:", error);
         res.status(500).json({ message: "Error al eliminar vehículo", error });
+    } finally {
+        // Liberar el queryRunner
+        await queryRunner.release();
     }
 };
 

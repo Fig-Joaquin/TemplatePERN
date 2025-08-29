@@ -61,22 +61,27 @@ export const createCompany = async (req: Request, res: Response, _next: NextFunc
             return;
         }
 
-        const { rut, email } = validationResult.data;
+        const { rut, email, phone } = validationResult.data;
 
-        // Verificar si el RUT ya existe
-        const existingCompanyByRut = await companyRepository.findOneBy({ rut });
-        if (existingCompanyByRut) {
-            res.status(409).json({ message: `El RUT '${rut}' ya está registrado en el sistema.` });
-            return;
+        // Check uniqueness for all provided fields
+        const uniquenessChecks = [
+            checkCompanyFieldUniqueness('rut', rut)
+        ];
+        
+        if (email !== undefined) {
+            uniquenessChecks.push(checkCompanyFieldUniqueness('email', email));
+        }
+        
+        if (phone !== undefined) {
+            uniquenessChecks.push(checkCompanyFieldUniqueness('phone', phone));
         }
 
-        // Verificar unicidad de email SOLO si fue enviado
-        if (email !== undefined) {
-            const existingCompanyByEmail = await companyRepository.findOneBy({ email });
-            if (existingCompanyByEmail) {
-                res.status(409).json({ message: `El email '${email}' ya está registrado en el sistema.` });
-                return;
-            }
+        const uniquenessResults = await Promise.all(uniquenessChecks);
+        const errorMessage = uniquenessResults.find(result => result !== null);
+        
+        if (errorMessage) {
+            res.status(409).json({ message: errorMessage });
+            return;
         }
 
         // Crear empresa
@@ -96,11 +101,33 @@ export const createCompany = async (req: Request, res: Response, _next: NextFunc
     }
 };
 
+// Helper function to check company field uniqueness
+const checkCompanyFieldUniqueness = async (
+    field: 'rut' | 'email' | 'phone',
+    value: string,
+    currentCompanyId?: number
+): Promise<string | null> => {
+    const whereCondition = { [field]: value };
+    const existingCompany = await companyRepository.findOneBy(whereCondition);
+    
+    if (existingCompany && existingCompany.company_id !== currentCompanyId) {
+        const fieldNames = {
+            rut: 'RUT',
+            email: 'email',
+            phone: 'número de teléfono'
+        };
+        return `El ${fieldNames[field]} '${value}' ya está registrado en el sistema.`;
+    }
+    
+    return null;
+};
+
 export const updateCompany = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         console.log(req.body);
         const { id } = req.params;
-        const company = await companyRepository.findOneBy({ company_id: parseInt(id, 10) });
+        const companyId = parseInt(id, 10);
+        const company = await companyRepository.findOneBy({ company_id: companyId });
 
         if (!company) {
             res.status(404).json({ message: "Empresa no encontrada" });
@@ -109,17 +136,45 @@ export const updateCompany = async (req: Request, res: Response, _next: NextFunc
 
         const validationResult = updateCompaniesSchema.safeParse(req.body);
         if (!validationResult.success) {
-            res.status(400).json({ errors: validationResult.error.errors });
+            res.status(400).json({
+                message: "Error de validación",
+                errors: validationResult.error.errors.map(err => ({
+                    field: err.path.join("."),
+                    message: err.message
+                }))
+            });
             return;
         }
 
-        companyRepository.merge(company, req.body);
+        const { rut, email, phone } = validationResult.data;
+
+        // Check uniqueness for fields that are being updated
+        const uniquenessChecks = [];
+        if (rut !== undefined && rut !== company.rut) {
+            uniquenessChecks.push(checkCompanyFieldUniqueness('rut', rut, companyId));
+        }
+        if (email !== undefined && email !== company.email) {
+            uniquenessChecks.push(checkCompanyFieldUniqueness('email', email, companyId));
+        }
+        if (phone !== undefined && phone !== company.phone) {
+            uniquenessChecks.push(checkCompanyFieldUniqueness('phone', phone, companyId));
+        }
+
+        const uniquenessResults = await Promise.all(uniquenessChecks);
+        const errorMessage = uniquenessResults.find(result => result !== null);
+        
+        if (errorMessage) {
+            res.status(409).json({ message: errorMessage });
+            return;
+        }
+
+        companyRepository.merge(company, validationResult.data);
         await companyRepository.save(company);
-        res.json(company);
+        res.json({ message: "Empresa actualizada exitosamente", company });
         return;
     } catch (error: unknown) {
         if (typeof error === 'object' && error !== null && 'code' in error && error.code === "23505") {
-            res.status(400).json({ message: "El RUT ya existe en el sistema" });
+            res.status(400).json({ message: "Datos duplicados en el sistema" });
             return;
         }
         res.status(500).json({ message: "Error al actualizar empresa", error });

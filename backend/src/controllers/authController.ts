@@ -33,7 +33,11 @@ export const login: RequestHandler = async (req: Request, res: Response): Promis
     }
 
     const token = jwt.sign(
-      { user_id: user.user_id, username: user.username },
+      { 
+        user_id: user.user_id, 
+        username: user.username,
+        userRole: user.user_role 
+      },
       process.env.JWT_SECRET || "secret_default",
       { expiresIn: "1h" }
     );

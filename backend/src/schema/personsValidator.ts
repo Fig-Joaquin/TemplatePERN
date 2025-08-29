@@ -58,8 +58,20 @@ export const PersonSchema = z.object({
     
     email: z
         .string()
-        .email("Email debe tener un formato válido")
-        .max(100, "Email no puede superar los 100 caracteres"),
+        .optional()
+        .transform((val) => (val?.trim() === "" ? undefined : val?.trim()))
+        .refine(
+          (val) => val == null || val.length >= 5, 
+          { message: "Email debe tener entre 5 y 100 caracteres" }
+        )
+        .refine(
+          (val) => val == null || val.length <= 100, 
+          { message: "Email debe tener entre 5 y 100 caracteres" }
+        )
+        .refine(
+          (val) => val == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+          { message: "Email inválido" }
+        ),
     
     number_phone: z
         .string()

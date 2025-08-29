@@ -102,11 +102,33 @@ export const createPerson = async (req: Request, res: Response, _next: NextFunct
     }
 };
 
+// Helper function to check person field uniqueness
+const checkPersonFieldUniqueness = async (
+    field: 'rut' | 'email' | 'number_phone',
+    value: string,
+    currentPersonId?: number
+): Promise<string | null> => {
+    const whereCondition = { [field]: value };
+    const existingPerson = await personRepository.findOneBy(whereCondition);
+    
+    if (existingPerson && existingPerson.person_id !== currentPersonId) {
+        const fieldNames = {
+            rut: 'RUT',
+            email: 'email',
+            number_phone: 'número de teléfono'
+        };
+        return `El ${fieldNames[field]} '${value}' ya está registrado en el sistema.`;
+    }
+    
+    return null;
+};
+
 export const updatePerson = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
         console.log(req.body);
         const { id } = req.params;
-        const person = await personRepository.findOneBy({ person_id: parseInt(id) });
+        const personId = parseInt(id);
+        const person = await personRepository.findOneBy({ person_id: personId });
         
         if (!person) {
             res.status(404).json({ message: "Persona no encontrada" });
@@ -115,17 +137,45 @@ export const updatePerson = async (req: Request, res: Response, _next: NextFunct
 
         const validationResult = UpdatePersonSchema.safeParse(req.body);
         if (!validationResult.success) {
-            res.status(400).json({ errors: validationResult.error.errors });
+            res.status(400).json({
+                message: "Error de validación",
+                errors: validationResult.error.errors.map(err => ({
+                    field: err.path.join("."),
+                    message: err.message
+                }))
+            });
             return;
         }
 
-        personRepository.merge(person, req.body);
+        const { rut, email, number_phone } = validationResult.data;
+
+        // Check uniqueness for fields that are being updated
+        const uniquenessChecks = [];
+        if (rut !== undefined && rut !== person.rut) {
+            uniquenessChecks.push(checkPersonFieldUniqueness('rut', rut, personId));
+        }
+        if (email !== undefined && email !== person.email) {
+            uniquenessChecks.push(checkPersonFieldUniqueness('email', email, personId));
+        }
+        if (number_phone !== undefined && number_phone !== person.number_phone) {
+            uniquenessChecks.push(checkPersonFieldUniqueness('number_phone', number_phone, personId));
+        }
+
+        const uniquenessResults = await Promise.all(uniquenessChecks);
+        const errorMessage = uniquenessResults.find(result => result !== null);
+        
+        if (errorMessage) {
+            res.status(409).json({ message: errorMessage });
+            return;
+        }
+
+        personRepository.merge(person, validationResult.data);
         await personRepository.save(person);
-        res.json(person);
+        res.json({ message: "Persona actualizada exitosamente", person });
         return;
     } catch (error: unknown) {
         if (typeof error === 'object' && error !== null && 'code' in error && error.code === '23505') {
-            res.status(400).json({ message: "El RUT ya existe en el sistema" });
+            res.status(409).json({ message: "Datos duplicados en el sistema" });
             return;
         }
         res.status(500).json({ message: "Error al actualizar persona", error });

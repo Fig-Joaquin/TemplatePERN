@@ -13,8 +13,8 @@ export const companiesSchema = z.object({
     
     email: z.preprocess(
         (val) => {
-            if (typeof val === "string" && val.trim() === "") {
-            return undefined;
+            if (val === null || val === undefined || (typeof val === "string" && val.trim() === "")) {
+                return undefined;
             }
             return val;
         },
@@ -25,10 +25,18 @@ export const companiesSchema = z.object({
         ),
           
 
-    phone: z.string()
-        .min(7, { message: "El teléfono debe tener al menos 7 caracteres" })
-        .max(12, { message: "El teléfono no puede superar los 12 caracteres" })
-        .optional()
+    phone: z.preprocess(
+        (val) => {
+            if (val === null || val === undefined || (typeof val === "string" && val.trim() === "")) {
+                return undefined;
+            }
+            return val;
+        },
+        z.string()
+            .min(7, { message: "El teléfono debe tener al menos 7 caracteres" })
+            .max(12, { message: "El teléfono no puede superar los 12 caracteres" })
+            .optional()
+    )
 });
 
 export const updateCompaniesSchema = companiesSchema.partial();

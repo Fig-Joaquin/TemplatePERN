@@ -7,22 +7,23 @@ createMileageHistory,
 updateMileageHistory, 
 deleteMileageHistory 
 } from "../../controllers/vehicles/mileageHistoryController";
+import { requireAdmin, authenticateUser } from "../../middleware/authMiddleware";
 
 const mileageHistoryRoutes = Router();
 
-// Obtener todos los historiales de kilometraje
-mileageHistoryRoutes.get("/", getAllMileageHistories);
+// Obtener todos los historiales de kilometraje (requiere autenticación)
+mileageHistoryRoutes.get("/", authenticateUser, getAllMileageHistories);
 
-// Obtener un historial de kilometraje por ID
-mileageHistoryRoutes.get("/:id", getMileageHistoryById);
+// Obtener un historial de kilometraje por ID (requiere autenticación)
+mileageHistoryRoutes.get("/:id", authenticateUser, getMileageHistoryById);
 
-// Crear un nuevo historial de kilometraje
-mileageHistoryRoutes.post("/", createMileageHistory);
+// Crear un nuevo historial de kilometraje (solo administradores)
+mileageHistoryRoutes.post("/", requireAdmin, createMileageHistory);
 
-// Actualizar un historial de kilometraje existente
-mileageHistoryRoutes.put("/:id", updateMileageHistory);
+// Actualizar un historial de kilometraje existente (solo administradores)
+mileageHistoryRoutes.put("/:id", requireAdmin, updateMileageHistory);
 
-// Eliminar un historial de kilometraje
-mileageHistoryRoutes.delete("/:id", deleteMileageHistory);
+// Eliminar un historial de kilometraje (solo administradores)
+mileageHistoryRoutes.delete("/:id", requireAdmin, deleteMileageHistory);
 
 export default mileageHistoryRoutes;
