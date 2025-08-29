@@ -3,11 +3,13 @@ import { AppDataSource } from "../../config/ormconfig";
 import { Quotation } from "../../entities/work/quotationEntity";
 import { QuotationSchema, QuotationUpdateSchema } from "../../schema/work/quotationValidator";
 import { Vehicle } from "../../entities"; // <-- nueva importación
+import { WorkOrder } from "../../entities/work/workOrderEntity"; // <-- nueva importación
 import { WorkProductDetail } from "../../entities/work/workProductDetailEntity"; // <-- nueva importación
 
 const quotationRepository = AppDataSource.getRepository(Quotation); // <-- nuevo repositorio
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
 const vehicleRepository = AppDataSource.getRepository(Vehicle); // <-- nuevo repositorio
+const workOrderRepository = AppDataSource.getRepository(WorkOrder); // <-- nuevo repositorio
 
 
 export const getAllQuotations = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
@@ -139,6 +141,36 @@ export const deleteQuotation = async (req: Request, res: Response, _next: NextFu
             res.status(404).json({ message: "Cotización no encontrada" });
             return;
         }
+
+        // Verificar si la cotización está asociada a una orden de trabajo activa
+        // Primero, busquemos TODAS las órdenes de trabajo asociadas a esta cotización para debugging
+        const allWorkOrders = await workOrderRepository.find({
+            where: { 
+                quotation: { quotation_id: quotation.quotation_id }
+            }
+        });
+
+        console.log(`Checking quotation ${quotation.quotation_id} for work orders...`);
+        console.log(`All work orders found:`, allWorkOrders.map(wo => ({ id: wo.work_order_id, status: wo.order_status })));
+
+        // Filtrar solo las órdenes activas
+        const activeWorkOrders = allWorkOrders.filter(wo => 
+            wo.order_status === "in_progress" || wo.order_status === "not_started"
+        );
+
+        console.log(`Active work orders found:`, activeWorkOrders.map(wo => ({ id: wo.work_order_id, status: wo.order_status })));
+
+        if (activeWorkOrders.length > 0) {
+            const activeWorkOrder = activeWorkOrders[0];
+            res.status(400).json({ 
+                message: "No se puede eliminar la cotización porque está asociada a una orden de trabajo activa. Complete o cancele la orden de trabajo primero.",
+                workOrderId: activeWorkOrder.work_order_id,
+                orderStatus: activeWorkOrder.order_status,
+                totalActiveOrders: activeWorkOrders.length
+            });
+            return;
+        }
+
         // Remove dependent work product details referencing this quotation
         await workProductDetailRepository.delete({ quotation: { quotation_id: quotation.quotation_id } });
         await quotationRepository.remove(quotation);

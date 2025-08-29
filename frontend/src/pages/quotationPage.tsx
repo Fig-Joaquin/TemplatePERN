@@ -84,9 +84,10 @@ export default function QuotationPage() {
         const response = await fetchQuotations([]);
         setQuotations(response);
         toast.success("Cotización eliminada exitosamente");
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al eliminar la cotización:", error);
-        toast.error("Error al eliminar la cotización");
+        const errorMessage = error.response?.data?.message || "Error al eliminar la cotización";
+        toast.error(errorMessage);
       } finally {
         setDeleteDialogOpen(false)
         setQuotationToDelete(null)

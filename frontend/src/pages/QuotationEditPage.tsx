@@ -12,7 +12,6 @@ import {
 } from "@/services/workProductDetail"
 import { fetchVehicles } from "@/services/vehicleService"
 import { fetchProducts } from "@/services/productService"
-import { getStockProducts } from "@/services/stockProductService"
 import { getTaxById } from "@/services/taxService"
 import { Button } from "@/components/ui/button"
 import { NumberInput } from "@/components/numberInput"
@@ -28,7 +27,7 @@ import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
 import { Save, ArrowLeft, FileText, Plus, Package } from "lucide-react"
-import type { Vehicle, Quotation, WorkProductDetail, Product, StockProduct } from "@/types/interfaces"
+import type { Vehicle, Quotation, WorkProductDetail, Product } from "@/types/interfaces"
 
 // Interface for selected products (similar to quotationCreatePage)
 interface SelectedProduct {
@@ -67,7 +66,6 @@ export default function EditQuotationPage() {
 
     // New states for product management
     const [products, setProducts] = useState<Product[]>([])
-    const [stockProducts, setStockProducts] = useState<StockProduct[]>([])
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
     const [showProductModal, setShowProductModal] = useState(false)
     const [taxRate, setTaxRate] = useState<number>(0)
@@ -128,14 +126,10 @@ export default function EditQuotationPage() {
                 }))
                 setSelectedProducts(initialSelectedProducts)
 
-                // Fetch products and stock
+                // Fetch products (no need for stock data in quotations)
                 const productsData = await fetchProducts()
                 setProducts(productsData)
 
-                const stockData = await getStockProducts()
-                setStockProducts(stockData)
-
-                console.log("Stock products:", stockData)
                 console.log("Product details:", details)
 
                 fetchTax().then((rate) => {
@@ -156,14 +150,7 @@ export default function EditQuotationPage() {
 
     // Product management functions updated for stock handling
     const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
-        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
-
-        // Validate stock quantity
-        if (stockProduct && quantity > stockProduct.quantity) {
-            toast.error("No hay suficiente stock disponible")
-            return
-        }
-
+        // No stock validation for quotations - they are estimates, not actual product consumption
         setSelectedProducts((prevSelectedProducts) => {
             const existingProduct = prevSelectedProducts.find((p) => p.productId === productId)
             if (existingProduct) {
@@ -347,20 +334,10 @@ export default function EditQuotationPage() {
         setTempSelectedProducts((prev) => prev.filter((p) => p.productId !== productId))
     }
 
-    // Update modal close handler to validate stock before applying changes
+    // Update modal close handler - no stock validation for quotations
     const handleModalClose = (save: boolean) => {
         if (save) {
-            // Validate stock for all temp selected products
-            const hasInvalidStock = tempSelectedProducts.some((selectedProduct) => {
-                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(selectedProduct.productId))
-                return !stockProduct || selectedProduct.quantity > stockProduct.quantity
-            })
-
-            if (hasInvalidStock) {
-                toast.error("No hay suficiente stock para uno o más productos")
-                return
-            }
-
+            // No stock validation needed for quotations since they are estimates
             setSelectedProducts(tempSelectedProducts)
         }
         setShowProductModal(false)
@@ -476,7 +453,7 @@ export default function EditQuotationPage() {
                                 <ul className="space-y-3">
                                     {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice, workProductDetailId }) => {
                                         const product = products.find((p) => p.product_id === Number(productId))
-                                        const stockProduct = stockProducts.find((sp) => sp.product?.product_id === Number(productId))
+                                        // No need to find stock product for quotations
 
                                         // Calculate the unit price for display
                                         const unitPrice =
@@ -505,13 +482,8 @@ export default function EditQuotationPage() {
                                                     </div>
                                                     <p className="text-xs text-gray-500">Margen: {product?.profit_margin}%</p>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Precio: {formatPriceCLP(unitPrice)} - Stock: {stockProduct?.quantity || 0}
-                                                        {(!stockProduct || stockProduct.quantity === 0) && (
-                                                            <span className="text-red-500 font-medium ml-1">(Sin stock)</span>
-                                                        )}
-                                                        {stockProduct && stockProduct.quantity > 0 && stockProduct.quantity < quantity && (
-                                                            <span className="text-orange-500 font-medium ml-1">(Stock insuficiente)</span>
-                                                        )}
+                                                        Precio: {formatPriceCLP(unitPrice)}
+                                                        {/* No stock warnings for quotations since they are estimates */}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center space-x-4">
@@ -647,7 +619,6 @@ export default function EditQuotationPage() {
                                     <ScrollArea className="h-[200px]">
                                         {products
                                             .map((product) => {
-                                                const stockProduct = stockProducts.find((sp) => sp.product?.product_id === product.product_id)
                                                 const selectedProduct = tempSelectedProducts.find((sp) => sp.productId === product.product_id)
                                                 const isSelected = !!selectedProduct
 
@@ -677,8 +648,8 @@ export default function EditQuotationPage() {
                                                                 <p className="font-medium">{product.product_name}</p>
                                                                 <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
                                                                 <p className="text-sm text-muted-foreground">
-                                                                    Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
-                                                                    {stockProduct?.quantity || 0}
+                                                                    Precio: {formatPriceCLP(Number(product.sale_price))}
+                                                                    {/* No stock information for quotations */}
                                                                 </p>
                                                             </div>
                                                         </div>
