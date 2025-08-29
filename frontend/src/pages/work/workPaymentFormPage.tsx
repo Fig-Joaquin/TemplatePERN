@@ -145,10 +145,17 @@ export default function WorkPaymentFormPage() {
     }
   };
 
-  // Modifica esta función para actualizar el estado automáticamente
+  // Modifica esta función para validar y limitar el monto
   const handleAmountChange = (value: number) => {
-    setFormData(prev => ({ ...prev, amount_paid: value }));
-    updatePaymentStatus(value);
+    // Validar que el monto no supere el total de la orden
+    if (selectedOrderTotal > 0 && value > selectedOrderTotal) {
+      toast.warning(`El monto no puede superar el total de la orden: ${formatPriceCLP(selectedOrderTotal)}`);
+      setFormData(prev => ({ ...prev, amount_paid: selectedOrderTotal }));
+      updatePaymentStatus(selectedOrderTotal);
+    } else {
+      setFormData(prev => ({ ...prev, amount_paid: value }));
+      updatePaymentStatus(value);
+    }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,6 +172,12 @@ export default function WorkPaymentFormPage() {
       formData.amount_paid < 0
     ) {
       toast.error("Por favor complete todos los campos obligatorios");
+      return;
+    }
+
+    // Validación adicional antes de enviar
+    if (selectedOrderTotal > 0 && formData.amount_paid > selectedOrderTotal) {
+      toast.error(`El monto no puede superar el total de la orden: ${formatPriceCLP(selectedOrderTotal)}`);
       return;
     }
 
@@ -294,8 +307,8 @@ export default function WorkPaymentFormPage() {
                             : order.vehicle?.company?.name || "Sin cliente";
 
                           // Formatear la fecha
-                          const orderDate = order.entry_date
-                            ? new Date(order.entry_date).toLocaleDateString('es-CL')
+                          const orderDate = order.order_date
+                            ? new Date(order.order_date).toLocaleDateString('es-CL')
                             : "Sin fecha";
 
                           // Traducir el estado
@@ -304,7 +317,7 @@ export default function WorkPaymentFormPage() {
                             "in_progress": "En progreso",
                             "finished": "Finalizado"
                           };
-                          const status = statusMap[order.work_order_status] || order.work_order_status;
+                          const status = statusMap[order.order_status] || order.order_status;
 
                           return (
                             <SelectItem key={order.work_order_id} value={order.work_order_id!.toString()}>
@@ -419,17 +432,25 @@ export default function WorkPaymentFormPage() {
                   value={formData.amount_paid}
                   onChange={handleAmountChange}
                   min={0}
+                  max={selectedOrderTotal > 0 ? selectedOrderTotal : undefined}
                   isPrice
                   required
                   className="w-full"
                 />
                 {selectedOrderTotal > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Total de la orden: {formatPriceCLP(selectedOrderTotal)} |
-                    {formData.amount_paid < selectedOrderTotal ?
-                      `Falta: ${formatPriceCLP(selectedOrderTotal - formData.amount_paid)}` :
-                      'Monto completo'}
-                  </p>
+                  <div className="space-y-1 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      Total de la orden: {formatPriceCLP(selectedOrderTotal)} |
+                      {formData.amount_paid < selectedOrderTotal ?
+                        `Falta: ${formatPriceCLP(selectedOrderTotal - formData.amount_paid)}` :
+                        'Monto completo'}
+                    </p>
+                    {formData.amount_paid > selectedOrderTotal && (
+                      <p className="text-xs text-red-500 font-medium">
+                        ⚠️ El monto no puede superar el total de la orden
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
