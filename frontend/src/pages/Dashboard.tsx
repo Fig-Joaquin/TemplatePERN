@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/solid";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Wrench,
-  Car,
-  AlertTriangle,
+import { 
+  Wrench, 
+  Car, 
+  AlertTriangle, 
   Clock,
   DollarSign,
   Package,
@@ -29,11 +29,18 @@ import { formatDate } from "@/utils/formDate";
 import { getCompleteWorkOrderById } from "@/services/workOrderService";
 import { WorkPayment, Gasto, WorkOrder, Quotation, StockProduct, Vehicle } from "@/types/interfaces";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "react-toastify";
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const [, setPayments] = useState<WorkPayment[]>([]);
-  const [, setGastos] = useState<Gasto[]>([]);
+  const [payments, setPayments] = useState<WorkPayment[]>([]);
+  const [gastos, setGastos] = useState<Gasto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [recentWorkOrders, setRecentWorkOrders] = useState<WorkOrder[]>([]);
   const [recentQuotations, setRecentQuotations] = useState<Quotation[]>([]);
@@ -86,11 +93,11 @@ export const Dashboard = () => {
       try {
         setLoading(true);
         const [
-          paymentsData,
-          gastosData,
-          workOrdersData,
-          quotationsData,
-          stockData,
+          paymentsData, 
+          gastosData, 
+          workOrdersData, 
+          quotationsData, 
+          stockData, 
           notificationsData,
           vehiclesData
         ] = await Promise.all([
@@ -102,22 +109,22 @@ export const Dashboard = () => {
           fetchNotifications(),
           fetchVehicles()
         ]);
-
+        
         setPayments(paymentsData);
         setGastos(gastosData);
-
+        
         // Calcular estadísticas financieras
         calculateStats(paymentsData, gastosData);
-
+        
         // Procesar datos adicionales para el dashboard
         processAdditionalData(
-          workOrdersData,
-          quotationsData,
-          stockData,
+          workOrdersData, 
+          quotationsData, 
+          stockData, 
           notificationsData,
           vehiclesData
         );
-
+        
       } catch (error) {
         console.error("Error al cargar datos del dashboard:", error);
       } finally {
@@ -126,12 +133,12 @@ export const Dashboard = () => {
     };
 
     fetchData();
-  }, [paymentVersion]); // Agregar paymentVersion como dependencia
+  }, []);
 
   const processAdditionalData = (
-    workOrders: WorkOrder[],
-    quotations: Quotation[],
-    stock: StockProduct[],
+    workOrders: WorkOrder[], 
+    quotations: Quotation[], 
+    stock: StockProduct[], 
     notifications: any[],
     vehicles: Vehicle[]
   ) => {
@@ -141,8 +148,8 @@ export const Dashboard = () => {
 
     // Filtrar órdenes de trabajo de hoy
     const workOrdersToday = workOrders.filter(wo => {
-      const orderDateStr = typeof wo.order_date === 'string'
-        ? (wo.order_date as string).split('T')[0]
+      const orderDateStr = typeof wo.order_date === 'string' 
+        ? (wo.order_date as string).split('T')[0] 
         : getLocalDateString(new Date(wo.order_date));
       return orderDateStr === todayStr;
     });
@@ -150,8 +157,8 @@ export const Dashboard = () => {
     // Filtrar cotizaciones de hoy
     const quotationsToday = quotations.filter(q => {
       if (!q.entry_date) return false;
-      const entryDateStr = typeof q.entry_date === 'string'
-        ? (q.entry_date as string).split('T')[0]
+      const entryDateStr = typeof q.entry_date === 'string' 
+        ? (q.entry_date as string).split('T')[0] 
         : getLocalDateString(new Date(q.entry_date));
       return entryDateStr === todayStr;
     });
@@ -161,7 +168,7 @@ export const Dashboard = () => {
       .sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime())
       .slice(0, 5);
     setRecentWorkOrders(sortedWorkOrders);
-
+    
     // Cotizaciones recientes (últimas 5)
     const sortedQuotations = quotations
       .sort((a, b) => new Date(b.entry_date || 0).getTime() - new Date(a.entry_date || 0).getTime())
@@ -183,8 +190,8 @@ export const Dashboard = () => {
       .filter(wo => (wo as any).order_status === 'in_progress' || (wo as any).order_status === 'not_started')
       .map(wo => wo.vehicle?.vehicle_id)
       .filter(Boolean);
-
-    const uniqueActiveVehicles = vehicles.filter(v =>
+    
+    const uniqueActiveVehicles = vehicles.filter(v => 
       activeWorkOrderVehicleIds.includes(v.vehicle_id)
     ).slice(0, 5);
     setActiveVehicles(uniqueActiveVehicles);
@@ -207,18 +214,18 @@ export const Dashboard = () => {
 
   const calculateStats = (payments: WorkPayment[], gastos: Gasto[]) => {
     const now = new Date();
-
+    
     // Fechas para cálculos diarios
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-
+    
     // Fechas para cálculos mensuales
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const startOfCurrentMonthLastMonthCalc = new Date(now.getFullYear(), now.getMonth(), 1);
-
+    
     // Fechas para cálculos anuales
     const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
@@ -313,11 +320,11 @@ export const Dashboard = () => {
     // Convertir las fechas de inicio y fin a strings YYYY-MM-DD para comparación simple
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
-
+    
     const filteredPayments = payments.filter(payment => {
       // Obtener la fecha como string YYYY-MM-DD
       let paymentDateStr: string;
-
+      
       if (typeof payment.payment_date === 'string') {
         // Si es string, extraer la parte de fecha
         paymentDateStr = payment.payment_date.split('T')[0];
@@ -325,21 +332,21 @@ export const Dashboard = () => {
         // Si ya es Date, convertirlo a string YYYY-MM-DD
         paymentDateStr = getLocalDateString(payment.payment_date);
       }
-
+      
       // Verificamos si el pago está en estado válido
-      const isValidPaymentStatus =
+      const isValidPaymentStatus = 
         payment.payment_status === "pagado" || payment.payment_status === "parcial";
-
+      
       if (!isValidPaymentStatus) {
         return false;
       }
-
+      
       // Para rangos de fechas: incluye start, excluye end
       const isInRange = paymentDateStr >= startDateStr && paymentDateStr < endDateStr;
-
+      
       return isInRange;
     });
-
+    
     const result = filteredPayments.reduce((sum, payment) => {
       // Asegurar que amount_paid sea tratado como número
       const montoNumerico = typeof payment.amount_paid === 'string' ? parseFloat(payment.amount_paid) : Number(payment.amount_paid);
@@ -353,25 +360,25 @@ export const Dashboard = () => {
     // Convertir las fechas de inicio y fin a strings YYYY-MM-DD para comparación simple
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
-
+    
     const filteredGastos = gastos.filter(gasto => {
       // Obtener la fecha como string YYYY-MM-DD
       let gastoDateStr: string;
       
-      if (typeof gasto.fecha_gasto === 'string') {
+      if (typeof gasto.expense_date === 'string') {
         // Si es string, extraer la parte de fecha
         gastoDateStr = gasto.expense_date.split('T')[0];
       } else {
         // Si ya es Date, convertirlo a string YYYY-MM-DD
         gastoDateStr = getLocalDateString(gasto.expense_date);
       }
-
+      
       // Para rangos de fechas: incluye start, excluye end
       const isInRange = gastoDateStr >= startDateStr && gastoDateStr < endDateStr;
-
+      
       return isInRange;
     });
-
+    
     const result = filteredGastos.reduce((sum, gasto) => {
       // Asegurar que gasto.amount sea tratado como número
       const montoNumerico = typeof gasto.amount === 'string' ? parseFloat(gasto.amount) : Number(gasto.amount);
@@ -383,17 +390,17 @@ export const Dashboard = () => {
   const calculatePercentageChange = (current: number, previous: number): number => {
     // Si ambos valores son cero, no hay cambio
     if (current === 0 && previous === 0) return 0;
-
+    
     // Si el valor anterior es cero pero el actual no
     if (previous === 0) {
       // Si el valor actual es positivo, consideramos como 100% de aumento
       // Si es negativo, consideramos como 100% de disminución
       return current > 0 ? 100 : (current < 0 ? -100 : 0);
     }
-
+    
     // Calcular el porcentaje de cambio normal
     const percentageChange = ((current - previous) / Math.abs(previous)) * 100;
-
+    
     // Limitar el porcentaje a un rango razonable (-999% a 999%)
     return Math.max(-999, Math.min(999, percentageChange));
   };
@@ -499,7 +506,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <motion.div
+    <motion.div 
       className="space-y-6 max-w-7xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -508,16 +515,16 @@ export const Dashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold text-primary">Dashboard de Gestión</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             onClick={() => navigate("/admin/nueva-orden-trabajo")}
             className="flex items-center gap-2"
           >
             <Wrench className="h-4 w-4" />
             Nueva Orden
           </Button>
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             onClick={() => navigate("/admin/cotizaciones/nuevo")}
             className="flex items-center gap-2"
           >
@@ -526,7 +533,7 @@ export const Dashboard = () => {
           </Button>
         </div>
       </div>
-
+      
       {loading ? (
         <div className="text-center py-20">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
@@ -535,7 +542,7 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* Estadísticas Financieras */}
-          <motion.div
+          <motion.div 
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -551,7 +558,8 @@ export const Dashboard = () => {
                   title="Balance Diario" 
                   amount={formatPriceCLP(stats.daily.amount)} 
                   percentage={Math.round(stats.daily.percentage)} 
-                  trend={stats.daily.trend} 
+                  trend={stats.daily.trend}
+                  onViewDetails={() => openDetailsDialog("daily")}
                 />
               </motion.div>
               <motion.div
@@ -563,7 +571,8 @@ export const Dashboard = () => {
                   title="Balance Mensual" 
                   amount={formatPriceCLP(stats.monthly.amount)} 
                   percentage={Math.round(stats.monthly.percentage)} 
-                  trend={stats.monthly.trend} 
+                  trend={stats.monthly.trend}
+                  onViewDetails={() => openDetailsDialog("monthly")}
                 />
               </motion.div>
               <motion.div
@@ -575,14 +584,15 @@ export const Dashboard = () => {
                   title="Balance Anual" 
                   amount={formatPriceCLP(stats.annual.amount)} 
                   percentage={Math.round(stats.annual.percentage)} 
-                  trend={stats.annual.trend} 
+                  trend={stats.annual.trend}
+                  onViewDetails={() => openDetailsDialog("annual")}
                 />
               </motion.div>
             </AnimatePresence>
           </motion.div>
 
           {/* Métricas Rápidas */}
-          <motion.div
+          <motion.div 
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -665,8 +675,8 @@ export const Dashboard = () => {
                     <Activity className="h-5 w-5" />
                     Órdenes de trabajo Reciente
                   </CardTitle>
-                  <Button
-                    variant="ghost"
+                  <Button 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => navigate("/admin/orden-trabajo")}
                   >
@@ -686,9 +696,9 @@ export const Dashboard = () => {
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {(order as any).order_status === 'not_started' ? 'No Iniciado' :
-                          (order as any).order_status === 'in_progress' ? 'En Progreso' :
-                            (order as any).order_status === 'finished' ? 'Finalizado' : 'Desconocido'}
+                        {(order as any).order_status === 'not_started' ? 'No Iniciado' : 
+                         (order as any).order_status === 'in_progress' ? 'En Progreso' : 
+                         (order as any).order_status === 'finished' ? 'Finalizado' : 'Desconocido'}
                       </Badge>
                     </div>
                   ))}
@@ -711,8 +721,8 @@ export const Dashboard = () => {
                     <AlertTriangle className="h-5 w-5" />
                     Alertas del Sistema
                   </CardTitle>
-                  <Button
-                    variant="ghost"
+                  <Button 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => navigate("/admin/productos")}
                   >
@@ -769,8 +779,8 @@ export const Dashboard = () => {
                     <FileText className="h-5 w-5" />
                     Cotizaciones Recientes
                   </CardTitle>
-                  <Button
-                    variant="ghost"
+                  <Button 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => navigate("/admin/cotizaciones")}
                   >
@@ -791,12 +801,12 @@ export const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <Badge
+                      <Badge 
                         variant={quotation.quotation_status === 'approved' ? 'default' : 'secondary'}
                         className="text-xs"
                       >
-                        {quotation.quotation_status === 'pending' ? 'Pendiente' :
-                          quotation.quotation_status === 'approved' ? 'Aprobada' : 'Rechazada'}
+                        {quotation.quotation_status === 'pending' ? 'Pendiente' : 
+                         quotation.quotation_status === 'approved' ? 'Aprobada' : 'Rechazada'}
                       </Badge>
                     </div>
                   ))}
@@ -819,8 +829,8 @@ export const Dashboard = () => {
                     <Car className="h-5 w-5" />
                     Vehículos en Taller
                   </CardTitle>
-                  <Button
-                    variant="ghost"
+                  <Button 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => navigate("/admin/vehiculos")}
                   >
@@ -1364,7 +1374,7 @@ interface QuickStatCardProps {
 
 const QuickStatCard: React.FC<QuickStatCardProps> = ({ title, value, icon, color, onClick }) => {
   return (
-    <Card
+    <Card 
       className={`transition-all duration-300 hover:shadow-lg ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
