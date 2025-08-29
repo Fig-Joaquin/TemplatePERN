@@ -5,6 +5,7 @@ import { AppDataSource } from "./config/ormconfig";
 import routes from "./routes";
 import cors from "cors";
 import { startNotificationCron } from "./utils/notificationScheduler";
+import { errorHandler } from "./middleware/errorMiddleware";
 
 
 // Imports de rutas
@@ -26,6 +27,9 @@ app.use(cors({
 
 // ! Rutas de acceso API
 app.use(routes);
+
+// Middleware de manejo de errores (debe ir después de las rutas)
+app.use(errorHandler);
 
 //app.use("/vehicles", vehicleRoutes);
 
@@ -50,7 +54,7 @@ app.get("/read-cookie", (req: Request, res: Response): void => {
     res.send(`Token: ${token}`);
 });
 
-const startServer = async () => {
+const startServer = async (): Promise<void> => {
     try {
         await AppDataSource.initialize();
         console.log("Database connected");

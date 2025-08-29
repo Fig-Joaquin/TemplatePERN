@@ -79,8 +79,8 @@ export const PersonSchema = z.object({
         .max(15, "Teléfono debe tener entre 7 y 15 caracteres"),
     
     person_type: z
-        .enum(["cliente", "proveedor"], {
-            errorMap: () => ({ message: "Tipo de persona debe ser 'cliente' o 'proveedor'" })
+        .enum(["cliente", "proveedor", "trabajador"], {
+            errorMap: () => ({ message: "Tipo de persona debe ser 'cliente', 'proveedor' o 'trabajador'" })
         })
 });
 
@@ -147,7 +147,73 @@ export const PersonForUserSchema = z.object({
   }),
 });
 
-export const UpdatePersonSchema = PersonSchema.partial();
+export const UpdatePersonSchema = z.object({
+    person_id: z.number().int().positive().optional(),
+    rut: z
+        .string()
+        .trim()
+        .optional()
+        .nullable()
+        .transform(val => (val === "" || val === null ? undefined : val))
+        .refine(val => val === undefined || /^[0-9kK]{8,9}$/.test(val), {
+          message: "RUT debe contener solo números y dígito verificador (K)",
+        })
+        .refine(val => val === undefined || (val.length >= 8 && val.length <= 9), {
+          message: "RUT debe tener entre 8 y 9 caracteres sin puntos ni guión",
+        })
+        .refine(val => val === undefined || validateRutDv(val), {
+          message: "Dígito verificador del RUT es incorrecto",
+        }),
+    
+    name: z
+        .string()
+        .min(2, "Nombre debe tener entre 2 y 50 caracteres")
+        .max(50, "Nombre debe tener entre 2 y 50 caracteres")
+        .optional(),
+    
+    first_surname: z
+        .string()
+        .min(2, "Primer apellido debe tener entre 2 y 50 caracteres")
+        .max(50, "Primer apellido debe tener entre 2 y 50 caracteres")
+        .optional(),
+    
+    second_surname: z
+        .string()
+        .max(50, "Segundo apellido no puede superar los 50 caracteres")
+        .optional()
+        .nullable()
+        .transform(val => (val === "" || val === null ? undefined : val)),
+    
+    email: z
+        .string()
+        .optional()
+        .nullable()
+        .transform((val) => (val?.trim() === "" || val === null ? undefined : val?.trim()))
+        .refine(
+          (val) => val == null || val.length >= 5, 
+          { message: "Email debe tener entre 5 y 100 caracteres" }
+        )
+        .refine(
+          (val) => val == null || val.length <= 100, 
+          { message: "Email debe tener entre 5 y 100 caracteres" }
+        )
+        .refine(
+          (val) => val == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+          { message: "Email inválido" }
+        ),
+    
+    number_phone: z
+        .string()
+        .min(7, "Teléfono debe tener entre 7 y 15 caracteres")
+        .max(15, "Teléfono debe tener entre 7 y 15 caracteres")
+        .optional(),
+    
+    person_type: z
+        .enum(["cliente", "proveedor", "trabajador"], {
+            errorMap: () => ({ message: "Tipo de persona debe ser 'cliente', 'proveedor' o 'trabajador'" })
+        })
+        .optional()
+});
 
 export type PersonInput = z.infer<typeof PersonSchema>;
 export type UpdatePersonInput = z.infer<typeof UpdatePersonSchema>;

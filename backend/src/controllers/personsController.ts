@@ -192,6 +192,43 @@ export const deletePerson = async (req: Request, res: Response, _next: NextFunct
         const { id } = req.params;
         const personId = parseInt(id);
         
+        // Check if person exists
+        const person = await personRepository.findOneBy({ person_id: personId });
+        if (!person) {
+            res.status(404).json({ message: "Persona no encontrada" });
+            return;
+        }
+
+        // Check if the person is assigned to active work orders as a technician
+        const activeWorkOrdersQuery = `
+            SELECT COUNT(*) as count, 
+                   STRING_AGG(DISTINCT wo.work_order_id::text, ', ') as work_order_ids
+            FROM work_order_technicians wot
+            INNER JOIN work_orders wo ON wot.work_order_id = wo.work_order_id
+            WHERE wot.technician_id = $1 
+            AND wo.order_status IN ('not_started', 'in_progress')
+        `;
+        
+        const activeWorkOrdersResult = await queryRunner.manager.query(activeWorkOrdersQuery, [personId]);
+        const activeWorkOrdersCount = parseInt(activeWorkOrdersResult[0].count);
+        
+        if (activeWorkOrdersCount > 0) {
+            const workOrderIds = activeWorkOrdersResult[0].work_order_ids;
+            res.status(400).json({ 
+                message: `No se puede eliminar el empleado porque está asignado como técnico a ${activeWorkOrdersCount} orden(es) de trabajo activa(s)`,
+                details: `Órdenes de trabajo: ${workOrderIds}. Complete o cancele estas órdenes antes de eliminar el empleado.`,
+                activeWorkOrders: activeWorkOrdersCount
+            });
+            return;
+        }
+
+        // If person is only assigned to completed work orders, we need to handle the deletion carefully
+        // First, remove technician assignments from completed work orders
+        await queryRunner.manager.query(
+            `DELETE FROM work_order_technicians WHERE technician_id = $1`,
+            [personId]
+        );
+        
         // 1. Obtener todos los vehículos de la persona
         const vehicleRepository = AppDataSource.getRepository(Vehicle);
         const vehicles = await vehicleRepository.find({
@@ -274,7 +311,7 @@ export const deletePerson = async (req: Request, res: Response, _next: NextFunct
         }
 
         res.status(200).json({ 
-            message: "Cliente y todos sus datos asociados eliminados exitosamente",
+            message: "Empleado y todos sus datos asociados eliminados exitosamente",
             deletedVehicles: vehicles.length
         });
     } catch (error) {
@@ -282,10 +319,26 @@ export const deletePerson = async (req: Request, res: Response, _next: NextFunct
         await queryRunner.rollbackTransaction();
         
         console.error("Error al eliminar persona:", error);
-        res.status(500).json({ 
-            message: "Error al eliminar persona", 
-            error: error instanceof Error ? error.message : String(error)
-        });
+        
+        // Provide more specific error messages
+        if (error instanceof Error) {
+            if (error.message.includes('foreign key constraint') && error.message.includes('work_order_technicians')) {
+                res.status(400).json({ 
+                    message: "No se puede eliminar el empleado porque está asignado a órdenes de trabajo",
+                    details: "Complete o cancele todas las órdenes de trabajo asignadas a este empleado antes de eliminarlo."
+                });
+            } else {
+                res.status(500).json({ 
+                    message: "Error interno del servidor al eliminar empleado", 
+                    error: error.message
+                });
+            }
+        } else {
+            res.status(500).json({ 
+                message: "Error interno del servidor al eliminar empleado", 
+                error: String(error)
+            });
+        }
     } finally {
         // Liberar el queryRunner
         await queryRunner.release();

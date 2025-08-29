@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { ExpenseType } from "../entities/tipoGasto";
 import { ExpenseTypeSchema } from "../schema/work/expenseTypeValidator";
+import type { ZodIssue } from "zod";
 
 const expenseTypeRepository = AppDataSource.getRepository(ExpenseType);
 
@@ -40,7 +41,7 @@ export const createExpenseType = async (req: Request, res: Response, _next: Next
         if (!validationResult.success) {
             res.status(400).json({
                 message: "Validation error",
-                errors: validationResult.error.errors.map((err: any) => ({
+                errors: validationResult.error.errors.map((err: ZodIssue) => ({
                     field: err.path.join("."),
                     message: err.message
                 }))
@@ -84,7 +85,7 @@ export const updateExpenseType = async (req: Request, res: Response, _next: Next
         if (!validationResult.success) {
             res.status(400).json({
                 message: "Validation error",
-                errors: validationResult.error.errors.map((err: any) => ({
+                errors: validationResult.error.errors.map((err: ZodIssue) => ({
                     field: err.path.join("."),
                     message: err.message
                 }))

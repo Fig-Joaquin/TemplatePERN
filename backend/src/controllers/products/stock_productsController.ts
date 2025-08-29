@@ -90,7 +90,13 @@ export const updateStockProduct = async (req: Request, res: Response, _next: Nex
 
         // Actualizar los campos recibidos
         if (quantity !== undefined) {
-            stockProduct.quantity = quantity;
+            // Asegurar que quantity sea un número válido
+            const numericQuantity = Number(quantity);
+            if (isNaN(numericQuantity) || numericQuantity < 0) {
+                res.status(400).json({ message: "La cantidad debe ser un número válido no negativo" });
+                return;
+            }
+            stockProduct.quantity = numericQuantity;
         }
         
         // Actualizar explícitamente la fecha si se proporciona

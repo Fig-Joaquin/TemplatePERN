@@ -7,7 +7,16 @@ export interface AuthRequest extends Request {
     userId: number;
     username: string;
     userRole: string;
-    person: any;
+    person: {
+      person_id: number;
+      name: string;
+      first_surname: string;
+      second_surname?: string;
+      rut?: string;
+      email?: string;
+      number_phone: string;
+      person_type: string;
+    };
   };
 }
 
@@ -20,8 +29,22 @@ export const authenticateUser = (req: AuthRequest, res: Response, next: NextFunc
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_default") as any;
-    req.user = decoded; // 🔹 Usa `as any` para evitar errores de tipado en `req.user`
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_default") as {
+      userId: number;
+      username: string;
+      userRole: string;
+      person: {
+        person_id: number;
+        name: string;
+        first_surname: string;
+        second_surname?: string;
+        rut?: string;
+        email?: string;
+        number_phone: string;
+        person_type: string;
+      };
+    };
+    req.user = decoded;
     next(); // 🔹 Siempre llama a `next()` en caso de éxito
   } catch {
     res.status(403).json({ message: "Token inválido o expirado" });
