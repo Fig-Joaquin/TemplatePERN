@@ -72,7 +72,13 @@ const CompaniesPage = () => {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createCompany(createFormData)
+      // Prepare data with optional fields properly handled
+      const dataToSubmit = {
+        ...createFormData,
+        email: createFormData.email.trim() || undefined,
+        phone: createFormData.phone.trim() || undefined
+      }
+      await createCompany(dataToSubmit)
       toast.success("Empresa creada exitosamente")
       setAddModalOpen(false)
       setCreateFormData(initialFormData)
@@ -89,7 +95,13 @@ const CompaniesPage = () => {
     e.preventDefault()
     try {
       if (selectedCompany) {
-        await updateCompany(selectedCompany.company_id, editFormData)
+        // Prepare data with optional fields properly handled
+        const dataToSubmit = {
+          ...editFormData,
+          email: editFormData.email.trim() || undefined,
+          phone: editFormData.phone.trim() || undefined
+        }
+        await updateCompany(selectedCompany.company_id, dataToSubmit)
         toast.success("Empresa actualizada exitosamente")
         setEditModalOpen(false)
         setSelectedCompany(null)
@@ -109,7 +121,7 @@ const CompaniesPage = () => {
     setEditFormData({
       rut: company.rut,
       name: company.name,
-      email: company.email,
+      email: company.email || "",
       phone: company.phone || ""
     })
     setEditModalOpen(true)
@@ -142,8 +154,8 @@ const CompaniesPage = () => {
     (company) =>
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.rut.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (company.phone && company.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+      company.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (

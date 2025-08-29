@@ -12,9 +12,10 @@ import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { formatDate } from "@/utils/formDate"
 import { VehicleCard } from "@/components/VehicleCard"
-import { FileText, Plus, Edit } from "lucide-react"
+import { FileText, Plus, Edit, Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
@@ -24,6 +25,7 @@ export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [workProductDetails, setWorkProductDetails] = useState<WorkProductDetail[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
   const navigate = useNavigate()
 
   // First, add a state for controlling the delete confirmation dialog
@@ -48,7 +50,7 @@ export default function QuotationPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await fetchQuotations()
+        const response = await fetchQuotations([])
         setQuotations(response)
 
         const detailsPromises = response.map((q) => getWorkProductDetailsByQuotationId(q.quotation_id!))
@@ -79,7 +81,7 @@ export default function QuotationPage() {
       try {
         await deleteQuotation(quotationToDelete);
         // Refresh the quotations list
-        const response = await fetchQuotations();
+        const response = await fetchQuotations([]);
         setQuotations(response);
         toast.success("Cotización eliminada exitosamente");
       } catch (error) {
@@ -98,6 +100,38 @@ export default function QuotationPage() {
     details: workProductDetails.filter((detail) => detail.quotation_id === quotation.quotation_id),
   }))
 
+  // Función de filtrado por patente, nombre del dueño o teléfono
+  const filteredData = data.filter((quotation) => {
+    if (!searchTerm) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+
+    // Buscar por patente del vehículo
+    const licensePlate = quotation.vehicle?.license_plate?.toLowerCase() || '';
+    if (licensePlate.includes(searchLower)) return true;
+
+    // Buscar por nombre del dueño (concatenar nombre + apellidos)
+    const owner = quotation.vehicle?.owner;
+    if (owner) {
+      const fullName = `${owner.name} ${owner.first_surname} ${owner.second_surname || ''}`.toLowerCase();
+      if (fullName.includes(searchLower)) return true;
+    }
+
+    // Buscar por nombre de la empresa
+    const company = quotation.vehicle?.company;
+    if (company?.name?.toLowerCase().includes(searchLower)) return true;
+
+    // Buscar por teléfono del dueño
+    const ownerPhone = owner?.number_phone?.toLowerCase() || '';
+    if (ownerPhone.includes(searchLower)) return true;
+
+    // Buscar por teléfono de la empresa
+    const companyPhone = company?.phone?.toLowerCase() || '';
+    if (companyPhone.includes(searchLower)) return true;
+
+    return false;
+  });
+
   const updatedColumns = columns.map((col) => {
     if (col.id === "actions") {
       return {
@@ -114,7 +148,7 @@ export default function QuotationPage() {
                   <DialogHeader>
                     <DialogTitle>Detalles de la Cotización</DialogTitle>
                   </DialogHeader>
-                  
+
                   {/* Contenido principal con scroll */}
                   <div className="overflow-y-auto flex-1 pr-2">
                     <div className="grid grid-cols-2 gap-4">
@@ -130,7 +164,11 @@ export default function QuotationPage() {
                       </div>
                       <div>
                         <h4 className="font-bold mb-2">Información del vehículo</h4>
-                        <VehicleCard vehicle={quotation.vehicle} />
+                        {quotation.vehicle ? (
+                          <VehicleCard vehicle={quotation.vehicle} />
+                        ) : (
+                          <div className="text-muted-foreground">Sin vehículo asignado</div>
+                        )}
                       </div>
                       <div className="col-span-2">
                         <h4 className="font-bold mb-2">Detalles de productos</h4>
@@ -194,7 +232,7 @@ export default function QuotationPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Botones siempre visibles al final del modal */}
                   <div className="mt-4 flex justify-end gap-2 pt-4 border-t">
                     <Button
@@ -251,6 +289,19 @@ export default function QuotationPage() {
           Nueva Cotización
         </Button>
       </div>
+
+      {/* Campo de búsqueda */}
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Buscar por patente, nombre del dueño o teléfono..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+      </div>
+
       {loading ? (
         <div className="text-center py-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -262,7 +313,19 @@ export default function QuotationPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <DataTable columns={updatedColumns} data={data} />
+          {filteredData.length === 0 && searchTerm ? (
+            <div className="text-center py-10">
+              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">
+                No se encontraron cotizaciones que coincidan con "{searchTerm}"
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Intenta buscar por patente, nombre del dueño o teléfono
+              </p>
+            </div>
+          ) : (
+            <DataTable columns={updatedColumns} data={filteredData} />
+          )}
         </motion.div>
       )}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

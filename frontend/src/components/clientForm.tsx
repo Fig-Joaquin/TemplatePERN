@@ -22,7 +22,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
             className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
-        
+
         <div className="grid grid-cols-1 gap-4">
           <div className="space-y-3">
             <Label htmlFor="name" className="text-sm font-medium text-gray-700">
@@ -39,7 +39,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
               pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
             />
           </div>
-          
+
           <div className="space-y-3">
             <Label htmlFor="first_surname" className="text-sm font-medium text-gray-700">
               Primer Apellido <span className="text-red-500">*</span>
@@ -56,7 +56,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
             />
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <Label htmlFor="second_surname" className="text-sm font-medium text-gray-700">
             Segundo Apellido (opcional)
@@ -71,7 +71,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
             pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$"
           />
         </div>
-        
+
         <div className="space-y-3">
           <Label htmlFor="email" className="text-sm font-medium text-gray-700">
             Email (opcional)
@@ -80,13 +80,13 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
             id="email"
             type="email"
             name="email"
-            value={formData.email}
+            value={formData.email ?? ""}
             onChange={handleInputChange}
             placeholder="ejemplo@correo.com"
             className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
-        
+
         <div className="space-y-3">
           <Label htmlFor="number_phone" className="text-sm font-medium text-gray-700">
             Teléfono <span className="text-red-500">*</span>
@@ -101,18 +101,18 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
             className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
-        
+
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={onCancel}
             className="px-6 py-2 transition-all duration-200 hover:bg-gray-50"
           >
             Cancelar
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             variant="default"
             className="px-6 py-2 bg-primary hover:bg-primary/90 transition-all duration-200"
           >

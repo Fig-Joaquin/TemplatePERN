@@ -8,6 +8,7 @@ import type { Vehicle } from "../types/interfaces";
 import { VehicleCard } from "@/components/VehicleCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fetchVehicles, deleteVehicle } from "@/services/vehicleService";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,6 +17,8 @@ const VehiclesPage = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -37,13 +40,26 @@ const VehiclesPage = () => {
     vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDelete = async (vehicleId: number) => {
-    try {
-      await deleteVehicle(vehicleId);
-      toast.success("Vehículo eliminado exitosamente");
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error al eliminar el vehículo");
+  const handleDelete = (vehicleId: number) => {
+    const vehicle = vehicles.find(v => v.vehicle_id === vehicleId);
+    if (vehicle) {
+      setVehicleToDelete(vehicle);
+      setDeleteModalOpen(true);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (vehicleToDelete !== null) {
+      try {
+        await deleteVehicle(vehicleToDelete.vehicle_id);
+        toast.success("Vehículo eliminado exitosamente");
+        fetchData();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Error al eliminar el vehículo");
+      } finally {
+        setDeleteModalOpen(false);
+        setVehicleToDelete(null);
+      }
     }
   };
 
@@ -54,8 +70,8 @@ const VehiclesPage = () => {
           <Car className="w-8 h-8" />
           Vehículos Registrados
         </h1>
-        <Button 
-          onClick={() => navigate("/admin/vehiculos/nuevo")} 
+        <Button
+          onClick={() => navigate("/admin/vehiculos/nuevo")}
           className="bg-primary text-primary-foreground"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -114,8 +130,8 @@ const VehiclesPage = () => {
             {searchTerm ? "No se encontraron vehículos con esa matrícula" : "No hay vehículos registrados"}
           </p>
           {!searchTerm && (
-            <Button 
-              onClick={() => navigate("/admin/vehiculos/nuevo")} 
+            <Button
+              onClick={() => navigate("/admin/vehiculos/nuevo")}
               className="mt-4"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -124,6 +140,43 @@ const VehiclesPage = () => {
           )}
         </div>
       )}
+
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">¡Advertencia! Eliminación Permanente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-center font-medium">¿Estás seguro de eliminar este vehículo?</p>
+            {vehicleToDelete && (
+              <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm">
+                <p><strong>Vehículo:</strong> {vehicleToDelete.license_plate}</p>
+                <p><strong>Marca/Modelo:</strong> {vehicleToDelete.model?.brand?.brand_name || "N/A"} {vehicleToDelete.model?.model_name || "N/A"}</p>
+                <p><strong>Año:</strong> {vehicleToDelete.year}</p>
+              </div>
+            )}
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
+              <p><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Todos los datos del vehículo</li>
+                <li>Historial de kilometraje completo</li>
+                <li>Órdenes de trabajo asociadas</li>
+                <li>Cotizaciones y registros relacionados</li>
+                <li>Todo registro de pagos asociados</li>
+              </ul>
+              <p className="mt-2 font-semibold">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4 gap-2">
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Eliminar permanentemente
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

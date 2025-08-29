@@ -72,7 +72,11 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
           <DialogHeader>
             <DialogTitle>Detalles del Vehículo</DialogTitle>
           </DialogHeader>
-          <VehicleCard vehicle={row.original.vehicle} />
+          {row.original.vehicle ? (
+            <VehicleCard vehicle={row.original.vehicle} />
+          ) : (
+            <div className="text-muted-foreground">Sin vehículo asignado</div>
+          )}
         </DialogContent>
       </Dialog>
     ),
@@ -110,7 +114,11 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
               </div>
               <div>
                 <h4 className="font-bold mb-2">Información del vehículo</h4>
-                <VehicleCard vehicle={quotation.vehicle} />
+                {quotation.vehicle ? (
+                  <VehicleCard vehicle={quotation.vehicle} />
+                ) : (
+                  <div className="text-muted-foreground">Sin vehículo asignado</div>
+                )}
               </div>
               <div className="col-span-2">
                 <h4 className="font-bold mb-2">Detalles de productos</h4>

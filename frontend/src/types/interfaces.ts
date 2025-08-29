@@ -4,10 +4,10 @@ export interface Person {
   name: string
   first_surname: string
   second_surname?: string
-  email: string
+  email?: string
   number_phone: string
   person_type: string
-  rut: string
+  rut?: string
 }
 
 export interface User {
@@ -23,10 +23,10 @@ export interface ClientFormProps {
     name: string
     first_surname: string
     second_surname?: string
-    email: string
+    email?: string
     number_phone: string
     person_type: string
-    rut: string
+    rut?: string
   }
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: React.FormEvent) => void
@@ -55,7 +55,7 @@ export interface Company {
   company_id: number;
   rut: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   vehicles?: Vehicle[]; // Optional array of vehicles
 }

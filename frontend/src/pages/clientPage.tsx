@@ -108,7 +108,14 @@ const ClientPage = () => {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createPerson(createFormData)
+      // Prepare data with optional fields properly handled
+      const dataToSubmit = {
+        ...createFormData,
+        email: createFormData.email.trim() || undefined,
+        rut: createFormData.rut.trim() || undefined,
+        second_surname: createFormData.second_surname.trim() || undefined
+      }
+      await createPerson(dataToSubmit)
       toast.success("Cliente creado exitosamente")
       setAddModalOpen(false)
       setCreateFormData(initialFormData)
@@ -126,7 +133,14 @@ const ClientPage = () => {
     e.preventDefault()
     try {
       if (selectedPerson) {
-        await updatePerson(selectedPerson.person_id, editFormData)
+        // Prepare data with optional fields properly handled
+        const dataToSubmit = {
+          ...editFormData,
+          email: editFormData.email.trim() || undefined,
+          rut: editFormData.rut.trim() || undefined,
+          second_surname: editFormData.second_surname.trim() || undefined
+        }
+        await updatePerson(selectedPerson.person_id, dataToSubmit)
         toast.success("Cliente actualizado exitosamente")
         setEditModalOpen(false)
         setSelectedPerson(null)
@@ -145,11 +159,11 @@ const ClientPage = () => {
   const handleEdit = (person: Person) => {
     setSelectedPerson(person)
     setEditFormData({
-      rut: person.rut,
+      rut: person.rut || "",
       name: person.name,
       first_surname: person.first_surname,
       second_surname: person.second_surname || "",
-      email: person.email,
+      email: person.email || "",
       number_phone: person.number_phone,
       person_type: person.person_type,
     })
@@ -183,7 +197,7 @@ const ClientPage = () => {
   const filteredPersons = persons.filter(
     (person) =>
       person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.rut.toLowerCase().includes(searchTerm.toLowerCase())
+      person.rut?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   // Mientras se cargan tanto clientes como vehículos, mostramos un spinner

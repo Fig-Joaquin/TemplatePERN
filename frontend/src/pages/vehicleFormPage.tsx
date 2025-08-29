@@ -175,7 +175,8 @@ export default function VehicleFormPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const finalValue = name === 'license_plate' ? value.toUpperCase() : value;
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -205,7 +206,14 @@ export default function VehicleFormPage() {
     e.preventDefault();
     try {
       setCreatingPerson(true);
-      const response = await createPerson(newPersonData);
+      // Prepare data with optional fields properly handled
+      const dataToSubmit = {
+        ...newPersonData,
+        email: newPersonData.email.trim() || undefined,
+        rut: newPersonData.rut.trim() || undefined,
+        second_surname: newPersonData.second_surname.trim() || undefined
+      };
+      const response = await createPerson(dataToSubmit);
 
       // Manejar diferentes estructuras de respuesta del API
       const newPerson = response.data?.person || response.data || response;
