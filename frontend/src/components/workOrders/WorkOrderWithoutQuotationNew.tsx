@@ -18,10 +18,9 @@ import {
   Search,
   AlertCircle,
   CheckCircle,
-  X,
-  FileText
+  X
 } from "lucide-react";
-
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NumberInput } from "@/components/numberInput";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { fetchVehicles } from "../../services/vehicleService";
@@ -65,20 +64,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const [productQuery, setProductQuery] = useState("");
   const [openVehiclePopover, setOpenVehiclePopover] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [selectedType, setSelectedType] = useState<"all" | "person" | "company">("all");
-
-  // Función para generar descripción automática
-  const generateAutoDescription = (vehicle: Vehicle): string => {
-    const vehicleInfo = `${vehicle.model?.brand?.brand_name} ${vehicle.model?.model_name} - ${vehicle.license_plate}`.trim();
-
-    if (vehicle.owner) {
-      return `Orden de trabajo para ${vehicleInfo} del propietario ${vehicle.owner.name}`;
-    } else if (vehicle.company) {
-      return `Orden de trabajo para ${vehicleInfo} de la empresa ${vehicle.company.name}`;
-    } else {
-      return `Orden de trabajo para ${vehicleInfo}`;
-    }
-  };
+  const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -102,7 +88,6 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         const tax = await getTaxById(1);
         setTaxRate(tax.tax_rate / 100);
       } catch (error) {
-        console.error("Error al cargar datos iniciales:", error);
         toast.error("Error al cargar datos iniciales");
       }
     };
@@ -110,35 +95,13 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     fetchData();
   }, [preselectedVehicleId]);
 
-  // Actualizar descripción cuando se selecciona un vehículo
-  useEffect(() => {
-    if (selectedVehicle) {
-      const autoDescription = generateAutoDescription(selectedVehicle);
-      setDescription(autoDescription);
-    }
-  }, [selectedVehicle]);
-
   // Filtros y cálculos
   const filteredVehicles = vehicles.filter((vehicle) => {
-    const vehicleInfo = [
-      vehicle.license_plate,
-      vehicle.model?.brand?.brand_name,
-      vehicle.model?.model_name,
-      vehicle.owner?.name,
-      vehicle.company?.name,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    let matchesType = true;
-    if (selectedType === "person") {
-      matchesType = !!vehicle.owner;
-    } else if (selectedType === "company") {
-      matchesType = !!vehicle.company;
-    }
-
-    return vehicleInfo.includes(vehicleQuery.toLowerCase()) && matchesType;
+    const matchesQuery = vehicle.license_plate.toLowerCase().includes(vehicleQuery.toLowerCase()) ||
+      (vehicle.owner?.name || "").toLowerCase().includes(vehicleQuery.toLowerCase()) ||
+      (vehicle.company?.name || "").toLowerCase().includes(vehicleQuery.toLowerCase());
+    const matchesType = selectedTabIndex === 0 ? vehicle.owner !== null : vehicle.company !== null;
+    return matchesQuery && matchesType;
   });
 
   const filteredProducts = products.filter((product) =>
@@ -216,15 +179,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         total_amount: finalTotal,
       };
 
-      const workOrderResponse = await createWorkOrder(workOrderData);
-      const createdWorkOrder = workOrderResponse.workOrder; // Extract the actual work order from the response
-
-      console.log("Orden de trabajo creada:", createdWorkOrder);
-      console.log("work_order_id:", createdWorkOrder.work_order_id);
-
-      if (!createdWorkOrder.work_order_id) {
-        throw new Error("No se pudo obtener el ID de la orden de trabajo creada");
-      }
+      const workOrder = await createWorkOrder(workOrderData);
 
       for (const selectedProduct of selectedProducts) {
         const product = products.find((p) => p.product_id === selectedProduct.productId);
@@ -234,7 +189,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         const finalProductPrice = Number(product.sale_price) * (1 + profitMargin / 100);
 
         const workProductDetailData: Omit<WorkProductDetail, 'work_product_detail_id'> = {
-          work_order_id: createdWorkOrder.work_order_id,
+          work_order_id: workOrder.work_order_id,
           product_id: selectedProduct.productId,
           quantity: selectedProduct.quantity,
           sale_price: finalProductPrice, // Use sale_price instead of unit_price
@@ -243,7 +198,6 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
           tax_id: 1,
         };
 
-        console.log("Creando detalle de producto:", workProductDetailData);
         await createWorkProductDetail(workProductDetailData);
 
         // Update stock using correct property names
@@ -278,45 +232,18 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Filtro por Tipo de Propietario */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800">
-                Filtro por Tipo de Propietario
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-3">
-                <Button
-                  variant={selectedType === "all" ? "default" : "outline"}
-                  onClick={() => setSelectedType("all")}
-                  type="button"
-                  className="flex-1 transition-all duration-200 hover:shadow-md"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Todos
-                </Button>
-                <Button
-                  variant={selectedType === "person" ? "default" : "outline"}
-                  onClick={() => setSelectedType("person")}
-                  type="button"
-                  className="flex-1 transition-all duration-200 hover:shadow-md"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Personas
-                </Button>
-                <Button
-                  variant={selectedType === "company" ? "default" : "outline"}
-                  onClick={() => setSelectedType("company")}
-                  type="button"
-                  className="flex-1 transition-all duration-200 hover:shadow-md"
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Empresas
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs value={selectedTabIndex.toString()} onValueChange={(value) => setSelectedTabIndex(Number(value))}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="0" className="flex items-center gap-2 transition-all duration-200 hover:shadow-md">
+                <User className="w-4 h-4" />
+                Personas
+              </TabsTrigger>
+              <TabsTrigger value="1" className="flex items-center gap-2 transition-all duration-200 hover:shadow-md">
+                <Building2 className="w-4 h-4" />
+                Empresas
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <div className="relative">
             <div className="relative">
@@ -394,7 +321,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle(null)} className="hover:shadow-md transition-all duration-200">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle(null)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -448,7 +375,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
                               Precio: {formatPriceCLP(finalPrice)}
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm" onClick={() => handleRemoveProduct(productId)} className="hover:shadow-md transition-all duration-200">
+                          <Button variant="ghost" size="sm" onClick={() => handleRemoveProduct(productId)}>
                             <X className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
@@ -577,7 +504,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
                   if (isSelected) {
                     cardClassName += "bg-primary/10 border-primary";
                   } else if (inStock) {
-                    cardClassName += "hover:bg-accent hover:shadow-md";
+                    cardClassName += "hover:bg-accent hover:shadow-sm";
                   } else {
                     cardClassName += "opacity-50";
                   }

@@ -375,8 +375,8 @@ const WorkOrderEditPage = () => {
             console.log(`Returning ${removedQuantity} units to stock. Before: ${currentStock}, After: ${updatedQuantity}`);
 
             await updateStockProduct(stockProduct.stock_product_id.toString(), {
-              ...stockProduct,
               quantity: updatedQuantity,
+              updated_at: new Date()
             });
           }
         }
@@ -416,8 +416,8 @@ const WorkOrderEditPage = () => {
               // Subtract the additional quantity from stock
               const updatedQuantity = stockProduct.quantity - quantityDiff;
               await updateStockProduct(stockProduct.stock_product_id.toString(), {
-                ...stockProduct,
                 quantity: updatedQuantity,
+                updated_at: new Date()
               });
             }
           }
@@ -430,8 +430,8 @@ const WorkOrderEditPage = () => {
           if (stockProduct && stockProduct.stock_product_id) {
             const updatedQuantity = stockProduct.quantity - product.quantity;
             await updateStockProduct(stockProduct.stock_product_id.toString(), {
-              ...stockProduct,
               quantity: updatedQuantity,
+              updated_at: new Date()
             });
           }
         }
@@ -767,10 +767,22 @@ const WorkOrderEditPage = () => {
                   {assignedTechnicians.length > 0 ? (
                     <div className="space-y-2">
                       {assignedTechnicians.map((assignment) => (
-                        <div key={assignment.id} className="flex justify-between items-center p-2 bg-secondary/20 rounded-md">
-                          <span>
-                            {assignment.technician?.name} {assignment.technician?.first_surname}
-                          </span>
+                        <div key={assignment.id} className="flex justify-between items-center p-3 bg-secondary/20 rounded-md">
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {assignment.technician?.name} {assignment.technician?.first_surname}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Asignado: {assignment.assigned_at ?
+                                new Date(assignment.assigned_at).toLocaleDateString('es-CL', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                }) : 'Fecha no disponible'}
+                            </span>
+                          </div>
                           <Button variant="ghost" size="sm" onClick={() => assignment.id && handleRemoveTechnician(assignment.id)}>
                             <X className="h-4 w-4" />
                           </Button>

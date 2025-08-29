@@ -36,18 +36,16 @@ const SupplierList: React.FC<SupplierListProps> = ({
           <TableBody>
             {suppliers.map((supplier) => (
               <TableRow key={supplier.supplier_id}>
-                <TableCell className="font-medium">{supplier.name}</TableCell>
-                <TableCell>{supplier.address || "No especificada"}</TableCell>
-                <TableCell>{supplier.city || "No especificada"}</TableCell>
+                <TableCell>{supplier.name}</TableCell>
+                <TableCell>
+                  {supplier.address ? supplier.address : "No hay información"}
+                </TableCell>
+                <TableCell>
+                  {supplier.city ? supplier.city : "No hay información"}
+                </TableCell>
                 <TableCell>+{supplier.phone}</TableCell>
                 <TableCell>
-                  {supplier.description ? (
-                    <span className="text-sm text-gray-600 line-clamp-2">
-                      {supplier.description}
-                    </span>
-                  ) : (
-                    "Sin descripción"
-                  )}
+                  {supplier.description ? supplier.description : "No hay información"}
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Company, brand } from "@/types/interfaces"
+import { Company, Brand } from "@/types/interfaces"
 import { createCompany, deleteCompany, fetchCompanies, updateCompany } from "@/services/work/companiesList"
 import CompanyList from "@/components/work/companiesList"
 import CompanyForm from "@/components/work/companiesForm"
@@ -16,7 +16,7 @@ import { fetchVehicleBrands } from "@/services/VehicleBrandService"
 
 const CompaniesPage = () => {
   const [companies, setCompanies] = useState<Company[]>([])
-  const [brands, setBrands] = useState<brand[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -159,20 +159,18 @@ const CompaniesPage = () => {
   )
 
   return (
-    <div className="space-y-6">
-      {/* Encabezado */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <Building className="w-8 h-8" />
           Lista de Empresas
         </h1>
-        <Button onClick={() => setAddModalOpen(true)}>
+        <Button onClick={() => setAddModalOpen(true)} className="mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
           Nueva Empresa
         </Button>
       </div>
 
-      {/* Buscador */}
       <div className="relative">
         <Input
           type="text"
@@ -181,12 +179,11 @@ const CompaniesPage = () => {
           onChange={handleSearch}
           className="pl-10"
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
 
-      {/* Listado de empresas */}
       <motion.div
-        className="bg-card shadow-lg rounded-lg overflow-hidden"
+        className="bg-card shadow rounded-lg overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -238,19 +235,30 @@ const CompaniesPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal para confirmar eliminación */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar Eliminación</DialogTitle>
+            <DialogTitle className="text-red-600">¡Advertencia! Eliminación Permanente</DialogTitle>
           </DialogHeader>
-          <p>¿Estás seguro de eliminar esta empresa?</p>
+          <div className="space-y-4">
+            <p className="text-center font-medium">¿Estás seguro de eliminar esta empresa?</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
+              <p><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Todos los datos de la empresa</li>
+                <li>Todos los vehículos asociados</li>
+                <li>Órdenes de trabajo relacionadas</li>
+                <li>Historial de servicios</li>
+              </ul>
+              <p className="mt-2 font-semibold">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
           <div className="flex justify-end mt-4 gap-2">
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
-              Eliminar
+              Eliminar permanentemente
             </Button>
           </div>
         </DialogContent>

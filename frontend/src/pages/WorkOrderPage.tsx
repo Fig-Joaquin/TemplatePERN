@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Table as TableIcon, LayoutGrid, FileText } from "lucide-react";
+import { Search, Table as TableIcon, LayoutGrid, FileText, MoreHorizontal, Eye, Edit, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllWorkOrders, deleteWorkOrder } from "@/services/workOrderService";
+import { createDebtor } from "@/services/debtorService";
 import WorkOrderCard from "@/components/workOrders/WorkOrderCard";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,7 +17,17 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 
 const WorkOrdersPage = () => {
@@ -31,6 +42,16 @@ const WorkOrdersPage = () => {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<any>(null);
   // Nuevo estado para almacenar técnicos por orden de trabajo
   const [techniciansByOrderId, setTechniciansByOrderId] = useState<{ [key: number]: any[] }>({});
+  // Estado para confirmación de eliminación
+  const [workOrderToDelete, setWorkOrderToDelete] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+
+  // Estados para crear deudor
+  const [showCreateDebtorModal, setShowCreateDebtorModal] = useState<boolean>(false);
+  const [workOrderForDebtor, setWorkOrderForDebtor] = useState<any>(null);
+  const [debtorDescription, setDebtorDescription] = useState<string>("");
+  const [debtorAmount, setDebtorAmount] = useState<number>(0);
+  const [creatingDebtor, setCreatingDebtor] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -41,6 +62,85 @@ const WorkOrdersPage = () => {
       not_started: "No iniciado",
     };
     return statusMap[status] || status; // Retorna el valor original si no coincide
+  };
+
+  const handleDeleteClick = (workOrder: any) => {
+    setWorkOrderToDelete(workOrder);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!workOrderToDelete) return;
+
+    try {
+      await deleteWorkOrder(workOrderToDelete.work_order_id);
+      toast.success("Orden eliminada correctamente y stock restaurado");
+      loadWorkOrders();
+    } catch (error: any) {
+      console.error("Error al eliminar la orden:", error);
+      toast.error(error?.response?.data?.message || "Error al eliminar la orden");
+    } finally {
+      setShowDeleteConfirm(false);
+      setWorkOrderToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setWorkOrderToDelete(null);
+  };
+
+  // Función para abrir el modal de crear deudor
+  const handleCreateDebtor = (workOrder: any) => {
+    setWorkOrderForDebtor(workOrder);
+    setDebtorDescription(`Deuda por orden de trabajo #${workOrder.work_order_id} - ${workOrder.vehicle?.license_plate || 'Sin vehículo'}`);
+    setDebtorAmount(Number(workOrder.total_amount) || 0);
+    setShowCreateDebtorModal(true);
+  };
+
+  // Función para crear el deudor
+  const handleCreateDebtorSubmit = async () => {
+    if (!workOrderForDebtor || !debtorDescription.trim()) {
+      toast.error("Por favor completa todos los campos requeridos");
+      return;
+    }
+
+    setCreatingDebtor(true);
+    try {
+      const debtorData = {
+        work_order_id: workOrderForDebtor.work_order_id,
+        description: debtorDescription,
+        total_amount: Number(debtorAmount),
+        paid_amount: 0,
+        payment_status: "pendiente"
+      };
+
+      await createDebtor(debtorData);
+      toast.success(`Deudor creado exitosamente para la orden #${workOrderForDebtor.work_order_id}`);
+
+      // Cerrar modal y limpiar estados
+      setShowCreateDebtorModal(false);
+      setWorkOrderForDebtor(null);
+      setDebtorDescription("");
+      setDebtorAmount(0);
+    } catch (error: any) {
+      console.error("Error al crear deudor:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Error al crear el deudor");
+      }
+    } finally {
+      setCreatingDebtor(false);
+    }
+  };
+
+  // Función para cancelar la creación del deudor
+  const handleCreateDebtorCancel = () => {
+    setShowCreateDebtorModal(false);
+    setWorkOrderForDebtor(null);
+    setDebtorDescription("");
+    setDebtorAmount(0);
   };
 
   useEffect(() => {
@@ -233,7 +333,13 @@ const WorkOrdersPage = () => {
                       technicianNames = assignedTechnicians
                         .map(tech => {
                           if (!tech || !tech.technician) return "Mécanico sin datos";
-                          return `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
+                          const name = `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
+                          const date = tech.assigned_at ?
+                            new Date(tech.assigned_at).toLocaleDateString('es-CL', {
+                              day: '2-digit',
+                              month: '2-digit'
+                            }) : '';
+                          return date ? `${name} (${date})` : name;
                         })
                         .join(', ');
                     }
@@ -250,37 +356,45 @@ const WorkOrdersPage = () => {
                         <td className="border px-4 py-2">{wo.quotation ? "Sí" : "No"}</td>
                         <td className="border px-4 py-2">{technicianNames}</td>
                         <td className="border px-4 py-2 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => setSelectedWorkOrder(wo)}
-                            >
-                              Ver Detalles
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/admin/orden-trabajo/editar/${wo.work_order_id}`)}
-                            >
-                              Editar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  await deleteWorkOrder(wo.work_order_id);
-                                  toast.success("Orden eliminada correctamente");
-                                  loadWorkOrders();
-                                } catch (error) {
-                                  toast.error("Error al eliminar la orden");
-                                }
-                              }}
-                            >
-                              Eliminar
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 focus:bg-gray-100">
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setSelectedWorkOrder(wo)}
+                                className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50"
+                              >
+                                <Eye className="mr-2 h-4 w-4 text-blue-600" />
+                                Ver Detalles
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/admin/orden-trabajo/editar/${wo.work_order_id}`)}
+                                className="cursor-pointer hover:bg-green-50 focus:bg-green-50"
+                              >
+                                <Edit className="mr-2 h-4 w-4 text-green-600" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleCreateDebtor(wo)}
+                                className="cursor-pointer hover:bg-orange-50 focus:bg-orange-50"
+                              >
+                                <UserPlus className="mr-2 h-4 w-4 text-orange-600" />
+                                Crear Deudor
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(wo)}
+                                className="cursor-pointer text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     );
@@ -305,7 +419,10 @@ const WorkOrdersPage = () => {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <WorkOrderCard workOrder={wo} />
+                    <WorkOrderCard
+                      workOrder={wo}
+                      onCreateDebtor={handleCreateDebtor}
+                    />
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -331,7 +448,115 @@ const WorkOrdersPage = () => {
               </DialogTitle>
             </DialogHeader>
             {/* Usamos la misma card existente */}
-            <WorkOrderCard workOrder={selectedWorkOrder} />
+            <WorkOrderCard
+              workOrder={selectedWorkOrder}
+              onCreateDebtor={handleCreateDebtor}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de confirmación para eliminar */}
+      {showDeleteConfirm && workOrderToDelete && (
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-destructive">¡Advertencia! Eliminación Permanente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-center font-medium text-foreground">
+                ¿Estás seguro de que deseas eliminar la orden de trabajo <strong>#{workOrderToDelete.work_order_id}</strong>?
+              </p>
+              <div className="bg-muted border border-border rounded-md p-3 text-sm">
+                <p className="text-foreground"><strong>Orden:</strong> #{workOrderToDelete.work_order_id}</p>
+                <p className="text-foreground"><strong>Estado:</strong> {translateStatus(workOrderToDelete.order_status)}</p>
+                <p className="text-foreground"><strong>Vehículo:</strong> {workOrderToDelete.vehicle?.license_plate || "N/A"}</p>
+              </div>
+              <div className="bg-accent/10 border border-accent/20 rounded-md p-3 text-sm">
+                <p className="text-foreground"><strong>ATENCIÓN:</strong> Esta acción realizará lo siguiente:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1 text-foreground">
+                  <li>Eliminará la orden de trabajo permanentemente</li>
+                  <li>Restaurará el stock de productos utilizados</li>
+                  <li>Eliminará todos los pagos asociados</li>
+                  <li>Eliminará todos los técnicos asignados</li>
+                </ul>
+                <p className="mt-2 font-semibold text-foreground">Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4 gap-2">
+              <Button variant="outline" onClick={handleDeleteCancel}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteConfirm}>
+                Eliminar permanentemente
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal para crear deudor */}
+      {showCreateDebtorModal && workOrderForDebtor && (
+        <Dialog open={showCreateDebtorModal} onOpenChange={setShowCreateDebtorModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-orange-600" />
+                Crear Deudor
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-muted border border-border rounded-md p-3 text-sm">
+                <p className="text-foreground"><strong>Orden de Trabajo:</strong> #{workOrderForDebtor.work_order_id}</p>
+                <p className="text-foreground"><strong>Vehículo:</strong> {workOrderForDebtor.vehicle?.license_plate || "N/A"}</p>
+                <p className="text-foreground"><strong>Cliente:</strong> {
+                  workOrderForDebtor.vehicle?.owner
+                    ? `${workOrderForDebtor.vehicle.owner.name} ${workOrderForDebtor.vehicle.owner.first_surname}`
+                    : workOrderForDebtor.vehicle?.company?.name || "N/A"
+                }</p>
+                <p className="text-foreground"><strong>Total de la Orden:</strong> {formatPriceCLP(workOrderForDebtor.total_amount)}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="debtor-description">Descripción de la Deuda</Label>
+                <Textarea
+                  id="debtor-description"
+                  value={debtorDescription}
+                  onChange={(e) => setDebtorDescription(e.target.value)}
+                  placeholder="Describe el motivo de la deuda..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="debtor-amount">Monto de la Deuda</Label>
+                <Input
+                  id="debtor-amount"
+                  type="number"
+                  value={debtorAmount}
+                  onChange={(e) => setDebtorAmount(parseFloat(e.target.value) || 0)}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCreateDebtorCancel}
+                disabled={creatingDebtor}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateDebtorSubmit}
+                disabled={creatingDebtor || !debtorDescription.trim()}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {creatingDebtor ? "Creando..." : "Crear Deudor"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

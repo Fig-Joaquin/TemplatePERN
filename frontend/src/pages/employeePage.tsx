@@ -1,25 +1,19 @@
 "use client"
 
-import type React from "react"
-import { motion, AnimatePresence } from "framer-motion"
-
-// EmployeePage.tsx
-import { useEffect, useState } from "react"
-import api from "../utils/axiosConfig"
+import React, { useEffect, useState, useCallback } from "react"
 import { toast } from "react-toastify"
-import { Plus, Users } from "lucide-react"
-import type { Person, Vehicle } from "../types/interfaces"
-import { createPerson, updatePerson, fetchPersonsEmployee } from "../services/personService"
-import { fetchVehicles } from "../services/vehicleService"
+import { Plus, Search, Users } from "lucide-react"
+import EmployeeList from "@/components/employee/employeeList"
+import EmployeeForm from "@/components/employee/employeeForm"
+import type { Person } from "../types/interfaces"
+import { createPerson, updatePerson, fetchPersonsEmployee, deletePerson } from "../services/personService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import EmployeeForm from "@/components/employee/employeeForm"
-import EmployeeList from "@/components/employee/employeeList"
-import SearchBar from "@/components/searchBar"
+import { Input } from "@/components/ui/input"
+import { motion, AnimatePresence } from "framer-motion"
 
 const EmployeePage = () => {
   const [persons, setPersons] = useState<Person[]>([])
-  const [, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -28,7 +22,6 @@ const EmployeePage = () => {
   const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null)
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
 
-  // Formulario inicial: rol predefinido como "employee"
   const initialFormData = {
     rut: "",
     name: "",
@@ -38,42 +31,33 @@ const EmployeePage = () => {
     number_phone: "",
     person_type: "trabajador",
   }
-
   const [createFormData, setCreateFormData] = useState(initialFormData)
   const [editFormData, setEditFormData] = useState(initialFormData)
 
-  useEffect(() => {
-    const fetchPersons = async () => {
-      try {
-        const employees = await fetchPersonsEmployee()
-        setPersons(employees)
-      } catch {
-        toast.error("Error loading employees")
-      } finally {
-        setLoading(false)
-      }
+  // Cargar todos los empleados
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const employees = await fetchPersonsEmployee()
+      setPersons(employees)
+    } catch (error) {
+      console.error("Error al cargar los datos:", error)
+      toast.error("Error al cargar los datos")
+    } finally {
+      setLoading(false)
     }
-
-    const fetchVehiclesData = async () => {
-      try {
-        const vehicles = await fetchVehicles()
-        setVehicles(vehicles)
-      } catch {
-        toast.error("Error loading vehicles")
-      }
-    }
-
-    fetchPersons()
-    fetchVehiclesData()
   }, [])
 
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
   }
 
   const handleCreateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setCreateFormData({ ...createFormData, [name]: value, person_type: "trabajador" })
+    setCreateFormData({ ...createFormData, [name]: value })
   }
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,17 +68,23 @@ const EmployeePage = () => {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createPerson(createFormData)
-      toast.success("Se ha creado un nuevo trabajador")
+      // Prepare data with optional fields properly handled
+      const dataToSubmit = {
+        ...createFormData,
+        email: createFormData.email.trim() || undefined,
+        rut: createFormData.rut.trim() || undefined,
+        second_surname: createFormData.second_surname.trim() || undefined
+      }
+      await createPerson(dataToSubmit)
+      toast.success("Trabajador creado exitosamente")
       setAddModalOpen(false)
       setCreateFormData(initialFormData)
-      const employees = await fetchPersonsEmployee()
-      setPersons(employees)
+      fetchData()
     } catch (error: any) {
       toast.error(
-        [error.response?.data?.message, error.response?.data?.errors?.map((err: any) => err.message).join(", ")]
+        [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
           .filter(Boolean)
-          .join(", ") || "Error creating employee",
+          .join(", ") || "Error al crear el trabajador"
       )
     }
   }
@@ -103,19 +93,25 @@ const EmployeePage = () => {
     e.preventDefault()
     try {
       if (selectedPerson) {
-        await updatePerson(selectedPerson.person_id, editFormData)
-        toast.success("Employee updated successfully")
+        // Prepare data with optional fields properly handled
+        const dataToSubmit = {
+          ...editFormData,
+          email: editFormData.email.trim() || undefined,
+          rut: editFormData.rut.trim() || undefined,
+          second_surname: editFormData.second_surname.trim() || undefined
+        }
+        await updatePerson(selectedPerson.person_id, dataToSubmit)
+        toast.success("Trabajador actualizado exitosamente")
         setEditModalOpen(false)
         setSelectedPerson(null)
         setEditFormData(initialFormData)
-        const employees = await fetchPersonsEmployee()
-        setPersons(employees)
+        fetchData()
       }
     } catch (error: any) {
       toast.error(
-        [error.response?.data?.message, error.response?.data?.errors?.map((err: any) => err.message).join(", ")]
+        [error.response?.data?.message, error.response?.data?.errors?.map((e: any) => e.message).join(", ")]
           .filter(Boolean)
-          .join(", ") || "Error updating employee",
+          .join(", ") || "Error al actualizar el trabajador"
       )
     }
   }
@@ -123,11 +119,11 @@ const EmployeePage = () => {
   const handleEdit = (person: Person) => {
     setSelectedPerson(person)
     setEditFormData({
-      rut: person.rut,
+      rut: person.rut || "",
       name: person.name,
       first_surname: person.first_surname,
       second_surname: person.second_surname || "",
-      email: person.email,
+      email: person.email || "",
       number_phone: person.number_phone,
       person_type: person.person_type,
     })
@@ -142,15 +138,24 @@ const EmployeePage = () => {
   const handleConfirmDelete = async () => {
     if (employeeToDelete !== null) {
       try {
-        await api.delete(`/persons/${employeeToDelete}`)
-        toast.success("Se ha eliminado el trabajador")
-        setPersons(persons.filter((person) => person.person_id !== employeeToDelete))
+        await deletePerson(employeeToDelete)
+        toast.success("Trabajador eliminado exitosamente")
+        fetchData()
       } catch (error: any) {
-        toast.error(
-          [error.response?.data?.message, error.response?.data?.errors?.map((err: any) => err.message).join(", ")]
-            .filter(Boolean)
-            .join(", ") || "Error al eliminar el empleado",
-        )
+        // Handle specific error messages from backend
+        if (error.response?.data?.details) {
+          // Show detailed message for work order conflicts
+          toast.error(`${error.response.data.message}\n\n${error.response.data.details}`, {
+            autoClose: 8000, // Show longer for detailed messages
+          })
+        } else {
+          // Fallback to general error handling
+          toast.error(
+            [error.response?.data?.message, error.response?.data?.errors?.map((err: any) => err.message).join(", ")]
+              .filter(Boolean)
+              .join(", ") || "Error al eliminar el trabajador",
+          )
+        }
       } finally {
         setDeleteModalOpen(false)
         setEmployeeToDelete(null)
@@ -161,40 +166,45 @@ const EmployeePage = () => {
   const filteredPersons = persons.filter(
     (person) =>
       person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.rut.toLowerCase().includes(searchTerm.toLowerCase()),
+      person.rut?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
-    <motion.div
-      className="p-6 space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+    <div className="space-y-6 p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <Users className="w-8 h-8" />
-          Lista de trabajadores</h1>
-        <Button onClick={() => setAddModalOpen(true)}>
+          Lista de Trabajadores
+        </h1>
+        <Button onClick={() => setAddModalOpen(true)} className="mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Trabajador
         </Button>
       </div>
 
-      <SearchBar searchTerm={searchTerm} handleSearch={handleSearch} />
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Buscar trabajador por nombre o RUT..."
+          value={searchTerm}
+          onChange={handleSearch}
+          className="pl-10"
+        />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      </div>
 
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-muted-foreground">Cargando empleados...</p>
-        </div>
-      ) : (
-        <motion.div
-          className="bg-card/30 backdrop-blur-md rounded-lg shadow p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
+      <motion.div
+        className="bg-card shadow rounded-lg overflow-hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {loading ? (
+          <div className="text-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-lg text-muted-foreground">Cargando trabajadores...</p>
+          </div>
+        ) : (
           <AnimatePresence>
             <EmployeeList
               persons={filteredPersons}
@@ -202,13 +212,11 @@ const EmployeePage = () => {
               handleDelete={handleDelete}
             />
           </AnimatePresence>
-        </motion.div>
-      )}
+        )}
+      </motion.div>
 
-      {/* Add Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        {addModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
-        <DialogContent className="w-96 bg-card text-card-foreground shadow-lg rounded-lg p-6">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Nuevo Trabajador</DialogTitle>
           </DialogHeader>
@@ -221,7 +229,6 @@ const EmployeePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Modal */}
       <Dialog
         open={editModalOpen}
         onOpenChange={() => {
@@ -229,8 +236,7 @@ const EmployeePage = () => {
           setSelectedPerson(null)
         }}
       >
-        {editModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
-        <DialogContent className="w-96 bg-card text-card-foreground shadow-lg rounded-lg p-6">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Editar Trabajador</DialogTitle>
           </DialogHeader>
@@ -247,25 +253,35 @@ const EmployeePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        {deleteModalOpen && <div className="fixed inset-0 bg-transparent backdrop-blur-sm" />}
-        <DialogContent className="w-96 bg-card text-card-foreground shadow-lg rounded-lg p-6">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Eliminar Trabajador</DialogTitle>
+            <DialogTitle className="text-red-600">¡Advertencia! Eliminación Permanente</DialogTitle>
           </DialogHeader>
-          <p>¿Desea eliminar este trabajador?</p>
+          <div className="space-y-4">
+            <p className="text-center font-medium">¿Estás seguro de eliminar este trabajador?</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
+              <p><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Todos los datos personales del trabajador</li>
+                <li>Órdenes de trabajo asociadas</li>
+                <li>Historial de trabajos realizados</li>
+                <li>Asignaciones de vehículos</li>
+              </ul>
+              <p className="mt-2 font-semibold">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
           <div className="flex justify-end mt-4 gap-2">
-            <Button variant="secondary" onClick={() => setDeleteModalOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
-              Eliminar
+              Eliminar permanentemente
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   )
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Table as TableIcon, LayoutGrid, Plus, Edit, Trash2, FileX, Calendar, User, CreditCard, AlertTriangle, DollarSign, ExternalLink, Car, Building2, Phone, Mail } from "lucide-react";
+import { Search, Table as TableIcon, LayoutGrid, Plus, Edit, Trash2, FileX, Calendar, User, CreditCard, AlertTriangle, DollarSign, ExternalLink, Car, Building2, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllDebtors, deleteDebtor, processPayment } from "@/services/debtorService";
 import { fetchPaymentTypes } from "@/services/work/paymentType";
@@ -280,13 +280,30 @@ const DebtorsPage = () => {
     if (!debtorToDelete) return;
 
     try {
-      await deleteDebtor(debtorToDelete.debtor_id);
+      const response = await deleteDebtor(debtorToDelete.debtor_id);
+
+      // Remover el deudor de la lista local (independientemente de si fue marcado como pagado o eliminado)
       setDebtors(prev => prev.filter(d => d.debtor_id !== debtorToDelete.debtor_id));
-      toast.success("Deudor eliminado correctamente");
+
+      // Mostrar mensaje apropiado según la acción realizada
+      if (response?.data?.action === "marked_as_paid") {
+        toast.success("Deudor marcado como pagado exitosamente");
+      } else if (response?.data?.action === "deleted_permanently") {
+        toast.success("Deudor eliminado exitosamente");
+      } else {
+        toast.success("Deudor procesado correctamente");
+      }
+
       fetchDebtors(); // Refrescar los datos
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al eliminar deudor:", error);
-      toast.error("Error al eliminar el deudor");
+
+      // Mostrar mensaje de error más específico
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Error al procesar la eliminación del deudor");
+      }
     } finally {
       setShowDeleteDialog(false);
       setDebtorToDelete(null);
@@ -873,27 +890,53 @@ const DebtorsPage = () => {
 
       {/* Dialog de confirmación de eliminación */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar eliminación</DialogTitle>
+            <DialogTitle className="text-destructive">¡Advertencia! Eliminación Permanente</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            ¿Estás seguro de que deseas eliminar este deudor? Esta acción no se puede deshacer.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
+          <div className="space-y-4">
+            <p className="text-center font-medium text-foreground">¿Estás seguro de eliminar este deudor?</p>
+            {debtorToDelete && (
+              <div className="bg-muted border border-border rounded-md p-3 text-sm">
+                <p className="text-foreground"><strong>Deudor:</strong> {debtorToDelete.description}</p>
+                <p className="text-foreground"><strong>Orden:</strong> #{debtorToDelete.workOrder?.work_order_id}</p>
+                <p className="text-foreground"><strong>Monto total:</strong> {formatPriceCLP(Number(debtorToDelete.total_amount) || 0)}</p>
+                {debtorToDelete.paid_amount && Number(debtorToDelete.paid_amount) > 0 && (
+                  <p className="text-foreground"><strong>Monto pagado:</strong> {formatPriceCLP(Number(debtorToDelete.paid_amount))}</p>
+                )}
+              </div>
+            )}
+            <div className="bg-accent/10 border border-accent/20 rounded-md p-3 text-sm">
+              <p className="text-foreground"><strong>ATENCIÓN:</strong> Esta acción realizará lo siguiente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-foreground">
+                {(debtorToDelete?.paid_amount && Number(debtorToDelete.paid_amount) > 0) ? (
+                  <>
+                    <li>El deudor será marcado como "pagado completo"</li>
+                    <li>No aparecerá más en la lista de deudores pendientes</li>
+                    <li>Los registros de pagos se mantendrán para auditoría</li>
+                  </>
+                ) : (
+                  <>
+                    <li>El deudor será eliminado completamente del registro</li>
+                    <li>Se perderán todos los datos asociados</li>
+                    <li>No habrá respaldo de la información</li>
+                  </>
+                )}
+              </ul>
+              <p className="mt-2 font-semibold text-foreground">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4 gap-2">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
               Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteDebtor}
-            >
-              Eliminar
+            <Button variant="destructive" onClick={handleDeleteDebtor}>
+              {(debtorToDelete?.paid_amount && Number(debtorToDelete.paid_amount) > 0)
+                ? "Marcar como Pagado"
+                : "Eliminar permanentemente"
+              }
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

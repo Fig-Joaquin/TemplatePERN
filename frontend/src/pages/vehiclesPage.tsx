@@ -144,27 +144,27 @@ const VehiclesPage = () => {
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-red-600">¡Advertencia! Eliminación Permanente</DialogTitle>
+            <DialogTitle className="text-destructive">¡Advertencia! Eliminación Permanente</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center font-medium">¿Estás seguro de eliminar este vehículo?</p>
+            <p className="text-center font-medium text-foreground">¿Estás seguro de eliminar este vehículo?</p>
             {vehicleToDelete && (
-              <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm">
-                <p><strong>Vehículo:</strong> {vehicleToDelete.license_plate}</p>
-                <p><strong>Marca/Modelo:</strong> {vehicleToDelete.model?.brand?.brand_name || "N/A"} {vehicleToDelete.model?.model_name || "N/A"}</p>
-                <p><strong>Año:</strong> {vehicleToDelete.year}</p>
+              <div className="bg-muted border border-border rounded-md p-3 text-sm">
+                <p className="text-foreground"><strong>Vehículo:</strong> {vehicleToDelete.license_plate}</p>
+                <p className="text-foreground"><strong>Marca/Modelo:</strong> {vehicleToDelete.model?.brand?.brand_name || "N/A"} {vehicleToDelete.model?.model_name || "N/A"}</p>
+                <p className="text-foreground"><strong>Año:</strong> {vehicleToDelete.year}</p>
               </div>
             )}
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
-              <p><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
+            <div className="bg-accent/10 border border-accent/20 rounded-md p-3 text-sm">
+              <p className="text-foreground"><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-foreground">
                 <li>Todos los datos del vehículo</li>
                 <li>Historial de kilometraje completo</li>
                 <li>Órdenes de trabajo asociadas</li>
                 <li>Cotizaciones y registros relacionados</li>
                 <li>Todo registro de pagos asociados</li>
               </ul>
-              <p className="mt-2 font-semibold">Esta acción no se puede deshacer.</p>
+              <p className="mt-2 font-semibold text-foreground">Esta acción no se puede deshacer.</p>
             </div>
           </div>
           <div className="flex justify-end mt-4 gap-2">

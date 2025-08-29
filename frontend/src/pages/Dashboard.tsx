@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/solid";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Wrench, 
-  Car, 
-  AlertTriangle, 
+import {
+  Wrench,
+  Car,
+  AlertTriangle,
   Clock,
   DollarSign,
   Package,
@@ -24,6 +24,7 @@ import { fetchQuotations } from "@/services/quotationService";
 import { getStockProducts } from "@/services/stockProductService";
 import { fetchNotifications } from "@/services/notification/notificationService";
 import { fetchVehicles } from "@/services/vehicleService";
+import { getAllProductPurchases } from "@/services/productPurchaseService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
 import { getCompleteWorkOrderById } from "@/services/workOrderService";
@@ -41,6 +42,7 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const [payments, setPayments] = useState<WorkPayment[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [productPurchases, setProductPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [recentWorkOrders, setRecentWorkOrders] = useState<WorkOrder[]>([]);
   const [recentQuotations, setRecentQuotations] = useState<Quotation[]>([]);
@@ -76,13 +78,15 @@ export const Dashboard = () => {
     balance: number;
     incomeTransactions: WorkPayment[];
     expenseTransactions: Gasto[];
+    productPurchaseTransactions: any[];
   }>({
     period: "",
     income: 0,
     expenses: 0,
     balance: 0,
     incomeTransactions: [],
-    expenseTransactions: []
+    expenseTransactions: [],
+    productPurchaseTransactions: []
   });
 
   // Estado para el modal de detalle de orden de trabajo
@@ -93,13 +97,14 @@ export const Dashboard = () => {
       try {
         setLoading(true);
         const [
-          paymentsData, 
-          gastosData, 
-          workOrdersData, 
-          quotationsData, 
-          stockData, 
+          paymentsData,
+          gastosData,
+          workOrdersData,
+          quotationsData,
+          stockData,
           notificationsData,
-          vehiclesData
+          vehiclesData,
+          productPurchasesData
         ] = await Promise.all([
           fetchWorkPayments(),
           fetchGastos(),
@@ -107,24 +112,26 @@ export const Dashboard = () => {
           fetchQuotations([]),
           getStockProducts(),
           fetchNotifications(),
-          fetchVehicles()
+          fetchVehicles(),
+          getAllProductPurchases()
         ]);
-        
+
         setPayments(paymentsData);
         setGastos(gastosData);
-        
-        // Calcular estadísticas financieras
-        calculateStats(paymentsData, gastosData);
-        
+        setProductPurchases(productPurchasesData);
+
+        // Calcular estadísticas financieras incluyendo compras de productos
+        calculateStats(paymentsData, gastosData, productPurchasesData);
+
         // Procesar datos adicionales para el dashboard
         processAdditionalData(
-          workOrdersData, 
-          quotationsData, 
-          stockData, 
+          workOrdersData,
+          quotationsData,
+          stockData,
           notificationsData,
           vehiclesData
         );
-        
+
       } catch (error) {
         console.error("Error al cargar datos del dashboard:", error);
       } finally {
@@ -136,9 +143,9 @@ export const Dashboard = () => {
   }, []);
 
   const processAdditionalData = (
-    workOrders: WorkOrder[], 
-    quotations: Quotation[], 
-    stock: StockProduct[], 
+    workOrders: WorkOrder[],
+    quotations: Quotation[],
+    stock: StockProduct[],
     notifications: any[],
     vehicles: Vehicle[]
   ) => {
@@ -148,8 +155,8 @@ export const Dashboard = () => {
 
     // Filtrar órdenes de trabajo de hoy
     const workOrdersToday = workOrders.filter(wo => {
-      const orderDateStr = typeof wo.order_date === 'string' 
-        ? (wo.order_date as string).split('T')[0] 
+      const orderDateStr = typeof wo.order_date === 'string'
+        ? (wo.order_date as string).split('T')[0]
         : getLocalDateString(new Date(wo.order_date));
       return orderDateStr === todayStr;
     });
@@ -157,8 +164,8 @@ export const Dashboard = () => {
     // Filtrar cotizaciones de hoy
     const quotationsToday = quotations.filter(q => {
       if (!q.entry_date) return false;
-      const entryDateStr = typeof q.entry_date === 'string' 
-        ? (q.entry_date as string).split('T')[0] 
+      const entryDateStr = typeof q.entry_date === 'string'
+        ? (q.entry_date as string).split('T')[0]
         : getLocalDateString(new Date(q.entry_date));
       return entryDateStr === todayStr;
     });
@@ -168,7 +175,7 @@ export const Dashboard = () => {
       .sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime())
       .slice(0, 5);
     setRecentWorkOrders(sortedWorkOrders);
-    
+
     // Cotizaciones recientes (últimas 5)
     const sortedQuotations = quotations
       .sort((a, b) => new Date(b.entry_date || 0).getTime() - new Date(a.entry_date || 0).getTime())
@@ -190,8 +197,8 @@ export const Dashboard = () => {
       .filter(wo => (wo as any).order_status === 'in_progress' || (wo as any).order_status === 'not_started')
       .map(wo => wo.vehicle?.vehicle_id)
       .filter(Boolean);
-    
-    const uniqueActiveVehicles = vehicles.filter(v => 
+
+    const uniqueActiveVehicles = vehicles.filter(v =>
       activeWorkOrderVehicleIds.includes(v.vehicle_id)
     ).slice(0, 5);
     setActiveVehicles(uniqueActiveVehicles);
@@ -212,20 +219,20 @@ export const Dashboard = () => {
     });
   };
 
-  const calculateStats = (payments: WorkPayment[], gastos: Gasto[]) => {
+  const calculateStats = (payments: WorkPayment[], gastos: Gasto[], productPurchases: any[]) => {
     const now = new Date();
-    
+
     // Fechas para cálculos diarios
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-    
+
     // Fechas para cálculos mensuales
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const startOfCurrentMonthLastMonthCalc = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     // Fechas para cálculos anuales
     const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
@@ -236,28 +243,34 @@ export const Dashboard = () => {
     const dailyIncome = calculateIncomeInRange(payments, today, tomorrow);
     // Ingresos del día anterior
     const yesterdayIncome = calculateIncomeInRange(payments, yesterday, today);
-    // Gastos del día actual
-    const dailyExpenses = calculateExpensesInRange(gastos, today, tomorrow);
+    // Gastos del día actual (gastos + compras de productos)
+    const dailyExpenses = calculateExpensesInRange(gastos, today, tomorrow) +
+      calculateProductPurchaseExpensesInRange(productPurchases, today, tomorrow);
     // Gastos del día anterior
-    const yesterdayExpenses = calculateExpensesInRange(gastos, yesterday, today);
+    const yesterdayExpenses = calculateExpensesInRange(gastos, yesterday, today) +
+      calculateProductPurchaseExpensesInRange(productPurchases, yesterday, today);
 
     // Ingresos del mes actual
     const monthlyIncome = calculateIncomeInRange(payments, startOfCurrentMonth, startOfNextMonth);
     // Ingresos del mes anterior
     const lastMonthIncome = calculateIncomeInRange(payments, startOfLastMonth, startOfCurrentMonthLastMonthCalc);
-    // Gastos del mes actual
-    const monthlyExpenses = calculateExpensesInRange(gastos, startOfCurrentMonth, startOfNextMonth);
+    // Gastos del mes actual (gastos + compras de productos)
+    const monthlyExpenses = calculateExpensesInRange(gastos, startOfCurrentMonth, startOfNextMonth) +
+      calculateProductPurchaseExpensesInRange(productPurchases, startOfCurrentMonth, startOfNextMonth);
     // Gastos del mes anterior
-    const lastMonthExpenses = calculateExpensesInRange(gastos, startOfLastMonth, startOfCurrentMonthLastMonthCalc);
+    const lastMonthExpenses = calculateExpensesInRange(gastos, startOfLastMonth, startOfCurrentMonthLastMonthCalc) +
+      calculateProductPurchaseExpensesInRange(productPurchases, startOfLastMonth, startOfCurrentMonthLastMonthCalc);
 
     // Ingresos del año actual
     const annualIncome = calculateIncomeInRange(payments, startOfCurrentYear, startOfNextYear);
     // Ingresos del año anterior
     const lastYearIncome = calculateIncomeInRange(payments, startOfLastYear, startOfCurrentYearLastYearCalc);
-    // Gastos del año actual
-    const annualExpenses = calculateExpensesInRange(gastos, startOfCurrentYear, startOfNextYear);
+    // Gastos del año actual (gastos + compras de productos)
+    const annualExpenses = calculateExpensesInRange(gastos, startOfCurrentYear, startOfNextYear) +
+      calculateProductPurchaseExpensesInRange(productPurchases, startOfCurrentYear, startOfNextYear);
     // Gastos del año anterior
-    const lastYearExpenses = calculateExpensesInRange(gastos, startOfLastYear, startOfCurrentYearLastYearCalc);
+    const lastYearExpenses = calculateExpensesInRange(gastos, startOfLastYear, startOfCurrentYearLastYearCalc) +
+      calculateProductPurchaseExpensesInRange(productPurchases, startOfLastYear, startOfCurrentYearLastYearCalc);
 
     // Totales (ingresos - gastos)
     const dailyTotal = dailyIncome - dailyExpenses;
@@ -320,11 +333,11 @@ export const Dashboard = () => {
     // Convertir las fechas de inicio y fin a strings YYYY-MM-DD para comparación simple
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
-    
+
     const filteredPayments = payments.filter(payment => {
       // Obtener la fecha como string YYYY-MM-DD
       let paymentDateStr: string;
-      
+
       if (typeof payment.payment_date === 'string') {
         // Si es string, extraer la parte de fecha
         paymentDateStr = payment.payment_date.split('T')[0];
@@ -332,21 +345,21 @@ export const Dashboard = () => {
         // Si ya es Date, convertirlo a string YYYY-MM-DD
         paymentDateStr = getLocalDateString(payment.payment_date);
       }
-      
+
       // Verificamos si el pago está en estado válido
-      const isValidPaymentStatus = 
+      const isValidPaymentStatus =
         payment.payment_status === "pagado" || payment.payment_status === "parcial";
-      
+
       if (!isValidPaymentStatus) {
         return false;
       }
-      
+
       // Para rangos de fechas: incluye start, excluye end
       const isInRange = paymentDateStr >= startDateStr && paymentDateStr < endDateStr;
-      
+
       return isInRange;
     });
-    
+
     const result = filteredPayments.reduce((sum, payment) => {
       // Asegurar que amount_paid sea tratado como número
       const montoNumerico = typeof payment.amount_paid === 'string' ? parseFloat(payment.amount_paid) : Number(payment.amount_paid);
@@ -360,11 +373,11 @@ export const Dashboard = () => {
     // Convertir las fechas de inicio y fin a strings YYYY-MM-DD para comparación simple
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
-    
+
     const filteredGastos = gastos.filter(gasto => {
       // Obtener la fecha como string YYYY-MM-DD
       let gastoDateStr: string;
-      
+
       if (typeof gasto.expense_date === 'string') {
         // Si es string, extraer la parte de fecha
         gastoDateStr = gasto.expense_date.split('T')[0];
@@ -372,13 +385,13 @@ export const Dashboard = () => {
         // Si ya es Date, convertirlo a string YYYY-MM-DD
         gastoDateStr = getLocalDateString(gasto.expense_date);
       }
-      
+
       // Para rangos de fechas: incluye start, excluye end
       const isInRange = gastoDateStr >= startDateStr && gastoDateStr < endDateStr;
-      
+
       return isInRange;
     });
-    
+
     const result = filteredGastos.reduce((sum, gasto) => {
       // Asegurar que gasto.amount sea tratado como número
       const montoNumerico = typeof gasto.amount === 'string' ? parseFloat(gasto.amount) : Number(gasto.amount);
@@ -387,20 +400,51 @@ export const Dashboard = () => {
     return result;
   };
 
+  // Función para calcular gastos de compras de productos en un rango de fechas
+  const calculateProductPurchaseExpensesInRange = (productPurchases: any[], start: Date, end: Date): number => {
+    const startDateStr = getLocalDateString(start);
+    const endDateStr = getLocalDateString(end);
+
+    const filteredPurchases = productPurchases.filter(purchase => {
+      if (!purchase.purchase_history || !purchase.purchase_history.purchase_date) return false;
+
+      let purchaseDateStr: string;
+
+      if (typeof purchase.purchase_history.purchase_date === 'string') {
+        purchaseDateStr = purchase.purchase_history.purchase_date.split('T')[0];
+      } else {
+        purchaseDateStr = getLocalDateString(purchase.purchase_history.purchase_date);
+      }
+
+      // Solo incluir compras procesadas (que efectivamente gastaron dinero)
+      const isProcessed = purchase.purchase_status === "processed";
+      const isInRange = purchaseDateStr >= startDateStr && purchaseDateStr < endDateStr;
+
+      return isProcessed && isInRange;
+    });
+
+    const result = filteredPurchases.reduce((sum, purchase) => {
+      const totalPrice = typeof purchase.total_price === 'string' ? parseFloat(purchase.total_price) : Number(purchase.total_price);
+      return sum + totalPrice;
+    }, 0);
+
+    return result;
+  };
+
   const calculatePercentageChange = (current: number, previous: number): number => {
     // Si ambos valores son cero, no hay cambio
     if (current === 0 && previous === 0) return 0;
-    
+
     // Si el valor anterior es cero pero el actual no
     if (previous === 0) {
       // Si el valor actual es positivo, consideramos como 100% de aumento
       // Si es negativo, consideramos como 100% de disminución
       return current > 0 ? 100 : (current < 0 ? -100 : 0);
     }
-    
+
     // Calcular el porcentaje de cambio normal
     const percentageChange = ((current - previous) / Math.abs(previous)) * 100;
-    
+
     // Limitar el porcentaje a un rango razonable (-999% a 999%)
     return Math.max(-999, Math.min(999, percentageChange));
   };
@@ -413,39 +457,46 @@ export const Dashboard = () => {
     let expensesAmount = 0;
     let filteredIncome: WorkPayment[] = [];
     let filteredExpenses: Gasto[] = [];
-    
+    let filteredProductPurchases: any[] = [];
+
     // Configurar fechas según el tipo de período
     if (type === "daily") {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      
+
       periodName = `Día ${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
       filteredIncome = filterPaymentsByDateRange(payments, today, tomorrow);
       filteredExpenses = filterGastosByDateRange(gastos, today, tomorrow);
+      filteredProductPurchases = filterProductPurchasesByDateRange(productPurchases, today, tomorrow);
       incomeAmount = calculateIncomeInRange(payments, today, tomorrow);
-      expensesAmount = calculateExpensesInRange(gastos, today, tomorrow);
-    } 
+      expensesAmount = calculateExpensesInRange(gastos, today, tomorrow) +
+        calculateProductPurchaseExpensesInRange(productPurchases, today, tomorrow);
+    }
     else if (type === "monthly") {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      
+
       periodName = `Mes de ${new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(now)} ${now.getFullYear()}`;
       filteredIncome = filterPaymentsByDateRange(payments, startOfMonth, startOfNextMonth);
       filteredExpenses = filterGastosByDateRange(gastos, startOfMonth, startOfNextMonth);
+      filteredProductPurchases = filterProductPurchasesByDateRange(productPurchases, startOfMonth, startOfNextMonth);
       incomeAmount = calculateIncomeInRange(payments, startOfMonth, startOfNextMonth);
-      expensesAmount = calculateExpensesInRange(gastos, startOfMonth, startOfNextMonth);
-    } 
+      expensesAmount = calculateExpensesInRange(gastos, startOfMonth, startOfNextMonth) +
+        calculateProductPurchaseExpensesInRange(productPurchases, startOfMonth, startOfNextMonth);
+    }
     else if (type === "annual") {
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
-      
+
       periodName = `Año ${now.getFullYear()}`;
       filteredIncome = filterPaymentsByDateRange(payments, startOfYear, startOfNextYear);
       filteredExpenses = filterGastosByDateRange(gastos, startOfYear, startOfNextYear);
+      filteredProductPurchases = filterProductPurchasesByDateRange(productPurchases, startOfYear, startOfNextYear);
       incomeAmount = calculateIncomeInRange(payments, startOfYear, startOfNextYear);
-      expensesAmount = calculateExpensesInRange(gastos, startOfYear, startOfNextYear);
+      expensesAmount = calculateExpensesInRange(gastos, startOfYear, startOfNextYear) +
+        calculateProductPurchaseExpensesInRange(productPurchases, startOfYear, startOfNextYear);
     }
-    
+
     setDetailsType(type);
     setDetailsData({
       period: periodName,
@@ -453,7 +504,8 @@ export const Dashboard = () => {
       expenses: expensesAmount,
       balance: incomeAmount - expensesAmount,
       incomeTransactions: filteredIncome,
-      expenseTransactions: filteredExpenses
+      expenseTransactions: filteredExpenses,
+      productPurchaseTransactions: filteredProductPurchases
     });
     setShowDetailsDialog(true);
   };
@@ -462,18 +514,18 @@ export const Dashboard = () => {
   const filterPaymentsByDateRange = (payments: WorkPayment[], start: Date, end: Date): WorkPayment[] => {
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
-    
+
     return payments.filter(payment => {
       if (!payment.payment_date) return false;
-      
+
       let paymentDateStr = typeof payment.payment_date === 'string'
         ? payment.payment_date.split('T')[0]
         : getLocalDateString(new Date(payment.payment_date));
-      
+
       // Solo incluir pagos válidos
-      const isValidPaymentStatus = 
+      const isValidPaymentStatus =
         payment.payment_status === "pagado" || payment.payment_status === "parcial";
-      
+
       return isValidPaymentStatus && paymentDateStr >= startDateStr && paymentDateStr < endDateStr;
     });
   };
@@ -481,15 +533,35 @@ export const Dashboard = () => {
   const filterGastosByDateRange = (gastos: Gasto[], start: Date, end: Date): Gasto[] => {
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
-    
+
     return gastos.filter(gasto => {
       if (!gasto.expense_date) return false;
-      
+
       let gastoDateStr = typeof gasto.expense_date === 'string'
         ? gasto.expense_date.split('T')[0]
         : getLocalDateString(new Date(gasto.expense_date));
-      
+
       return gastoDateStr >= startDateStr && gastoDateStr < endDateStr;
+    });
+  };
+
+  // Función para filtrar compras de productos por rango de fechas
+  const filterProductPurchasesByDateRange = (productPurchases: any[], start: Date, end: Date): any[] => {
+    const startDateStr = getLocalDateString(start);
+    const endDateStr = getLocalDateString(end);
+
+    return productPurchases.filter(purchase => {
+      if (!purchase.purchase_history?.purchase_date) return false;
+
+      let purchaseDateStr = typeof purchase.purchase_history.purchase_date === 'string'
+        ? purchase.purchase_history.purchase_date.split('T')[0]
+        : getLocalDateString(new Date(purchase.purchase_history.purchase_date));
+
+      // Solo incluir compras procesadas
+      const isProcessed = purchase.purchase_status === "processed";
+      const isInRange = purchaseDateStr >= startDateStr && purchaseDateStr < endDateStr;
+
+      return isProcessed && isInRange;
     });
   };
 
@@ -506,7 +578,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-6 max-w-7xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -515,16 +587,16 @@ export const Dashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold text-primary">Dashboard de Gestión</h1>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => navigate("/admin/nueva-orden-trabajo")}
             className="flex items-center gap-2"
           >
             <Wrench className="h-4 w-4" />
             Nueva Orden
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => navigate("/admin/cotizaciones/nuevo")}
             className="flex items-center gap-2"
           >
@@ -533,7 +605,7 @@ export const Dashboard = () => {
           </Button>
         </div>
       </div>
-      
+
       {loading ? (
         <div className="text-center py-20">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
@@ -542,7 +614,7 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* Estadísticas Financieras */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -554,10 +626,10 @@ export const Dashboard = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
               >
-                <DashboardCard 
-                  title="Balance Diario" 
-                  amount={formatPriceCLP(stats.daily.amount)} 
-                  percentage={Math.round(stats.daily.percentage)} 
+                <DashboardCard
+                  title="Balance Diario"
+                  amount={formatPriceCLP(stats.daily.amount)}
+                  percentage={Math.round(stats.daily.percentage)}
                   trend={stats.daily.trend}
                   onViewDetails={() => openDetailsDialog("daily")}
                 />
@@ -567,10 +639,10 @@ export const Dashboard = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: 0.3 }}
               >
-                <DashboardCard 
-                  title="Balance Mensual" 
-                  amount={formatPriceCLP(stats.monthly.amount)} 
-                  percentage={Math.round(stats.monthly.percentage)} 
+                <DashboardCard
+                  title="Balance Mensual"
+                  amount={formatPriceCLP(stats.monthly.amount)}
+                  percentage={Math.round(stats.monthly.percentage)}
                   trend={stats.monthly.trend}
                   onViewDetails={() => openDetailsDialog("monthly")}
                 />
@@ -580,10 +652,10 @@ export const Dashboard = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: 0.4 }}
               >
-                <DashboardCard 
-                  title="Balance Anual" 
-                  amount={formatPriceCLP(stats.annual.amount)} 
-                  percentage={Math.round(stats.annual.percentage)} 
+                <DashboardCard
+                  title="Balance Anual"
+                  amount={formatPriceCLP(stats.annual.amount)}
+                  percentage={Math.round(stats.annual.percentage)}
                   trend={stats.annual.trend}
                   onViewDetails={() => openDetailsDialog("annual")}
                 />
@@ -592,7 +664,7 @@ export const Dashboard = () => {
           </motion.div>
 
           {/* Métricas Rápidas */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -675,8 +747,8 @@ export const Dashboard = () => {
                     <Activity className="h-5 w-5" />
                     Órdenes de trabajo Reciente
                   </CardTitle>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate("/admin/orden-trabajo")}
                   >
@@ -696,9 +768,9 @@ export const Dashboard = () => {
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {(order as any).order_status === 'not_started' ? 'No Iniciado' : 
-                         (order as any).order_status === 'in_progress' ? 'En Progreso' : 
-                         (order as any).order_status === 'finished' ? 'Finalizado' : 'Desconocido'}
+                        {(order as any).order_status === 'not_started' ? 'No Iniciado' :
+                          (order as any).order_status === 'in_progress' ? 'En Progreso' :
+                            (order as any).order_status === 'finished' ? 'Finalizado' : 'Desconocido'}
                       </Badge>
                     </div>
                   ))}
@@ -721,8 +793,8 @@ export const Dashboard = () => {
                     <AlertTriangle className="h-5 w-5" />
                     Alertas del Sistema
                   </CardTitle>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate("/admin/productos")}
                   >
@@ -779,8 +851,8 @@ export const Dashboard = () => {
                     <FileText className="h-5 w-5" />
                     Cotizaciones Recientes
                   </CardTitle>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate("/admin/cotizaciones")}
                   >
@@ -801,12 +873,12 @@ export const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <Badge 
+                      <Badge
                         variant={quotation.quotation_status === 'approved' ? 'default' : 'secondary'}
                         className="text-xs"
                       >
-                        {quotation.quotation_status === 'pending' ? 'Pendiente' : 
-                         quotation.quotation_status === 'approved' ? 'Aprobada' : 'Rechazada'}
+                        {quotation.quotation_status === 'pending' ? 'Pendiente' :
+                          quotation.quotation_status === 'approved' ? 'Aprobada' : 'Rechazada'}
                       </Badge>
                     </div>
                   ))}
@@ -829,8 +901,8 @@ export const Dashboard = () => {
                     <Car className="h-5 w-5" />
                     Vehículos en Taller
                   </CardTitle>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate("/admin/vehiculos")}
                   >
@@ -872,7 +944,7 @@ export const Dashboard = () => {
               Detalles de Balance: {detailsData.period}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="overflow-y-auto pr-6 pl-2 py-4 flex-1">
             {/* Resumen */}
             <div className="grid grid-cols-3 gap-4 mb-6">
@@ -884,7 +956,7 @@ export const Dashboard = () => {
                   <p className="text-xl font-bold text-green-600">{formatPriceCLP(detailsData.income)}</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-red-50 border-red-200">
                 <CardContent className="p-4">
                   <h3 className="text-sm font-medium text-red-800 flex items-center gap-1">
@@ -893,7 +965,7 @@ export const Dashboard = () => {
                   <p className="text-xl font-bold text-red-600">{formatPriceCLP(detailsData.expenses)}</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="p-4">
                   <h3 className="text-sm font-medium text-blue-800 flex items-center gap-1">
@@ -905,7 +977,7 @@ export const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Listado de ingresos */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Ingresos del período</h3>
@@ -929,16 +1001,16 @@ export const Dashboard = () => {
                           </td>
                           <td className="px-4 py-3 text-sm">
                             {payment.work_order ? (
-                              <Button 
-                                variant="link" 
+                              <Button
+                                variant="link"
                                 className="p-0 h-auto font-medium text-primary hover:text-primary/80 flex items-center gap-1"
                                 onClick={() => payment.work_order && handleViewWorkOrderDetails(payment.work_order.work_order_id)}
                               >
                                 <FileText className="h-3.5 w-3.5" />
-                                #{payment.work_order.work_order_id} 
-                                {payment.work_order.vehicle?.license_plate ? 
-                                 ` - ${payment.work_order.vehicle.license_plate}` : 
-                                 ""}
+                                #{payment.work_order.work_order_id}
+                                {payment.work_order.vehicle?.license_plate ?
+                                  ` - ${payment.work_order.vehicle.license_plate}` :
+                                  ""}
                               </Button>
                             ) : (
                               <span className="text-muted-foreground">Sin orden</span>
@@ -966,7 +1038,7 @@ export const Dashboard = () => {
                 </p>
               )}
             </div>
-            
+
             {/* Listado de gastos */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Gastos del período</h3>
@@ -1007,8 +1079,60 @@ export const Dashboard = () => {
                 </p>
               )}
             </div>
+
+            {/* Listado de compras de productos */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Compras de productos del período</h3>
+              {detailsData.productPurchaseTransactions.length > 0 ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm">Fecha</th>
+                        <th className="px-4 py-2 text-left text-sm">Producto</th>
+                        <th className="px-4 py-2 text-left text-sm">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-sm">Precio Unit.</th>
+                        <th className="px-4 py-2 text-right text-sm">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailsData.productPurchaseTransactions.map((purchase, index) => (
+                        <tr key={purchase.product_purchase_id || index} className="border-t">
+                          <td className="px-4 py-3 text-sm">
+                            {formatDate(purchase.purchase_history?.purchase_date)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div>
+                              <div className="font-medium">{purchase.product?.product_name || "Producto desconocido"}</div>
+                              {purchase.product?.type?.type_name && (
+                                <div className="text-xs text-muted-foreground">
+                                  {purchase.product.type.type_name}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {purchase.quantity}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {formatPriceCLP(Number(purchase.purchase_price))}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right font-medium text-red-600">
+                            {formatPriceCLP(Number(purchase.total_price))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4 bg-muted/20 rounded-lg">
+                  No hay compras de productos registradas en este período
+                </p>
+              )}
+            </div>
           </div>
-          
+
           {/* Botón para cerrar el diálogo */}
           <div className="flex justify-end mt-4">
             <Button onClick={() => setShowDetailsDialog(false)}>
@@ -1033,7 +1157,7 @@ export const Dashboard = () => {
                 </div>
               </DialogTitle>
             </DialogHeader>
-            
+
             <div className="overflow-y-auto max-h-[75vh] pr-2">
               <div className="space-y-6 py-4">
                 {/* Header con información principal */}
@@ -1046,24 +1170,24 @@ export const Dashboard = () => {
                       </div>
                       <p className="text-lg font-semibold">{formatDate(selectedWorkOrder.order_date)}</p>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Activity className="h-4 w-4" />
                         Estado actual
                       </div>
-                      <Badge 
+                      <Badge
                         variant={
-                          selectedWorkOrder.order_status === "finished" ? "default" : 
-                          selectedWorkOrder.order_status === "in_progress" ? "secondary" : "outline"
+                          selectedWorkOrder.order_status === "finished" ? "default" :
+                            selectedWorkOrder.order_status === "in_progress" ? "secondary" : "outline"
                         }
                         className="text-sm px-3 py-1"
                       >
-                        {selectedWorkOrder.order_status === "finished" ? "✅ Finalizado" : 
-                         selectedWorkOrder.order_status === "in_progress" ? "🔄 En Progreso" : "⏳ No Iniciado"}
+                        {selectedWorkOrder.order_status === "finished" ? "✅ Finalizado" :
+                          selectedWorkOrder.order_status === "in_progress" ? "🔄 En Progreso" : "⏳ No Iniciado"}
                       </Badge>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <DollarSign className="h-4 w-4" />
@@ -1095,7 +1219,7 @@ export const Dashboard = () => {
                               <p className="font-semibold text-blue-900">{selectedWorkOrder.vehicle.license_plate}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
                             <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                               <span className="text-purple-700 font-bold text-sm">🏭</span>
@@ -1108,7 +1232,7 @@ export const Dashboard = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-4">
                           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -1121,7 +1245,7 @@ export const Dashboard = () => {
                               </p>
                             </div>
                           </div>
-                          
+
                           {selectedWorkOrder.vehicle.year && (
                             <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
                               <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -1184,7 +1308,7 @@ export const Dashboard = () => {
                               const laborPrice = Number(detail.labor_price || 0);
                               const quantity = Number(detail.quantity || 1);
                               const subtotal = (productPrice * quantity) + laborPrice;
-                              
+
                               return (
                                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                                   <td className="px-6 py-4">
@@ -1260,7 +1384,7 @@ export const Dashboard = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {selectedWorkOrder.technicians.map((tech, index) => {
                           let techName = `Técnico #${index + 1}`;
-                          
+
                           if (tech && typeof tech === 'object') {
                             if ('employee' in tech && tech.employee) {
                               techName = typeof tech.employee === 'string' ? tech.employee : `Técnico #${index + 1}`;
@@ -1270,7 +1394,7 @@ export const Dashboard = () => {
                               techName = `Técnico #${tech.employee_id}`;
                             }
                           }
-                          
+
                           return (
                             <div key={index} className="flex items-center gap-3 p-3 bg-cyan-50 rounded-lg">
                               <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center">
@@ -1296,16 +1420,16 @@ export const Dashboard = () => {
                 Última actualización: {formatDate(selectedWorkOrder.order_date)}
               </div>
               <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => navigate(`/admin/orden-trabajo/editar/${selectedWorkOrder.work_order_id}`)}
                   className="flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
                   Editar Orden
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setSelectedWorkOrder(null)}
                 >
                   Cerrar
@@ -1346,11 +1470,11 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, amount, percentage
               {percentage}% {trend === "up" ? "Crecimiento" : "Disminución"}
             </p>
           </div>
-          
+
           {onViewDetails && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onViewDetails}
               className="flex items-center text-xs"
             >
@@ -1374,7 +1498,7 @@ interface QuickStatCardProps {
 
 const QuickStatCard: React.FC<QuickStatCardProps> = ({ title, value, icon, color, onClick }) => {
   return (
-    <Card 
+    <Card
       className={`transition-all duration-300 hover:shadow-lg ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >

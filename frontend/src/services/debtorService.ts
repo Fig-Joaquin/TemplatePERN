@@ -6,7 +6,13 @@ export const getAllDebtors = async (): Promise<Debtor[]> => {
     console.log("Llamando a API de deudores..."); // Debug
     const response = await api.get("/debtors");
     console.log("Respuesta de API de deudores:", response.data); // Debug
-    return response.data;
+    
+    // Filtrar deudores pagados para que no aparezcan en la lista
+    const unpaidDebtors = response.data.filter((debtor: Debtor) => 
+      debtor.payment_status !== "pagado"
+    );
+    
+    return unpaidDebtors;
   } catch (error) {
     console.error("Error en getAllDebtors:", error); // Debug
     throw error;
@@ -28,8 +34,9 @@ export const updateDebtor = async (id: number, debtorData: Partial<DebtorInput>)
   return response.data.debtor || response.data;
 };
 
-export const deleteDebtor = async (id: number): Promise<void> => {
-  await api.delete(`/debtors/${id}`);
+export const deleteDebtor = async (id: number): Promise<any> => {
+  const response = await api.delete(`/debtors/${id}`);
+  return response;
 };
 
 export const processPayment = async (id: number, paymentData: PaymentInput): Promise<any> => {

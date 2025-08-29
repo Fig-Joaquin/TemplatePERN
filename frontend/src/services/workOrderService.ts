@@ -76,10 +76,9 @@ export const fetchWorkOrders = async (): Promise<WorkOrder[]> => {
   return data;
 };
 
-export const createWorkOrder = async (workOrderData: Partial<WorkOrderInput>): Promise<any> => {
-  // Modificamos el tipo de retorno a 'any' para manejar la respuesta exacta del servidor
+export const createWorkOrder = async (workOrderData: Partial<WorkOrderInput>): Promise<{ message: string; workOrder: WorkOrder }> => {
   const { data } = await api.post("/workOrders", workOrderData);
-  return data; // Ahora devuelve el objeto completo { message, workOrder }
+  return data; // Retorna { message, workOrder }
 };
 
 export const updateWorkOrder = async (workOrderId: number, workOrderData: Partial<WorkOrderInput>): Promise<WorkOrder> => {

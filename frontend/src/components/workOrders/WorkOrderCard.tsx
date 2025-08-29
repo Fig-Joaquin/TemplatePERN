@@ -8,6 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,10 +25,12 @@ import { deleteWorkOrder } from "@/services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
 import { getTaxById } from "@/services/taxService";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
+import { MoreHorizontal, Edit, UserPlus, Trash2 } from "lucide-react";
 
 interface WorkOrderCardProps {
   workOrder: any; // Ajusta según tu interfaz WorkOrder con las relaciones necesarias.
   onDelete?: (id: number) => void;
+  onCreateDebtor?: (workOrder: any) => void;
 }
 
 const statusTranslations: Record<string, string> = {
@@ -36,7 +45,7 @@ const statusColors: Record<string, string> = {
   not_started: "text-red-600",
 };
 
-const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
+const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardProps) => {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [loadedDetails, setLoadedDetails] = useState<any[]>([]);
@@ -118,6 +127,13 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
 
   const handleEdit = () => {
     navigate(`/admin/orden-trabajo/editar/${work_order_id}`);
+  };
+
+  const handleCreateDebtor = () => {
+    if (onCreateDebtor) {
+      onCreateDebtor(workOrder);
+    }
+    setOpen(false); // Cerrar el modal después de crear el deudor
   };
 
   const handleDeleteConfirmed = async () => {
@@ -319,10 +335,22 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
               {assignedTechnicians.length > 0 ? (
                 <ul className="list-disc list-inside">
                   {assignedTechnicians.map(tech => (
-                    <li key={tech.id}>
-                      {!tech || !tech.technician
-                        ? "Mécanico sin datos"
-                        : `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`}
+                    <li key={tech.id} className="flex flex-col">
+                      <span>
+                        {!tech || !tech.technician
+                          ? "Mécanico sin datos"
+                          : `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`
+                        }
+                      </span>
+                      {tech.assigned_at && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          Asignado: {new Date(tech.assigned_at).toLocaleDateString('es-CL', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -331,33 +359,79 @@ const WorkOrderCard = ({ workOrder, onDelete }: WorkOrderCardProps) => {
               )}
             </div>
           </div>
-          <div className="mt-4 flex justify-end space-x-2 border-t pt-4">
-            <Button variant="outline" onClick={handleEdit}>
-              Editar
-            </Button>
-            <Button variant="destructive" onClick={() => setConfirmDelete(true)}>
-              Eliminar
-            </Button>
-            <Button onClick={() => setOpen(false)}>Cerrar</Button>
+          <div className="mt-4 flex justify-end items-center border-t pt-4">
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="hover:bg-gray-50 focus:bg-gray-50">
+                    <MoreHorizontal className="mr-2 h-4 w-4" />
+                    Acciones
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleEdit}
+                    className="cursor-pointer hover:bg-green-50 focus:bg-green-50"
+                  >
+                    <Edit className="mr-2 h-4 w-4 text-green-600" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleCreateDebtor}
+                    className="cursor-pointer hover:bg-orange-50 focus:bg-orange-50"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4 text-orange-600" />
+                    Crear Deudor
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setConfirmDelete(true)}
+                    className="cursor-pointer text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={() => setOpen(false)}>
+                Cerrar
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Diálogo de confirmación para eliminar */}
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent className="bg-card text-card-foreground max-w-4xl">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar Eliminación</DialogTitle>
+            <DialogTitle className="text-destructive">¡Advertencia! Eliminación Permanente</DialogTitle>
           </DialogHeader>
-          <p className="mb-4">
-            ¿Estás seguro de eliminar la orden #{work_order_id}?
-          </p>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={handleDeleteConfirmed}>
-              Eliminar
-            </Button>
-            <Button variant="destructive" onClick={() => setConfirmDelete(false)}>
+          <div className="space-y-4">
+            <p className="text-center font-medium text-foreground">
+              ¿Estás seguro de eliminar la orden #{work_order_id}?
+            </p>
+            <div className="bg-muted border border-border rounded-md p-3 text-sm">
+              <p className="text-foreground"><strong>Orden:</strong> #{work_order_id}</p>
+              <p className="text-foreground"><strong>Estado:</strong> {statusTranslations[order_status] || order_status}</p>
+              <p className="text-foreground"><strong>Monto:</strong> {formatPriceCLP(finalTotal)}</p>
+            </div>
+            <div className="bg-accent/10 border border-accent/20 rounded-md p-3 text-sm">
+              <p className="text-foreground"><strong>ATENCIÓN:</strong> Esta acción realizará lo siguiente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-foreground">
+                <li>Eliminará la orden de trabajo permanentemente</li>
+                <li>Restaurará el stock de productos utilizados</li>
+                <li>Eliminará todos los pagos asociados</li>
+              </ul>
+              <p className="mt-2 font-semibold text-foreground">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4 gap-2">
+            <Button variant="outline" onClick={() => setConfirmDelete(false)}>
               Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirmed}>
+              Eliminar permanentemente
             </Button>
           </div>
         </DialogContent>
