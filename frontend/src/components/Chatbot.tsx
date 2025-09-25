@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { SendHorizontal, X, Trash2, MessageCircle, ThumbsUp, ThumbsDown, Bot } from "lucide-react"
 import { toast } from "react-toastify"
 import { sendChatQuery, sendChatFeedback, resetChatSession } from "../services/chatbotService"
 import ReactMarkdown from 'react-markdown'
 import { motion, AnimatePresence } from "framer-motion"
+import { useNavigate } from "react-router-dom"
 
 interface Message {
   text: string
@@ -13,12 +14,35 @@ interface Message {
 }
 
 export const Chatbot = () => {
+  const navigate = useNavigate()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [, setIsTyping] = useState(false)
   const [isWaitingResponse, setIsWaitingResponse] = useState(false)
+
+  // Rehidratar estado desde localStorage al montar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('chatbot_messages')
+      if (saved) {
+        setMessages(JSON.parse(saved))
+      }
+      const savedOpen = localStorage.getItem('chatbot_is_open')
+      if (savedOpen !== null) {
+        setIsOpen(savedOpen === 'true')
+      }
+    } catch {}
+  }, [])
+
+  // Persistir mensajes y estado abierto/cerrado
+  useEffect(() => {
+    try { localStorage.setItem('chatbot_messages', JSON.stringify(messages)) } catch {}
+  }, [messages])
+  useEffect(() => {
+    try { localStorage.setItem('chatbot_is_open', String(isOpen)) } catch {}
+  }, [isOpen])
 
   // Función para crear efecto de tipeo
   const typeBotMessage = (messageId: string, fullText: string) => {
@@ -146,6 +170,7 @@ export const Chatbot = () => {
   const clearHistory = () => {
     setMessages([])
     resetChatSession() // Resetear el ID de sesión para comenzar conversación nueva
+  try { localStorage.removeItem('chatbot_messages') } catch {}
     toast.success("Historial borrado")
   }
 
@@ -170,10 +195,28 @@ export const Chatbot = () => {
             li: ({node, ...props}) => (
               <li className="my-0 text-card-foreground" {...props} />
             ),
-            // Enlaces usan el color de acento
-            a: ({node, ...props}) => (
-              <a className="text-accent hover:text-accent/80 underline" {...props} />
-            ),
+            // Enlaces: SPA para rutas internas y nueva pestaña para externas
+            a: ({ node, ...props }) => {
+              const href = (props as any).href as string | undefined
+              const isInternal = !!href && href.startsWith('/')
+              const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                if (isInternal && href) {
+                  e.preventDefault()
+                  navigate(href)
+                }
+              }
+              return (
+                <a
+                  className="text-accent hover:text-accent/80 underline"
+                  href={href}
+                  onClick={onClick}
+                  target={isInternal ? undefined : "_blank"}
+                  rel={isInternal ? undefined : "noopener noreferrer"}
+                >
+                  {props.children}
+                </a>
+              )
+            },
             // Encabezados usan el color primario
             h1: ({node, ...props}) => (
               <h1 className="text-primary font-bold" {...props} />
