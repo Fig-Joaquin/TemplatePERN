@@ -1,10 +1,10 @@
 "use client"
 
 import React from "react"
+import { Edit, Trash2 } from "lucide-react"
 import type { Person } from "../../types/interfaces"
 import { Button } from "@/components/ui/button"
 import RutFormatter from "../RutFormatter"
-import { Edit, Trash2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface EmployeeListProps {
@@ -13,7 +13,11 @@ interface EmployeeListProps {
   handleDelete: (personId: number) => void
 }
 
-const EmployeeList: React.FC<EmployeeListProps> = ({ persons, handleEdit, handleDelete }) => {
+const EmployeeList: React.FC<EmployeeListProps> = ({
+  persons,
+  handleEdit,
+  handleDelete,
+}) => {
   return (
     <div className="overflow-x-auto">
       {persons.length === 0 ? (
@@ -34,12 +38,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ persons, handleEdit, handle
             {persons.map((person) => (
               <TableRow key={person.person_id}>
                 <TableCell>
-                  <RutFormatter rut={person.rut || "No hay información"} />
+                  {person.rut ? <RutFormatter rut={person.rut} /> : "No hay información"}
                 </TableCell>
                 <TableCell>{person.name}</TableCell>
                 <TableCell>{person.first_surname}</TableCell>
-                <TableCell>{person.email || "No hay información"}</TableCell>
-                <TableCell>+{person.number_phone || "No hay información"}</TableCell>
+                <TableCell>
+                  {person.email ? person.email : "No hay información"}
+                </TableCell>
+                <TableCell>+{person.number_phone}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(person)}>

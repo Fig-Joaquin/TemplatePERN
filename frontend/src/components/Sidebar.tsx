@@ -58,7 +58,10 @@ const sidebarStructure = [
     id: "inventario",
     icon: ArchiveBoxIcon,
     title: "Inventario",
-    path: "/admin/productos",
+    items: [
+      { name: "Productos", path: "/admin/productos" },
+      { name: "Compras de Productos", path: "/admin/compras-productos" },
+    ],
   },
   {
     id: "finanzas",
@@ -68,6 +71,7 @@ const sidebarStructure = [
       { name: "Pagos de clientes", path: "/admin/finanzas/pagos" },
       { name: "Registro de Gastos", path: "/admin/finanzas/gastos" },
       { name: "Deudores", path: "/admin/finanzas/deudores" },
+      { name: "Balances", path: "/admin/finanzas/balances" },
     ],
   },
   {

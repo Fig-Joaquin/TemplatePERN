@@ -3,7 +3,8 @@ import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { WorkOrderSchema, WorkOrderUpdateSchema } from "../../schema/work/workOrderValidator";
 import { DeepPartial } from "typeorm";
-import { WorkOrder, Vehicle, Quotation, Notification, WorkProductDetail, WorkOrderTechnician, StockProduct } from "../../entities";
+import { WorkOrder, Vehicle, Quotation, Notification, WorkProductDetail, WorkOrderTechnician, StockProduct, WorkPayment, Debtor } from "../../entities";
+import type { ZodIssue } from "zod";
 
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 const vehicleRepository = AppDataSource.getRepository(Vehicle);
@@ -13,6 +14,8 @@ const notifRepo = AppDataSource.getRepository(Notification);
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
 const workOrderTechnicianRepository = AppDataSource.getRepository(WorkOrderTechnician);
 const stockProductRepository = AppDataSource.getRepository(StockProduct);
+const workPaymentRepository = AppDataSource.getRepository(WorkPayment);
+const debtorRepository = AppDataSource.getRepository(Debtor);
 
 
 export const getAllWorkOrders = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
@@ -126,7 +129,7 @@ export const createWorkOrder = async (req: Request, res: Response, _next: NextFu
       if (!validationResult.success) {
         res.status(400).json({
           message: "Error de validación",
-          errors: validationResult.error.errors.map((err: any) => ({
+          errors: validationResult.error.errors.map((err: ZodIssue) => ({
             field: err.path.join("."),
             message: err.message
           }))
@@ -222,7 +225,7 @@ export const updateWorkOrder = async (req: Request, res: Response, _next: NextFu
       if (!validationResult.success) {
         res.status(400).json({
           message: "Error de validación",
-          errors: validationResult.error.errors.map((err: any) => ({
+          errors: validationResult.error.errors.map((err: ZodIssue) => ({
             field: err.path.join("."),
             message: err.message
           }))
@@ -268,15 +271,37 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
           });
 
           if (stockProduct) {
+            // Asegurar que ambos valores son números
+            const currentStock = Number(stockProduct.quantity);
+            const quantityToRestore = Number(detail.quantity);
+            
             // Recuperar la cantidad que se había descontado
-            stockProduct.quantity += Number(detail.quantity);
+            const newStock = currentStock + quantityToRestore;
+            stockProduct.quantity = newStock;
+            
             await stockProductRepository.save(stockProduct);
-            console.log(`Stock restaurado para producto ${detail.product.product_id}: +${detail.quantity} (nuevo stock: ${stockProduct.quantity})`);
+            console.log(`Stock restaurado para producto ${detail.product.product_id}: +${quantityToRestore} (stock anterior: ${currentStock}, nuevo stock: ${newStock})`);
           }
         }
       }
   
-      // 1. Eliminar manualmente los técnicos asociados a la orden
+      // 1. Eliminar manualmente los pagos asociados a la orden
+      await workPaymentRepository
+        .createQueryBuilder()
+        .delete()
+        .from(WorkPayment)
+        .where("work_order_id = :id", { id })
+        .execute();
+
+      // 2. Eliminar manualmente los deudores asociados a la orden
+      await debtorRepository
+        .createQueryBuilder()
+        .delete()
+        .from(Debtor)
+        .where("work_order_id = :id", { id })
+        .execute();
+
+      // 3. Eliminar manualmente los técnicos asociados a la orden
       await workOrderTechnicianRepository
         .createQueryBuilder()
         .delete()
@@ -284,7 +309,7 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
         .where("work_order_id = :id", { id })
         .execute();
   
-      // 2. Para los detalles que provienen de una cotización (quotation_id IS NOT NULL):
+      // 4. Para los detalles que provienen de una cotización (quotation_id IS NOT NULL):
       //    desvincular la orden, estableciendo work_order a null
       await workProductDetailRepository
         .createQueryBuilder()
@@ -294,7 +319,7 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
         .andWhere("quotation_id IS NOT NULL")
         .execute();
   
-      // 3. Para los detalles de mantenimiento (quotation_id IS NULL):
+      // 5. Para los detalles de mantenimiento (quotation_id IS NULL):
       //    eliminarlos manualmente
       await workProductDetailRepository
         .createQueryBuilder()
@@ -304,7 +329,7 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
         .andWhere("quotation_id IS NULL")
         .execute();
   
-      // 4. Finalmente, eliminar la orden de trabajo
+      // 6. Finalmente, eliminar la orden de trabajo
       const result = await workOrderRepository.delete(id);
       if (result.affected === 0) {
         res.status(404).json({ message: "Orden de trabajo no encontrada" });
@@ -324,7 +349,7 @@ export const deleteWorkOrder = async (req: Request, res: Response, _next: NextFu
         res.status(500).json({ message: "Error al eliminar la orden de trabajo", error: String(error) });
       }
     }
-  };
+};
 
 export const getWorkOrdersByVehicleLicensePlate = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {

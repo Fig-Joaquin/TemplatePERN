@@ -2,8 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "t
 import { IsNumber, Min, IsEnum } from "class-validator";
 import { 
     Product, 
-    PurchaseHistory, 
-    Tax 
+    PurchaseHistory
 } from "../";
 
 @Entity("product_purchases")
@@ -19,10 +18,6 @@ export class ProductPurchase {
     @ManyToOne(() => PurchaseHistory, { nullable: false })
     @JoinColumn({ name: "purchase_history_id" })
     purchase_history!: PurchaseHistory;
-
-    @ManyToOne(() => Tax, { nullable: false })
-    @JoinColumn({ name: "tax_id" })
-    tax!: Tax;
 
     @Column({
         type: "enum",

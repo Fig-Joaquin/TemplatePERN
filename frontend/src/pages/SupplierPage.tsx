@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
-import DeleteConfirmation from "../components/DeleteConfirmation"
 
 const SupplierPage = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -134,10 +133,14 @@ const SupplierPage = () => {
     }
   }
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
+  }
+
   const filteredSuppliers = suppliers.filter(
     (supplier) =>
       supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (supplier.city && supplier.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      supplier.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supplier.phone.includes(searchTerm)
   )
 
@@ -155,24 +158,26 @@ const SupplierPage = () => {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
           type="text"
-          placeholder="Buscar por nombre, ciudad o teléfono..."
+          placeholder="Buscar proveedor por nombre, ciudad o teléfono..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearch}
           className="pl-10"
         />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
 
       <motion.div
+        className="bg-card shadow rounded-lg overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.5 }}
       >
         {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="text-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-lg text-muted-foreground">Cargando proveedores...</p>
           </div>
         ) : (
           <AnimatePresence>
@@ -223,11 +228,33 @@ const SupplierPage = () => {
         </DialogContent>
       </Dialog>
 
-      <DeleteConfirmation
-        isOpen={deleteModalOpen}
-        onConfirm={confirmDelete}
-        onClose={() => setDeleteModalOpen(false)}
-      />
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">¡Advertencia! Eliminación Permanente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-center font-medium">¿Estás seguro de eliminar este proveedor?</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
+              <p><strong>ATENCIÓN:</strong> Esta acción eliminará permanentemente:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Todos los datos del proveedor</li>
+                <li>Historial de compras relacionadas</li>
+                <li>Productos asociados al proveedor</li>
+              </ul>
+              <p className="mt-2 font-semibold">Esta acción no se puede deshacer.</p>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4 gap-2">
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Eliminar permanentemente
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

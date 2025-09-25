@@ -22,7 +22,6 @@ import { Package } from "lucide-react"
 
 const ProductCreatePage = () => {
   const [productName, setProductName] = useState("")
-  const [stockQuantity, setStockQuantity] = useState(0)
   const [description, setDescription] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [selectedProductType, setSelectedProductType] = useState("")
@@ -84,11 +83,10 @@ const ProductCreatePage = () => {
     }
 
     if (
-      Number(lastPurchasePrice) === 0 ||
-      Number(stockQuantity) === 0
+      Number(lastPurchasePrice) === 0
     ) {
       toast.error(
-        "El precio de compra y cantidad deben ser mayores a 0"
+        "El precio de compra debe ser mayor a 0"
       )
       setLoading(false)
       return
@@ -102,7 +100,7 @@ const ProductCreatePage = () => {
         last_purchase_price: Number(lastPurchasePrice),
         sale_price: Number(lastPurchasePrice), // Usar el mismo valor que lastPurchasePrice
         description: description.trim() || undefined, // Solo enviar descripción si no está vacía
-        product_quantity: Number(stockQuantity),
+        product_quantity: 0, // Stock inicial en 0
       }
 
       // Only add supplier_id if one is selected and not "none"
@@ -112,8 +110,23 @@ const ProductCreatePage = () => {
       // No need to explicitly set supplier_id to null, just omit it
 
       await createProduct(newProduct)
-      toast.success("Producto creado exitosamente")
-      navigate("/admin/productos")
+
+      // Ofrecer ir directamente a compras
+      toast.success("Producto creado exitosamente", {
+        autoClose: 8000,
+      })
+
+      // Mostrar opción para ir a compras
+      setTimeout(() => {
+        const goToCompras = window.confirm(
+          "¿Deseas ir ahora a 'Compras de Productos' para agregar stock inicial a este producto?"
+        )
+        if (goToCompras) {
+          navigate("/admin/compras-productos")
+        } else {
+          navigate("/admin/productos")
+        }
+      }, 1000)
     } catch (error: any) {
       console.log(error)
       toast.error(
@@ -308,18 +321,19 @@ const ProductCreatePage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="stockQuantity">
-                      Cantidad de Producto
-                    </Label>
-                    <NumberInput
-                      id="stockQuantity"
-                      value={Number(stockQuantity)}
-                      onChange={(value) => setStockQuantity(value)}
-                      min={1}
-                      required
-                      className="w-full"
-                    />
+
+                  {/* Nota sobre el stock */}
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Package className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-blue-900">Stock Inicial</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          El producto se creará con stock en 0. Para agregar inventario inicial,
+                          ve a <strong>"Compras de Productos"</strong> después de crear el producto.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

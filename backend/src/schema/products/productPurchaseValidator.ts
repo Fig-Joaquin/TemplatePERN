@@ -2,7 +2,6 @@ import { z } from "zod";
 import { ProductSchema } from "./productValidator";
 
 export const ProductPurchaseSchema = z.object({
-    tax_id: z.number().int().positive(),
     product_id: z.number().int().positive(),
     product: ProductSchema.optional(),
     purchase_status: z.enum(["processed", "returned"]),

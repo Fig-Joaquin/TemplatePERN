@@ -150,17 +150,19 @@ export const deleteSupplier = async (req: Request, res: Response, _next: NextFun
         }
 
         res.json({ message: "Proveedor eliminado exitosamente" });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error al eliminar proveedor:", error);
         
         // Manejo específico de errores de restricción de clave foránea
-        if (error.code === "23503" || error.code === "23505") {
+        if (error && typeof error === 'object' && 'code' in error && 
+            (error.code === "23503" || error.code === "23505")) {
             res.status(409).json({ 
                 message: "No se puede eliminar el proveedor porque tiene productos asociados. Debe reasignar o eliminar estos productos primero." 
             });
             return;
         }
         
-        res.status(500).json({ message: "Error al eliminar el proveedor", error: error.message });
+        const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+        res.status(500).json({ message: "Error al eliminar el proveedor", error: errorMessage });
     }
 };

@@ -199,7 +199,7 @@ export const createUserWithPerson = async (req: Request, res: Response, _next: N
           { message: "Email inválido" }
         ),
       number_phone: z.string().min(7, "Teléfono debe tener al menos 7 caracteres").max(15),
-      person_type: z.enum(["cliente", "proveedor"]),
+      person_type: z.enum(["cliente", "proveedor", "trabajador"]),
       rut: z
         .string()
         .optional()

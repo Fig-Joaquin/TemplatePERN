@@ -61,21 +61,32 @@ export const getDebtorById = async (req: Request, res: Response, _next: NextFunc
 };
 
 export const createDebtor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    console.log("Datos recibidos para crear deudor:", req.body);
+    
     const validationResult = DebtorSchema.safeParse(req.body);
     if (!validationResult.success) {
-        return next({
-            status: 400,
+        console.log("Error de validación:", validationResult.error.errors);
+        res.status(400).json({
             message: "Error de validación",
-            errors: validationResult.error.errors
+            errors: validationResult.error.errors.map(err => ({
+                field: err.path.join("."),
+                message: err.message
+            }))
         });
+        return;
     }
+    
     try {
         // Extraer work_order_id sin buscar el objeto workOrder
         const { work_order_id, ...debtorData } = validationResult.data;
+        
+        console.log("Datos validados:", { work_order_id, ...debtorData });
+        
         // Verificar que el work_order_id exista en el repositorio de WorkOrder
         const workOrder = await workOrderRepository.findOneBy({ work_order_id });
         if (!workOrder) {
-            return next({ status: 404, message: "Orden de trabajo no encontrada" });
+            res.status(404).json({ message: "Orden de trabajo no encontrada" });
+            return;
         }
         
         // Si no se especifica total_amount, usar el total de la orden de trabajo
@@ -84,13 +95,19 @@ export const createDebtor = async (req: Request, res: Response, next: NextFuncti
             total_amount: debtorData.total_amount || workOrder.total_amount
         };
         
+        console.log("Datos finales del deudor:", finalDebtorData);
+        
         const newDebtor = debtorRepository.create({
             ...finalDebtorData,
             workOrder: workOrder  // Se utiliza el objeto de orden de trabajo
         });
-        await debtorRepository.save(newDebtor);
-        res.status(201).json({ data: newDebtor });
+        
+        const savedDebtor = await debtorRepository.save(newDebtor);
+        console.log("Deudor creado exitosamente:", savedDebtor);
+        
+        res.status(201).json({ data: savedDebtor });
     } catch (error) {
+        console.error("Error al crear deudor:", error);
         next(error);
     }
 };
@@ -131,15 +148,59 @@ export const deleteDebtor = async (req: Request, res: Response, _next: NextFunct
             return;
         }
 
-        const result = await debtorRepository.delete(id);
-        if (result.affected === 0) {
+        // Buscar el deudor con todas las relaciones necesarias
+        const debtor = await debtorRepository.findOne({
+            where: { debtor_id: id },
+            relations: [
+                "workOrder",
+                "workOrder.vehicle",
+                "workOrder.vehicle.owner", 
+                "workOrder.vehicle.company"
+            ]
+        });
+
+        if (!debtor) {
             res.status(404).json({ message: "Deudor no encontrado" });
             return;
         }
 
-        res.status(200).json({ message: "Deudor eliminado exitosamente" });
+        // Verificar si el deudor tiene pagos registrados
+        const hasPayments = await workPaymentRepository.findOne({
+            where: { work_order: { work_order_id: debtor.workOrder.work_order_id } }
+        });
+
+        const hasPaidAmount = debtor.paid_amount && Number(debtor.paid_amount) > 0;
+
+        if (hasPayments || hasPaidAmount) {
+            // CASO 1: Deudor con pagos - Marcar como pagado para que no aparezca en la lista
+            await debtorRepository.update(id, {
+                payment_status: "pagado",
+                paid_amount: debtor.total_amount || debtor.paid_amount // Asegurar que esté completamente pagado
+            });
+
+            res.status(200).json({ 
+                message: "Deudor marcado como pagado completo exitosamente. Ya no aparecerá en la lista de deudores pendientes.",
+                action: "marked_as_paid"
+            });
+        } else {
+            // CASO 2: Deudor sin pagos - Eliminar completamente de la base de datos
+            const result = await debtorRepository.delete(id);
+            if (result.affected === 0) {
+                res.status(404).json({ message: "Deudor no encontrado para eliminar" });
+                return;
+            }
+
+            res.status(200).json({ 
+                message: "Deudor eliminado completamente del registro (no tenía pagos registrados).",
+                action: "deleted_permanently"
+            });
+        }
     } catch (error) {
-        res.status(500).json({ message: "Error al eliminar el deudor", error });
+        console.error("Error en deleteDebtor:", error);
+        res.status(500).json({ 
+            message: "Error al procesar la eliminación del deudor", 
+            error: error instanceof Error ? error.message : "Error desconocido"
+        });
     }
 };
 

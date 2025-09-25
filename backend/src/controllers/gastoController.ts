@@ -4,6 +4,7 @@ import { ExpenseType } from "../entities/tipoGasto";
 import { CompanyExpense } from "../entities/gastosEmpresas";
 import { CompanyExpenseSchema, UpdateCompanyExpenseSchema } from "../schema/work/companyExpenseValidator";
 import { DeepPartial } from "typeorm";
+import type { ZodIssue } from "zod";
 
 const companyExpenseRepository = AppDataSource.getRepository(CompanyExpense);
 const expenseTypeRepository = AppDataSource.getRepository(ExpenseType);
@@ -49,7 +50,7 @@ export const createCompanyExpense = async (req: Request, res: Response, _next: N
         if (!validationResult.success) {
             res.status(400).json({
                 message: "Validation error",
-                errors: validationResult.error.errors.map((err: any) => ({
+                errors: validationResult.error.errors.map((err: ZodIssue) => ({
                     field: err.path.join("."),
                     message: err.message
                 }))
@@ -101,7 +102,7 @@ export const updateCompanyExpense = async (req: Request, res: Response, _next: N
         if (!validationResult.success) {
             res.status(400).json({
                 message: "Validation error",
-                errors: validationResult.error.errors.map((err: any) => ({
+                errors: validationResult.error.errors.map((err: ZodIssue) => ({
                     field: err.path.join("."),
                     message: err.message
                 }))

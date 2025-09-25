@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppDataSource } from "../../config/ormconfig";
 import { DeepPartial } from "typeorm";
-import { WorkProductDetail, WorkOrder, Product, Quotation, Tax} from "../../entities";
+import { WorkProductDetail, WorkOrder, Product, Quotation, Tax, StockProduct} from "../../entities";
 import { workProductDetailSchema } from "../../schema/work/workProductDetailValidator";
 
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
@@ -10,6 +10,7 @@ const workOrderRepository = AppDataSource.getRepository(WorkOrder);      // nuev
 const productRepository = AppDataSource.getRepository(Product);          // nuevo repository
 const quotationRepository = AppDataSource.getRepository(Quotation);      // nuevo repository
 const taxRepository = AppDataSource.getRepository(Tax);      // nuevo repository
+const stockProductRepository = AppDataSource.getRepository(StockProduct);      // nuevo repository
 
 export const getAllWorkProductDetails = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -220,16 +221,76 @@ export const deleteWorkProductDetail = async (req: Request, res: Response, _next
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
+            console.log(`Invalid ID provided for deletion: ${req.params.id}`);
             res.status(400).json({ message: "ID inválido" });
             return;
         }
-        const result = await workProductDetailRepository.delete(id);
-        if (result.affected === 0) {
-            res.status(404).json({ message: "Detalle de producto de trabajo no encontrado" });
+
+        console.log(`Attempting to delete work product detail with ID: ${id}`);
+
+        // First, get the detail with product information before deleting
+        const workProductDetail = await workProductDetailRepository.findOne({
+            where: { work_product_detail_id: id },
+            relations: ["product"]
+        });
+
+        if (!workProductDetail) {
+            console.log(`Work product detail with ID ${id} not found in database`);
+            res.status(404).json({ 
+                message: "Detalle de producto de trabajo no encontrado",
+                detail_id: id 
+            });
             return;
         }
-        res.json({ message: "Detalle de producto de trabajo eliminado exitosamente" });
+
+        console.log(`Found work product detail:`, {
+            id: workProductDetail.work_product_detail_id,
+            product_id: workProductDetail.product?.product_id,
+            quantity: workProductDetail.quantity
+        });
+
+        // Get the product's stock to restore it
+        if (workProductDetail.product && workProductDetail.quantity) {
+            const stockProduct = await stockProductRepository.findOne({
+                where: { product: { product_id: workProductDetail.product.product_id } }
+            });
+
+            if (stockProduct) {
+                // Restore the quantity to stock
+                const currentStock = Number(stockProduct.quantity);
+                const quantityToRestore = Number(workProductDetail.quantity);
+                const newStock = currentStock + quantityToRestore;
+                
+                stockProduct.quantity = newStock;
+                stockProduct.updated_at = new Date();
+                await stockProductRepository.save(stockProduct);
+                
+                console.log(`Stock restored for product ${workProductDetail.product.product_id}: +${quantityToRestore} (stock before: ${currentStock}, new stock: ${newStock})`);
+            } else {
+                console.log(`No stock product found for product ${workProductDetail.product.product_id}`);
+            }
+        }
+
+        // Now delete the work product detail
+        const result = await workProductDetailRepository.delete(id);
+        if (result.affected === 0) {
+            console.log(`Failed to delete work product detail ${id} - no rows affected`);
+            res.status(404).json({ 
+                message: "Detalle de producto de trabajo no encontrado",
+                detail_id: id 
+            });
+            return;
+        }
+
+        console.log(`Successfully deleted work product detail ${id}`);
+        res.json({ 
+            message: "Detalle de producto de trabajo eliminado exitosamente y stock restaurado",
+            restoredQuantity: workProductDetail.quantity,
+            productId: workProductDetail.product?.product_id,
+            detail_id: id
+        });
     } catch (error) {
+        console.error("Error deleting work product detail:", error);
         res.status(500).json({ message: "Error al eliminar el detalle de producto de trabajo", error });
     }
 };

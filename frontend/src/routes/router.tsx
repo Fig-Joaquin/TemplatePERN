@@ -33,6 +33,9 @@ import SupplierPage from "@/pages/SupplierPage";
 import UsersPage from "@/pages/UsersPage";
 import DebtorsPage from "@/pages/DebtorsPage";
 import DebtorFormPage from "@/pages/DebtorFormPage";
+import ProductPurchasesPage from "@/pages/ProductPurchasesPage";
+import CreateProductPurchasePage from "@/pages/CreateProductPurchasePage";
+import BalancesPage from "@/pages/BalancesPage";
 
 
 const router = createBrowserRouter([
@@ -63,6 +66,8 @@ const router = createBrowserRouter([
       { path: "cotizaciones/editar/:id", element: <EditQuotationPage />, handle: { title: "Editar Cotización" } },
       { path: "productos", element: <ProductPage />, handle: { title: "Productos" } },
       { path: "productos/nuevo", element: <ProductCreatePage />, handle: { title: "Nuevo Producto" } },
+      { path: "compras-productos", element: <ProductPurchasesPage />, handle: { title: "Compras de Productos" } },
+      { path: "compras-productos/nuevo", element: <CreateProductPurchasePage />, handle: { title: "Nueva Compra de Productos" } },
       { path: "categorias-productos", element: <ProductCategoryPage />, handle: { title: "Categorías de Productos" } },
       { path: "tipo-productos", element: <ProductTypePage />, handle: { title: "Tipos de Productos" } },
       { path: "marcas-vehiculos", element: <VehicleBrandPage />, handle: { title: "Marcas de Vehículos" } },
@@ -84,6 +89,7 @@ const router = createBrowserRouter([
       { path: "finanzas/deudores", element: <DebtorsPage />, handle: { title: "Deudores" } },
       { path: "finanzas/deudores/nuevo", element: <DebtorFormPage />, handle: { title: "Nuevo Deudor" } },
       { path: "finanzas/deudores/editar/:id", element: <DebtorFormPage />, handle: { title: "Editar Deudor" } },
+      { path: "finanzas/balances", element: <BalancesPage />, handle: { title: "Balances Financieros" } },
       { path: "configuracion/usuarios", element: <UsersPage />, handle: { title: "Usuarios" } },
       { path: "*", element: <h1>Not Found</h1> },
     ],
