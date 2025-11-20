@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 
 interface CustomError {
   status?: number;
@@ -6,8 +7,21 @@ interface CustomError {
   errors?: any[];
 }
 
-export const errorHandler = (err: CustomError | Error, _req: Request, res: Response, _next: NextFunction): void => {
+export const errorHandler = (err: CustomError | Error | ZodError, _req: Request, res: Response, _next: NextFunction): void => {
   console.error("Error:", err);
+
+  // Si es un error de validación de Zod
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      message: "Error de validación",
+      errors: err.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+        code: issue.code
+      }))
+    });
+    return;
+  }
 
   // Si es un error personalizado con status
   if ('status' in err && err.status) {

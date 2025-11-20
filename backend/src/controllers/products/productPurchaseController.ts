@@ -78,7 +78,22 @@ export const createProductPurchase = async (req: Request, res: Response): Promis
     console.log("Datos recibidos para crear compra:", req.body);
     
     // Validar datos
-    const validatedData = CreatePurchaseSchema.parse(req.body);
+    const validation = CreatePurchaseSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      console.error("Error de validación:", validation.error.issues);
+      res.status(400).json({ 
+        message: "Error de validación", 
+        errors: validation.error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+          code: issue.code
+        }))
+      });
+      return;
+    }
+    
+    const validatedData = validation.data;
     
     // Iniciar transacción
     await AppDataSource.transaction(async (transactionalEntityManager) => {
