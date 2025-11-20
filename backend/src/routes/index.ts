@@ -39,7 +39,6 @@ router.use("/productCategories", productCategoryRoutes);
 router.use("/products", productRoutes);
 router.use("/productTypes", productTypeRoutes);
 router.use("/productPurchases", productPurchaseRoutes);
-router.use("/productPurchases", productPurchaseRoutes);
 router.use("/quotations", quotationRoutes);
 router.use("/taxes", taxRoutes);
 router.use("/workOrders", workOrderRoutes);
