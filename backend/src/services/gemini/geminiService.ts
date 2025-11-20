@@ -2,13 +2,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from '../../config/config';
 import { dbSchema } from '../../config/dbSchema';
+import { matchHelpIntent } from '../chatbot/helpContent';
 
 // Initialize the Gemini API client
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
 // Get the generative model
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
+  model: "gemini-2.5-flash-lite",
 });
 
 // Default generation configuration
@@ -59,6 +60,12 @@ export async function generateGeminiSQL(question: string): Promise<{ isError: bo
   if (/^(hola|saludos|buenos días|buenas tardes|buenas noches|qué tal|como estás|gracias|ayuda|help)/i.test(question.trim())) {
     return { isError: false, isConversational: true, message: await getGeminiConversationalResponse(question) };
   }
+
+  // Help intents like "cómo crear ..."
+  const help = matchHelpIntent(question);
+  if (help) {
+    return { isError: false, isConversational: true, message: help };
+  }
   
   // Format the schema information
   const tables = Object.entries(dbSchema).map(([tableName, schema]) => {
@@ -74,19 +81,16 @@ export async function generateGeminiSQL(question: string): Promise<{ isError: bo
   
   console.log('Available tables for Gemini:', tables);
   
-  // Modified prompt to encourage joins when querying vehicles
-  const prompt = `Tablas PostgreSQL:\n${tables}\n\n
-Instrucciones importantes:
-- Utiliza siempre LEFT JOIN en lugar de INNER JOIN cuando sea posible para preservar todos los registros de la tabla principal
-- Cuando generes consultas que involucren la tabla vehicles (las tablas de quotation y work order tienen relación con vehicles para que siempre hagas el LEFT JOIN y muestres la información de la tabla vehicles):
-  - Usa LEFT JOIN con vehicle_models y vehicle_brands para obtener información del modelo y marca
-  - Usa LEFT JOIN con persons para obtener información del propietario si es una persona
-  - Usa LEFT JOIN con companies para obtener información de la empresa si es una compañía
-  - Usa LEFT JOIN con mileage_history para obtener el historial de kilometraje
-- Cuando una tabla tenga relación con otra tabla que contiene información descriptiva, siempre incluye un LEFT JOIN
-
-Genera una consulta SQL para: ${question}\n\n
-Devuelve solo la consulta SQL sin comentarios adicionales. No uses comillas para encerrar la consulta.`;
+  // Modified prompt to encourage joins when querying vehicles and respect schema naming
+  const prompt = `Contexto de base de datos (PostgreSQL):\n${tables}\n\n
+Reglas IMPORTANTES para generar SQL seguro y correcto:\n
+1) Solo se permiten consultas de lectura (SELECT). PROHIBIDO: INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER.\n
+2) Respeta EXACTAMENTE los nombres de tablas y columnas tal como aparecen arriba; pueden no coincidir con nombres comunes. No asumas nombres alternativos.\n
+3) Prefiere LEFT JOIN cuando haya relaciones, para no perder registros de la tabla principal.\n
+4) Si consultas vehículos y entidades relacionadas:\n   - LEFT JOIN con vehicle_models y vehicle_brands para modelo y marca.\n   - LEFT JOIN con persons para propietario persona.\n   - LEFT JOIN con companies para propietario empresa.\n   - LEFT JOIN con mileage_history para historial de kilometraje.\n
+5) Si una tabla referencia otra descriptiva, incluye LEFT JOIN para traer descripciones legibles.\n
+6) Devuelve SOLO la consulta SQL sin comentarios, sin bloques de código, terminada en punto y coma.\n\n
+Genera la consulta SQL para: ${question}`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -219,7 +223,9 @@ Genera una respuesta profesional basada en estos criterios.`;
  */
 export async function getGeminiConversationalResponse(question: string): Promise<string> {
   try {
-    const prompt = `Eres un asistente para un taller mecánico llamado "Mecánica automotriz A&M" que responde consultas hechas por los adiminstradores de dicho taller. Pregunta: "${question}"`;
+  const prompt = `Eres un asistente del taller "Mecánica automotriz A&M" que ayuda a administradores a entender procesos y navegar la app.\n
+Responde SIEMPRE en español, en tono breve y claro. Si tu respuesta incluye acciones en la app, usa enlaces Markdown a las rutas cuando tenga sentido (por ejemplo: /admin/vehiculos, /admin/cotizaciones, /admin/nueva-orden-trabajo).\n
+Pregunta: "${question}"`;
     
     const result = await model.generateContent(prompt);
     return result.response.text().trim();

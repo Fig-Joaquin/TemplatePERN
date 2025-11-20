@@ -91,6 +91,7 @@ const WorkOrderEditPage = () => {
   const [loadingTechnicians, setLoadingTechnicians] = useState(false);
   const [tempProducts, setTempProducts] = useState<any[]>([]); // Add temporary products state
   const [productsToDelete, setProductsToDelete] = useState<number[]>([]); // Track products to delete
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track unsaved changes
 
   useEffect(() => {
     const loadData = async () => {
@@ -234,22 +235,61 @@ const WorkOrderEditPage = () => {
       }
 
       setProducts(tempProducts);
+
+      // Mark as having unsaved changes if new products were added
+      if (newTempProducts.length > 0) {
+        setHasUnsavedChanges(true);
+      }
     }
 
     setShowProductModal(false);
   };
 
-  // Modified to only mark products for deletion
+  // Modified to only mark products for deletion and track unsaved changes
   const handleRemoveProduct = (index: number) => {
     const productToRemove = products[index];
 
     if (productToRemove.work_product_detail_id) {
-      // Add to list of products to delete on save
-      setProductsToDelete(prev => [...prev, productToRemove.work_product_detail_id]);
+      // Validate that the ID is valid before adding to deletion list
+      const detailId = productToRemove.work_product_detail_id;
+
+      if (typeof detailId === 'number' && detailId > 0 && !Number.isNaN(detailId)) {
+        // Only add to deletion list if it has a valid ID (exists in database)
+        setProductsToDelete(prev => {
+          // Avoid duplicates
+          if (!prev.includes(detailId)) {
+            console.log(`Adding product detail ${detailId} to deletion list`);
+            return [...prev, detailId];
+          }
+          console.log(`Product detail ${detailId} already in deletion list`);
+          return prev;
+        });
+
+        // Mark the product as deleted in the UI but keep it in the list
+        setProducts(prev => {
+          const updated = [...prev];
+          updated[index] = {
+            ...updated[index],
+            _markedForDeletion: true
+          };
+          return updated;
+        });
+
+        console.log(`Marked product detail ${detailId} for deletion`);
+      } else {
+        console.warn(`Invalid work_product_detail_id:`, detailId);
+        // For invalid IDs, just remove from UI
+        setProducts(prev => prev.filter((_, i) => i !== index));
+      }
+    } else {
+      // For new products that haven't been saved yet, remove them immediately
+      // These don't need to be "deleted" from the database since they don't exist there
+      setProducts(prev => prev.filter((_, i) => i !== index));
+      console.log(`Removed new product from UI (no database deletion needed)`);
     }
 
-    // Remove from current list without updating stock yet
-    setProducts(prev => prev.filter((_, i) => i !== index));
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true);
   };
 
   // Add this function to handle quantity changes in the product table
@@ -290,6 +330,9 @@ const WorkOrderEditPage = () => {
 
       console.log("Updated product at index", index, ":", updated[index]); // Debug log
 
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
+
       return updated;
     });
   };
@@ -304,6 +347,10 @@ const WorkOrderEditPage = () => {
         _modified: true
       };
       console.log("Updated labor price for product at index", index, ":", updated[index]);
+
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
+
       return updated;
     });
   };
@@ -316,7 +363,7 @@ const WorkOrderEditPage = () => {
     // Validar que cada detalle no exceda el stock actual, considerando su cantidad original
     for (const product of products) {
       // Skip products that will be deleted
-      if (productsToDelete.includes(product.work_product_detail_id)) continue;
+      if (product._markedForDeletion) continue;
 
       const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
       if (!stockProduct) continue;
@@ -357,36 +404,53 @@ const WorkOrderEditPage = () => {
         total_amount: totalAmount,
       });
 
-      // Process deletions first
-      for (const detailId of productsToDelete) {
-        const productToRemove = orderData.productDetails?.find((p: any) => p.work_product_detail_id === detailId);
+      // Process deletions first - Only use the productsToDelete list to avoid duplicates
+      // Don't use products.filter(p => p._markedForDeletion) as those are already in productsToDelete
+      const validProductsToDelete = productsToDelete.filter(id =>
+        id && typeof id === 'number' && id > 0 && !Number.isNaN(id)
+      );
 
-        if (productToRemove) {
+      console.log("Valid products to delete from database:", validProductsToDelete);
+
+      const deletionErrors: string[] = [];
+
+      // Process deletions sequentially to avoid race conditions
+      for (const detailId of validProductsToDelete) {
+        try {
+          console.log(`Attempting to delete work product detail ${detailId}`);
+          // Backend now handles stock restoration automatically
           await deleteWorkProductDetail(detailId);
+          console.log(`Successfully deleted work product detail ${detailId}`);
+        } catch (error: any) {
+          console.error(`Error deleting work product detail ${detailId}:`, error);
 
-          // Return quantity to stock
-          const stockProduct = stockProducts.find(sp => sp.product?.product_id === productToRemove.product_id);
-          if (stockProduct && stockProduct.stock_product_id) {
-            // Fix: Ensure quantity is properly parsed as a number and avoid potential type conversion issues
-            const removedQuantity = parseInt(productToRemove.quantity.toString(), 10);
-            const currentStock = parseInt(stockProduct.quantity.toString(), 10);
-            const updatedQuantity = currentStock + removedQuantity;
-
-            console.log(`Returning ${removedQuantity} units to stock. Before: ${currentStock}, After: ${updatedQuantity}`);
-
-            await updateStockProduct(stockProduct.stock_product_id.toString(), {
-              quantity: updatedQuantity,
-              updated_at: new Date()
-            });
+          // If it's a 404, the detail doesn't exist anymore, which is acceptable
+          // This can happen if the detail was already deleted by another process
+          if (error.response?.status === 404) {
+            console.log(`Work product detail ${detailId} not found (404), already deleted or doesn't exist`);
+          } else {
+            // For other errors, collect them but don't stop the entire save process
+            deletionErrors.push(`Error deleting product detail ${detailId}: ${error.message || 'Unknown error'}`);
           }
         }
       }
 
-      // Process each product: update if modified, create if new
-      for (const product of products) {
-        // Skip deleted products
-        if (productsToDelete.includes(product.work_product_detail_id)) continue;
+      // Show appropriate success/warning messages
+      if (deletionErrors.length === 0 && validProductsToDelete.length > 0) {
+        toast.success(`${validProductsToDelete.length} producto(s) eliminado(s) exitosamente`);
+      } else if (deletionErrors.length > 0 && validProductsToDelete.length > deletionErrors.length) {
+        toast.success(`${validProductsToDelete.length - deletionErrors.length} de ${validProductsToDelete.length} productos eliminados`);
+      }
 
+      // Remove products that were successfully marked for deletion from the UI
+      // This cleans up the UI regardless of whether the backend deletion succeeded
+      setProducts(prev => prev.filter(p => !p._markedForDeletion && !productsToDelete.includes(p.work_product_detail_id)));
+
+      // Process each product: update if modified, create if new
+      // Only process products that are still in the products array (not deleted)
+      const remainingProducts = products.filter(p => !p._markedForDeletion);
+
+      for (const product of remainingProducts) {
         const detailPayload = {
           product_id: Number(product.product_id),
           quantity: Number(product.quantity),
@@ -438,6 +502,16 @@ const WorkOrderEditPage = () => {
       }
 
       toast.success("Orden de trabajo y detalles actualizados exitosamente");
+      setHasUnsavedChanges(false); // Reset unsaved changes flag
+
+      // Reload stock data to reflect changes
+      try {
+        const stockData = await getStockProducts();
+        setStockProducts(stockData);
+      } catch (error) {
+        console.error("Error reloading stock data:", error);
+      }
+
       navigate("/admin/orden-trabajo");
       setTimeout(() => window.location.reload(), 100);
     } catch (error) {
@@ -445,20 +519,24 @@ const WorkOrderEditPage = () => {
       toast.error("Error al actualizar la orden de trabajo");
     } finally {
       setSubmitting(false);
-      // Clear deleted products list
+      // Clear deleted products list to avoid duplicate deletions on next save
       setProductsToDelete([]);
     }
   };
 
   // Cálculos de totales
-  const totalProductPrice = products.reduce(
-    (acc, p) => acc + Number(p.sale_price) * Number(p.quantity),
-    0
-  );
-  const totalLaborPrice = products.reduce(
-    (acc, p) => acc + Number(p.labor_price),
-    0
-  );
+  const totalProductPrice = products
+    .filter(p => !p._markedForDeletion) // Exclude products marked for deletion
+    .reduce(
+      (acc, p) => acc + Number(p.sale_price) * Number(p.quantity),
+      0
+    );
+  const totalLaborPrice = products
+    .filter(p => !p._markedForDeletion) // Exclude products marked for deletion
+    .reduce(
+      (acc, p) => acc + Number(p.labor_price),
+      0
+    );
   const subtotal = totalProductPrice + totalLaborPrice;
   const ivaAmount = subtotal * taxRate;
   const totalAmount = subtotal + ivaAmount;
@@ -589,6 +667,19 @@ const WorkOrderEditPage = () => {
         </div>
       )}
 
+      {/* Mostrar aviso si hay cambios sin guardar */}
+      {hasUnsavedChanges && (
+        <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200 flex items-start gap-3 mb-4">
+          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-yellow-800">Cambios sin guardar</h3>
+            <p className="text-yellow-700">
+              Tiene cambios sin guardar. Asegúrese de guardar antes de salir.
+            </p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información General y Vehículo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -616,7 +707,10 @@ const WorkOrderEditPage = () => {
               )}
               <div className="space-y-2">
                 <Label htmlFor="status">Estado de la Orden</Label>
-                <Select value={status} onValueChange={setStatus} disabled={submitting}>
+                <Select value={status} onValueChange={(value) => {
+                  setStatus(value);
+                  setHasUnsavedChanges(true);
+                }} disabled={submitting}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar estado" />
                   </SelectTrigger>
@@ -632,7 +726,10 @@ const WorkOrderEditPage = () => {
                 <Textarea
                   id="description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
                   rows={5}
                   placeholder="Descripción de la orden de trabajo"
                   disabled={submitting}
@@ -841,14 +938,21 @@ const WorkOrderEditPage = () => {
                         const isFromQuotation = isQuotationBased &&
                           quotationProducts.some(qp => qp.product_id === product.product_id);
                         return (
-                          <tr key={index} className={`hover:bg-muted/50 ${product._isNew ? 'bg-yellow-50' : ''}`}>
+                          <tr key={index} className={`hover:bg-muted/50 ${product._isNew ? 'bg-yellow-50' : ''} ${product._markedForDeletion ? 'bg-red-50 opacity-60' : ''}`}>
                             <td className="px-4 py-2 font-medium">
-                              {productName}
-                              {product._isNew && (
-                                <span className="ml-2 text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
-                                  No guardado
-                                </span>
-                              )}
+                              <div className={product._markedForDeletion ? 'line-through text-muted-foreground' : ''}>
+                                {productName}
+                                {product._isNew && !product._markedForDeletion && (
+                                  <span className="ml-2 text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                                    No guardado
+                                  </span>
+                                )}
+                                {product._markedForDeletion && (
+                                  <span className="ml-2 text-xs px-2 py-1 bg-red-100 text-red-800 rounded-full">
+                                    Será eliminado
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-xs text-green-600 mt-1">
                                 Stock disponible: {currentStock}
                               </div>
@@ -870,7 +974,7 @@ const WorkOrderEditPage = () => {
                                   handleProductQuantityChange(index, newValue);
                                 }}
                                 className="w-20 mx-auto text-center"
-                                disabled={submitting}
+                                disabled={submitting || product._markedForDeletion}
                                 min={1}
                                 max={product._isNew ? currentStock : (currentStock + (product.originalQuantity || 0))}
                               />
@@ -894,7 +998,7 @@ const WorkOrderEditPage = () => {
                                 value={product.labor_price || 0}
                                 onChange={(e) => handleProductLaborPriceChange(index, Number(e.target.value))}
                                 className="w-24 ml-auto text-right"
-                                disabled={submitting}
+                                disabled={submitting || product._markedForDeletion}
                                 min={0}
                               />
                             </td>
@@ -962,10 +1066,26 @@ const WorkOrderEditPage = () => {
 
         {/* Botones de acción */}
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/orden-trabajo")} disabled={submitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (hasUnsavedChanges) {
+                const confirmed = window.confirm(
+                  "Tiene cambios sin guardar. ¿Está seguro de que desea salir sin guardar?"
+                );
+                if (confirmed) {
+                  navigate("/admin/orden-trabajo");
+                }
+              } else {
+                navigate("/admin/orden-trabajo");
+              }
+            }}
+            disabled={submitting}
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={submitting} className="gap-2">
+          <Button type="submit" disabled={submitting} className={`gap-2 ${hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700' : ''}`}>
             {submitting ? (
               <>
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent"></span>
@@ -974,7 +1094,7 @@ const WorkOrderEditPage = () => {
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Guardar Cambios
+                {hasUnsavedChanges ? 'Guardar Cambios *' : 'Guardar Cambios'}
               </>
             )}
           </Button>
