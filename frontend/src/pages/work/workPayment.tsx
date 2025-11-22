@@ -39,9 +39,9 @@ export default function WorkPaymentsPage() {
       console.log("Datos de pagos cargados:", data);
       console.log("Total de pagos encontrados:", data.length);
       setPayments(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar los pagos:", error);
-      toast.error("Error al cargar los pagos");
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los pagos");
     } finally {
       setLoading(false);
     }
@@ -187,9 +187,31 @@ export default function WorkPaymentsPage() {
           <p className="mt-4 text-lg text-muted-foreground">Cargando pagos...</p>
         </div>
       ) : groupedPaymentsArray.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-lg text-muted-foreground">No se encontraron pagos</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <CreditCard className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron pagos
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm
+              ? "No hay pagos que coincidan con tu búsqueda. Intenta con otros términos."
+              : "Aún no hay pagos registrados. Crea el primer pago para comenzar."}
+          </p>
+          <Button
+            onClick={() => navigate("/admin/finanzas/pagos/nuevo")}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Primer Pago
+          </Button>
+        </motion.div>
       ) : (
         <div className="space-y-6">
           <AnimatePresence>

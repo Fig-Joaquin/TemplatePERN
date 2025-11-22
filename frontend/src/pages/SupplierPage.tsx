@@ -3,14 +3,15 @@
 import React, { useEffect, useState, useCallback } from "react"
 import { toast } from "react-toastify"
 import { Plus, Search, Truck } from "lucide-react"
-import SupplierList from "../components/supplierList"
 import SupplierForm from "../components/supplierForm"
+import { DataTable } from "@/components/data-table"
+import { supplierColumns } from "@/components/supplierColumns"
 import type { Supplier } from "../types/interfaces"
 import { createSupplier, updateSupplier, fetchSuppliers, deleteSupplier } from "../services/supplierService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion,  } from "framer-motion"
 
 const SupplierPage = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -38,9 +39,9 @@ const SupplierPage = () => {
       setLoading(true)
       const suppliersData = await fetchSuppliers()
       setSuppliers(suppliersData)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar los datos:", error)
-      toast.error("Error al cargar los datos")
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los datos")
     } finally {
       setLoading(false)
     }
@@ -145,13 +146,18 @@ const SupplierPage = () => {
   )
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-center">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <Truck className="w-8 h-8" />
-          Lista de Proveedores
+          Proveedores
         </h1>
-        <Button onClick={() => setAddModalOpen(true)} className="mt-4 sm:mt-0">
+        <Button onClick={() => setAddModalOpen(true)} className="bg-primary text-primary-foreground">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Proveedor
         </Button>
@@ -165,30 +171,48 @@ const SupplierPage = () => {
           onChange={handleSearch}
           className="pl-10"
         />
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
       </div>
 
-      <motion.div
-        className="bg-card shadow rounded-lg overflow-hidden"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {loading ? (
-          <div className="text-center py-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-lg text-muted-foreground">Cargando proveedores...</p>
-          </div>
-        ) : (
-          <AnimatePresence>
-            <SupplierList
-              suppliers={filteredSuppliers}
-              handleEdit={handleEdit}
-              handleDelete={handleDelete}
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando proveedores...</p>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {filteredSuppliers.length === 0 && searchTerm ? (
+            <div className="text-center py-10">
+              <Truck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">
+                No se encontraron proveedores que coincidan con "{searchTerm}"
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Intenta buscar por nombre, ciudad o teléfono
+              </p>
+            </div>
+          ) : filteredSuppliers.length === 0 ? (
+            <div className="text-center py-10">
+              <Truck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">
+                No hay proveedores registrados
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Comienza agregando un nuevo proveedor
+              </p>
+            </div>
+          ) : (
+            <DataTable 
+              columns={supplierColumns(handleEdit, handleDelete)} 
+              data={filteredSuppliers} 
             />
-          </AnimatePresence>
-        )}
-      </motion.div>
+          )}
+        </motion.div>
+      )}
 
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -255,7 +279,7 @@ const SupplierPage = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 

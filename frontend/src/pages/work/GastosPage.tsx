@@ -30,9 +30,9 @@ export default function GastosPage() {
         setLoading(true);
         const data = await fetchGastos();
         setGastos(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al cargar los gastos:", error);
-        toast.error("Error al cargar los gastos");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar los gastos");
       } finally {
         setLoading(false);
       }
@@ -52,9 +52,9 @@ export default function GastosPage() {
         await deleteGasto(gastoToDelete);
         setGastos(gastos.filter(gasto => gasto.company_expense_id !== gastoToDelete));
         toast.success("Gasto eliminado correctamente");
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al eliminar el gasto:", error);
-        toast.error("Error al eliminar el gasto");
+        toast.error(error.response?.data?.message || error.message || "Error al eliminar el gasto");
       } finally {
         setDeleteDialogOpen(false);
         setGastoToDelete(null);
@@ -106,16 +106,36 @@ export default function GastosPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-lg text-muted-foreground">Cargando gastos...</p>
         </div>
+      ) : filteredGastos.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <Banknote className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron gastos
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm
+              ? "No hay gastos que coincidan con tu búsqueda. Intenta con otros términos."
+              : "Aún no hay gastos registrados. Crea el primer gasto para comenzar."}
+          </p>
+          <Button
+            onClick={() => navigate("/admin/finanzas/gastos/nuevo")}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Primer Gasto
+          </Button>
+        </motion.div>
       ) : (
-        <>
-          {filteredGastos.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-lg text-muted-foreground">No se encontraron gastos</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {filteredGastos.map((gasto) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {filteredGastos.map((gasto) => (
                   <motion.div
                     key={gasto.company_expense_id}
                     initial={{ opacity: 0, y: 20 }}
@@ -174,8 +194,6 @@ export default function GastosPage() {
                 ))}
               </AnimatePresence>
             </div>
-          )}
-        </>
       )}
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

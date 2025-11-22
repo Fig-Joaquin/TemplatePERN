@@ -82,8 +82,8 @@ const QuotationCreatePage = () => {
             setSelectedVehicle(vehicleFromUrl);
           }
         }
-      } catch (error) {
-        toast.error("Error al cargar vehículos");
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar vehículos");
       }
     };
     
@@ -91,8 +91,8 @@ const QuotationCreatePage = () => {
       try {
         const res = await fetchProducts();
         setProducts(res);
-      } catch (error) {
-        toast.error("Error al cargar productos");
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar productos");
       }
     }
 
@@ -100,8 +100,8 @@ const QuotationCreatePage = () => {
       try {
         const res = await getStockProducts()
         setStockProducts(res)
-      } catch (error) {
-        toast.error("Error al cargar stock de productos")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar stock de productos")
       }
     }
 

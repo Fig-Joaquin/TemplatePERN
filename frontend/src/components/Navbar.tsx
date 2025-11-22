@@ -106,6 +106,14 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
           </PopoverContent>
         </Popover>
         <DarkModeToggle />
+        <a 
+          href="https://www.patentechile.com/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-4 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors cursor-pointer border border-primary/20"
+        >
+          Patente Chile
+        </a>
         <img src="/OR_LOGO A&M.png" alt="Logo" className="h-10 w-auto center" />
         {user && (
           <span className="text-foreground font-medium">
@@ -115,9 +123,9 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
         {user && (
           <button
             onClick={handleLogout}
-            className="text-primary hover:text-hover-primary transition-colors hover:underline"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors cursor-pointer shadow-sm"
           >
-            Logout
+            Cerrar Sesión
           </button>
         )}
       </div>

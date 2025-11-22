@@ -55,9 +55,9 @@ const ProductPurchasesPage = () => {
       setLoading(true);
       const data = await getAllProductPurchases();
       setPurchases(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar compras:", error);
-      toast.error("Error al cargar las compras de productos");
+      toast.error(error.response?.data?.message || error.message || "Error al cargar las compras de productos");
     } finally {
       setLoading(false);
     }
@@ -94,9 +94,9 @@ const ProductPurchasesPage = () => {
       await deleteProductPurchase(purchaseToDelete.product_purchase_id);
       toast.success("Compra eliminada exitosamente");
       loadPurchases();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al eliminar compra:", error);
-      toast.error("Error al eliminar la compra");
+      toast.error(error.response?.data?.message || error.message || "Error al eliminar la compra");
     } finally {
       setShowDeleteConfirm(false);
       setPurchaseToDelete(null);
@@ -108,9 +108,9 @@ const ProductPurchasesPage = () => {
       await updatePurchaseStatus(purchase.product_purchase_id, newStatus);
       toast.success("Estado actualizado exitosamente");
       loadPurchases();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al actualizar estado:", error);
-      toast.error("Error al actualizar el estado");
+      toast.error(error.response?.data?.message || error.message || "Error al actualizar el estado");
     }
   };
 

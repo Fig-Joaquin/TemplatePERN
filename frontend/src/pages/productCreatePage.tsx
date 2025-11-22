@@ -43,8 +43,8 @@ const ProductCreatePage = () => {
         setProductTypes(typesResponse.data)
         const suppliersResponse = await api.get("/suppliers")
         setSuppliers(suppliersResponse.data)
-      } catch (error) {
-        toast.error("Error al cargar categorías, tipos de producto y proveedores")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar categorías, tipos de producto y proveedores")
       }
     }
     fetchData()

@@ -34,9 +34,9 @@ export default function PaymentTypePage() {
       setLoading(true);
       const data = await fetchPaymentTypes();
       setPaymentTypes(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar los tipos de pago:", error);
-      toast.error("Error al cargar los tipos de pago");
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los tipos de pago");
     } finally {
       setLoading(false);
     }
@@ -161,9 +161,31 @@ export default function PaymentTypePage() {
           <p className="mt-4 text-lg text-muted-foreground">Cargando tipos de pago...</p>
         </div>
       ) : filteredPaymentTypes.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-lg text-muted-foreground">No se encontraron tipos de pago</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <CreditCard className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron tipos de pago
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm
+              ? "No hay tipos de pago que coincidan con tu búsqueda. Intenta con otros términos."
+              : "Aún no hay tipos de pago registrados. Crea el primer tipo para comenzar."}
+          </p>
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Primer Tipo de Pago
+          </Button>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatePresence>

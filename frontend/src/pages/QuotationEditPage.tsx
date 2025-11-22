@@ -137,9 +137,9 @@ export default function EditQuotationPage() {
                         setTaxRate(rate)
                     }
                 })
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error loading quotation:", error)
-                toast.error("Error al cargar la cotización")
+                toast.error(error.response?.data?.message || error.message || "Error al cargar la cotización")
             } finally {
                 setLoading(false)
             }
@@ -292,9 +292,9 @@ export default function EditQuotationPage() {
 
             toast.success("Cotización actualizada exitosamente")
             navigate("/admin/cotizaciones")
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error updating quotation:", error)
-            toast.error("Error al actualizar la cotización")
+            toast.error(error.response?.data?.message || error.message || "Error al actualizar la cotización")
         } finally {
             setSubmitting(false)
         }

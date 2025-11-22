@@ -85,9 +85,9 @@ const CreateProductPurchasePage = () => {
       ]);
       setProducts(productsData);
       setStockProducts(stockData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar datos:", error);
-      toast.error("Error al cargar los datos necesarios");
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los datos necesarios");
     }
   };
 
@@ -219,9 +219,9 @@ const CreateProductPurchasePage = () => {
       await createProductPurchase(purchaseData);
       toast.success("Compra creada exitosamente");
       navigate("/admin/compras-productos");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al crear compra:", error);
-      toast.error("Error al crear la compra");
+      toast.error(error.response?.data?.message || error.message || "Error al crear la compra");
     } finally {
       setLoading(false);
     }

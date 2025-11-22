@@ -223,9 +223,9 @@ const DebtorsPage = () => {
       const debtorsData = await getAllDebtors();
       console.log("Datos de deudores cargados:", debtorsData); // Debug
       setDebtors(debtorsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar deudores:", error);
-      toast.error("Error al cargar los deudores");
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los deudores");
     } finally {
       setLoading(false);
     }
@@ -244,9 +244,9 @@ const DebtorsPage = () => {
         console.log("Primer deudor completo:", debtorsData[0]); // Debug detallado
         setDebtors(debtorsData);
         setPaymentTypes(paymentTypesData);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al cargar datos:", error);
-        toast.error("Error al cargar los datos");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar los datos");
       } finally {
         setLoading(false);
       }
@@ -687,25 +687,32 @@ const DebtorsPage = () => {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {visibleDebtors.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4">
-                <FileX className="h-16 w-16 text-muted-foreground" />
-                <h3 className="text-xl font-semibold">
+              <motion.div 
+                className="col-span-full flex flex-col items-center justify-center py-16 space-y-4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="bg-muted/50 rounded-full p-8 mb-2">
+                  <FileX className="w-24 h-24 text-muted-foreground" />
+                </div>
+                <h2 className="text-2xl font-semibold text-foreground">
                   No se encontraron deudores
-                </h3>
+                </h2>
                 <p className="text-muted-foreground text-center max-w-md">
                   {searchTerm
                     ? "No hay deudores que coincidan con tu búsqueda. Intenta ajustar los filtros."
-                    : "Aún no hay deudores registrados. Agrega uno nuevo para comenzar."
+                    : "Aún no hay deudores registrados. Los deudores se crean desde las órdenes de trabajo."
                   }
                 </p>
                 <Button
-                  onClick={() => navigate("/admin/finanzas/deudores/nuevo")}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                  onClick={() => navigate("/admin/ordenes-trabajo")}
+                  className="flex items-center gap-2 mt-2"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar primer deudor
+                  <FileX className="w-4 h-4" />
+                  Ver Órdenes de Trabajo
                 </Button>
-              </div>
+              </motion.div>
             ) : (
               visibleDebtors.map((debtor) => (
                 <DebtorCard

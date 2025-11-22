@@ -214,7 +214,7 @@ const ProductTypePage = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4">Cargando tipos de productos...</p>
         </div>
-      ) : (
+      ) : filteredProductTypes.length > 0 ? (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial={{ opacity: 0 }}
@@ -259,6 +259,35 @@ const ProductTypePage = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <Tag className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron tipos de productos
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm
+              ? "No hay tipos de productos que coincidan con tu búsqueda. Intenta con otros términos."
+              : "Aún no hay tipos de productos registrados. Crea el primer tipo para comenzar."}
+          </p>
+          <Button
+            onClick={() => {
+              resetForm();
+              setCreateModalOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Primer Tipo
+          </Button>
         </motion.div>
       )}
 

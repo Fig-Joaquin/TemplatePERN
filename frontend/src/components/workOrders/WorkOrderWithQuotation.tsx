@@ -74,8 +74,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
         // Resto de la carga de datos...
         const stockData = await getStockProducts();
         setStockProducts(stockData);
-      } catch (error) {
-        toast.error("Error al cargar datos iniciales");
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar datos iniciales");
       }
     };
 
@@ -103,8 +103,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
         const res = await getTaxById(1);
         const tax = res.tax_rate / 100;
         setTaxRate(tax);
-      } catch (error) {
-        toast.error("Error al cargar impuesto");
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar impuesto");
       }
     };
     fetchTax();
@@ -128,8 +128,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
           );
           setVehicleQuotations(filtered);
         })
-        .catch(() => {
-          toast.error("Error al cargar cotizaciones para el vehículo");
+        .catch((error: any) => {
+          toast.error(error.response?.data?.message || error.message || "Error al cargar cotizaciones para el vehículo");
         });
     } else {
       setVehicleQuotations([]);
@@ -154,8 +154,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
             selectedQuotation!.quotation_id!
           );
           setProductDetails(details);
-        } catch (error) {
-          toast.error("Error al cargar detalles de productos");
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || error.message || "Error al cargar detalles de productos");
         }
       };
       fetchProductDetails();
@@ -230,7 +230,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
       navigate("/admin/orden-trabajo");
     } catch (error: any) {
       console.error("Error al crear la orden de trabajo:", error);
-      toast.error("Error al crear la orden de trabajo");
+      toast.error(error.response?.data?.message || error.message || "Error al crear la orden de trabajo");
     } finally {
       setLoading(false);
     }
@@ -256,9 +256,9 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
           console.log(`Stock updated for product ID: ${detail.product_id}`);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating product stock:", error);
-      toast.error("Error al actualizar el inventario");
+      toast.error(error.response?.data?.message || error.message || "Error al actualizar el inventario");
     }
   };
 

@@ -165,8 +165,8 @@ const WorkOrdersPage = () => {
         }
       }
       setTechniciansByOrderId(techsObj);
-    } catch (error) {
-      toast.error("Error al cargar órdenes de trabajo");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Error al cargar órdenes de trabajo");
     } finally {
       setLoading(false);
     }
@@ -435,7 +435,31 @@ const WorkOrdersPage = () => {
           )}
         </>
       ) : (
-        <p>No se encontraron órdenes de trabajo.</p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <FileText className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron órdenes de trabajo
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm
+              ? "No hay órdenes que coincidan con tu búsqueda. Intenta con otros términos."
+              : "Aún no hay órdenes de trabajo registradas. Crea la primera orden para comenzar."}
+          </p>
+          <Button
+            onClick={() => navigate("/admin/nueva-orden-trabajo")}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Crear Primera Orden
+          </Button>
+        </motion.div>
       )}
 
       {/* Modal para ver detalles en vista de tabla */}

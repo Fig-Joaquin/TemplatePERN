@@ -11,7 +11,7 @@ export const getAllExpenseTypes = async (_req: Request, res: Response, _next: Ne
         const expenseTypes = await expenseTypeRepository.find();
         res.json(expenseTypes);
     } catch (error) {
-        res.status(500).json({ message: "Error retrieving expense types", error });
+        res.status(500).json({ message: "Error al obtener los tipos de gasto", error });
     }
 };
 
@@ -19,19 +19,19 @@ export const getExpenseTypeById = async (req: Request, res: Response, _next: Nex
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            res.status(400).json({ message: "Invalid ID" });
+            res.status(400).json({ message: "ID inválido" });
             return;
         }
 
         const expenseType = await expenseTypeRepository.findOneBy({ expense_type_id: id });
         if (!expenseType) {
-            res.status(404).json({ message: "Expense type not found" });
+            res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;
         }
 
         res.json(expenseType);
     } catch (error) {
-        res.status(500).json({ message: "Error retrieving expense type", error });
+        res.status(500).json({ message: "Error al obtener el tipo de gasto", error });
     }
 };
 
@@ -40,7 +40,7 @@ export const createExpenseType = async (req: Request, res: Response, _next: Next
         const validationResult = ExpenseTypeSchema.safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({
-                message: "Validation error",
+                message: "Error de validación",
                 errors: validationResult.error.errors.map((err: ZodIssue) => ({
                     field: err.path.join("."),
                     message: err.message
@@ -54,16 +54,16 @@ export const createExpenseType = async (req: Request, res: Response, _next: Next
         // Check if an expense type with the same name already exists
         const existingExpenseType = await expenseTypeRepository.findOneBy({ expense_type_name: expense_type_name as string });
         if (existingExpenseType) {
-            res.status(409).json({ message: `Expense type '${expense_type_name}' already exists.` });
+            res.status(409).json({ message: `El tipo de gasto '${expense_type_name}' ya existe.` });
             return;
         }
 
         const newExpenseType = expenseTypeRepository.create(validationResult.data);
         await expenseTypeRepository.save(newExpenseType);
         
-        res.status(201).json({ message: "Expense type created successfully", expenseType: newExpenseType });
+        res.status(201).json({ message: "Tipo de gasto creado exitosamente", expenseType: newExpenseType });
     } catch (error) {
-        res.status(500).json({ message: "Error creating expense type", error });
+        res.status(500).json({ message: "Error al crear el tipo de gasto", error });
     }
 };
 
@@ -71,20 +71,20 @@ export const updateExpenseType = async (req: Request, res: Response, _next: Next
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            res.status(400).json({ message: "Invalid ID" });
+            res.status(400).json({ message: "ID inválido" });
             return;
         }
 
         const expenseType = await expenseTypeRepository.findOneBy({ expense_type_id: id });
         if (!expenseType) {
-            res.status(404).json({ message: "Expense type not found" });
+            res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;
         }
 
         const validationResult = ExpenseTypeSchema.partial().safeParse(req.body);
         if (!validationResult.success) {
             res.status(400).json({
-                message: "Validation error",
+                message: "Error de validación",
                 errors: validationResult.error.errors.map((err: ZodIssue) => ({
                     field: err.path.join("."),
                     message: err.message
@@ -101,7 +101,7 @@ export const updateExpenseType = async (req: Request, res: Response, _next: Next
             });
             if (existingExpenseType) {
                 res.status(409).json({ 
-                    message: `Expense type '${validationResult.data.expense_type_name}' already exists.` 
+                    message: `El tipo de gasto '${validationResult.data.expense_type_name}' ya existe.` 
                 });
                 return;
             }
@@ -110,9 +110,9 @@ export const updateExpenseType = async (req: Request, res: Response, _next: Next
         expenseTypeRepository.merge(expenseType, validationResult.data);
         await expenseTypeRepository.save(expenseType);
         
-        res.json({ message: "Expense type updated successfully", expenseType });
+        res.json({ message: "Tipo de gasto actualizado exitosamente", expenseType });
     } catch (error) {
-        res.status(500).json({ message: "Error updating expense type", error });
+        res.status(500).json({ message: "Error al actualizar el tipo de gasto", error });
     }
 };
 
@@ -120,7 +120,7 @@ export const deleteExpenseType = async (req: Request, res: Response, _next: Next
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            res.status(400).json({ message: "Invalid ID" });
+            res.status(400).json({ message: "ID inválido" });
             return;
         }
 
@@ -131,25 +131,25 @@ export const deleteExpenseType = async (req: Request, res: Response, _next: Next
         });
 
         if (!expenseType) {
-            res.status(404).json({ message: "Expense type not found" });
+            res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;
         }
 
         if (expenseType.expenses && expenseType.expenses.length > 0) {
             res.status(409).json({ 
-                message: "Cannot delete this expense type because it has associated expenses" 
+                message: "No se puede eliminar este tipo de gasto porque tiene gastos asociados" 
             });
             return;
         }
 
         const result = await expenseTypeRepository.delete(id);
         if (result.affected === 0) {
-            res.status(404).json({ message: "Expense type not found" });
+            res.status(404).json({ message: "Tipo de gasto no encontrado" });
             return;
         }
 
-        res.json({ message: "Expense type deleted successfully" });
+        res.json({ message: "Tipo de gasto eliminado exitosamente" });
     } catch (error) {
-        res.status(500).json({ message: "Error deleting expense type", error });
+        res.status(500).json({ message: "Error al eliminar el tipo de gasto", error });
     }
 };

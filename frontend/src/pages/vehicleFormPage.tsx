@@ -160,9 +160,9 @@ export default function VehicleFormPage() {
             }));
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al cargar datos:", error);
-        toast.error("Error al cargar datos");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar datos");
       } finally {
         setLoading(false);
       }

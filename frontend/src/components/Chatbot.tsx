@@ -162,8 +162,8 @@ export const Chatbot = () => {
       );
       
       toast.success(isPositive ? "¡Gracias por tu feedback positivo!" : "Gracias por ayudarnos a mejorar");
-    } catch (error) {
-      toast.error("Error al enviar feedback");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Error al enviar feedback");
     }
   }
 

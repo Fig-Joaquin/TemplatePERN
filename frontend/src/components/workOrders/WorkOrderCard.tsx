@@ -81,9 +81,9 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
     if (quotation && (!quotation.productDetails || quotation.productDetails.length === 0)) {
       getWorkProductDetailsByQuotationId(quotation.quotation_id)
         .then((res) => setLoadedDetails(res))
-        .catch((err) => {
+        .catch((err: any) => {
           console.error("Error al cargar detalles por cotización:", err);
-          toast.error("Error al cargar detalles de productos");
+          toast.error(err.response?.data?.message || err.message || "Error al cargar detalles de productos");
         });
     } else {
       setLoadedDetails(initialDetails);
@@ -96,8 +96,8 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
       try {
         const res = await getTaxById(1);
         setTaxRate(res.tax_rate / 100);
-      } catch (error) {
-        toast.error("Error al cargar el impuesto");
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar el impuesto");
       }
     };
     fetchTax();
@@ -143,9 +143,9 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
       if (onDelete) onDelete(work_order_id);
       setConfirmDelete(false);
       setOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al eliminar la orden:", error);
-      toast.error("Error al eliminar la orden");
+      toast.error(error.response?.data?.message || error.message || "Error al eliminar la orden");
     }
   };
 

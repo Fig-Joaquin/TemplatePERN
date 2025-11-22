@@ -127,9 +127,9 @@ const DebtorsPage = () => {
         setLoading(true);
         const data = await getAllDebtors();
         setDebtors(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al cargar deudores:", error);
-        toast.error("Error al cargar los deudores");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar los deudores");
       } finally {
         setLoading(false);
       }
@@ -166,9 +166,9 @@ const DebtorsPage = () => {
       await deleteDebtor(debtorToDelete.debtor_id);
       setDebtors(prev => prev.filter(d => d.debtor_id !== debtorToDelete.debtor_id));
       toast.success("Deudor eliminado correctamente");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al eliminar deudor:", error);
-      toast.error("Error al eliminar el deudor");
+      toast.error(error.response?.data?.message || error.message || "Error al eliminar el deudor");
     } finally {
       setShowDeleteDialog(false);
       setDebtorToDelete(null);

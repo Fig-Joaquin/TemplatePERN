@@ -48,8 +48,8 @@ const VehicleModelPage = () => {
     try {
       const data = await fetchVehicleModels()
       setModels(data)
-    } catch (error) {
-      toast.error("Error al cargar los modelos de vehículos")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los modelos de vehículos")
     } finally {
       setIsLoading(false)
     }
@@ -59,8 +59,8 @@ const VehicleModelPage = () => {
     try {
       const data = await fetchVehicleBrands()
       setBrands(data)
-    } catch (error) {
-      toast.error("Error al cargar las marcas de vehículos")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Error al cargar las marcas de vehículos")
     }
   }
 
@@ -233,7 +233,11 @@ const VehicleModelPage = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4">Cargando modelos de vehículos...</p>
         </div>
-      ) : (
+      ) : models.filter(
+                (model) =>
+                  model.model_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                  (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId)
+              ).length > 0 ? (
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial={{ opacity: 0 }}
@@ -284,6 +288,35 @@ const VehicleModelPage = () => {
                 </motion.div>
               ))}
           </AnimatePresence>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <Settings className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron modelos de vehículos
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm || filterBrandId
+              ? "No hay modelos que coincidan con tu búsqueda o filtro. Intenta con otros términos."
+              : "Aún no hay modelos de vehículos registrados. Crea el primer modelo para comenzar."}
+          </p>
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsCreateModalOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Primer Modelo
+          </Button>
         </motion.div>
       )}
 

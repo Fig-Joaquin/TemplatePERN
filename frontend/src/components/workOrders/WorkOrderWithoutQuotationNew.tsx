@@ -87,8 +87,8 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
 
         const tax = await getTaxById(1);
         setTaxRate(tax.tax_rate / 100);
-      } catch (error) {
-        toast.error("Error al cargar datos iniciales");
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar datos iniciales");
       }
     };
 

@@ -241,8 +241,8 @@ export default function QuotationPage() {
                       onClick={async () => {
                         try {
                           await downloadQuotationPDF(quotation.quotation_id!);
-                        } catch (error) {
-                          toast.error("Error al descargar el PDF");
+                        } catch (error: any) {
+                          toast.error(error.response?.data?.message || error.message || "Error al descargar el PDF");
                         }
                       }}
                     >

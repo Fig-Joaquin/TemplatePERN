@@ -31,8 +31,8 @@ const WorkOrderForm = ({ initialData, quotationId, onSuccess, onClose }: WorkOrd
       const quotation: Quotation = await fetchQuotationById(quotationId);
       setDescription(quotation.description);
       setProducts(quotation.details || []);
-    } catch (error) {
-      toast.error("Error al cargar detalles de la cotización");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Error al cargar detalles de la cotización");
     }
   };
 

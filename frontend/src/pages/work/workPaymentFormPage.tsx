@@ -90,9 +90,9 @@ export default function WorkPaymentFormPage() {
           const orderTotal = Number(paymentData.work_order.total_amount) || 0;
           setSelectedOrderTotal(orderTotal);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al cargar datos:", error);
-        toast.error("Error al cargar datos");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar datos");
       } finally {
         setLoading(false);
       }

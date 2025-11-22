@@ -3,14 +3,15 @@
 import React, { useEffect, useState, useCallback } from "react"
 import { toast } from "react-toastify"
 import { Plus, Search, Users } from "lucide-react"
-import EmployeeList from "@/components/employee/employeeList"
 import EmployeeForm from "@/components/employee/employeeForm"
+import { DataTable } from "@/components/data-table"
+import { employeeColumns } from "@/components/employee/employeeColumns"
 import type { Person } from "../types/interfaces"
 import { createPerson, updatePerson, fetchPersonsEmployee, deletePerson } from "../services/personService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion,  } from "framer-motion"
 
 const EmployeePage = () => {
   const [persons, setPersons] = useState<Person[]>([])
@@ -40,9 +41,9 @@ const EmployeePage = () => {
       setLoading(true)
       const employees = await fetchPersonsEmployee()
       setPersons(employees)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al cargar los datos:", error)
-      toast.error("Error al cargar los datos")
+      toast.error(error.response?.data?.message || error.message || "Error al cargar los datos")
     } finally {
       setLoading(false)
     }
@@ -170,13 +171,18 @@ const EmployeePage = () => {
   )
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="flex flex-col sm:flex-row justify-between items-center">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
           <Users className="w-8 h-8" />
-          Lista de Trabajadores
+          Trabajadores
         </h1>
-        <Button onClick={() => setAddModalOpen(true)} className="mt-4 sm:mt-0">
+        <Button onClick={() => setAddModalOpen(true)} className="bg-primary text-primary-foreground">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Trabajador
         </Button>
@@ -190,30 +196,48 @@ const EmployeePage = () => {
           onChange={handleSearch}
           className="pl-10"
         />
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
       </div>
 
-      <motion.div
-        className="bg-card shadow rounded-lg overflow-hidden"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {loading ? (
-          <div className="text-center py-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-lg text-muted-foreground">Cargando trabajadores...</p>
-          </div>
-        ) : (
-          <AnimatePresence>
-            <EmployeeList
-              persons={filteredPersons}
-              handleEdit={handleEdit}
-              handleDelete={handleDelete}
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Cargando trabajadores...</p>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {filteredPersons.length === 0 && searchTerm ? (
+            <div className="text-center py-10">
+              <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">
+                No se encontraron trabajadores que coincidan con "{searchTerm}"
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Intenta buscar por nombre o RUT
+              </p>
+            </div>
+          ) : filteredPersons.length === 0 ? (
+            <div className="text-center py-10">
+              <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">
+                No hay trabajadores registrados
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Comienza agregando un nuevo trabajador
+              </p>
+            </div>
+          ) : (
+            <DataTable 
+              columns={employeeColumns(handleEdit, handleDelete)} 
+              data={filteredPersons} 
             />
-          </AnimatePresence>
-        )}
-      </motion.div>
+          )}
+        </motion.div>
+      )}
 
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -281,9 +305,8 @@ const EmployeePage = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   )
 }
 
 export default EmployeePage
-

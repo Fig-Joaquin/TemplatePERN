@@ -92,9 +92,9 @@ export default function DebtorFormPage() {
             total_amount: debtorData.total_amount?.toString() || ""
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error al cargar datos:", error);
-        toast.error("Error al cargar los datos");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar los datos");
       } finally {
         setLoading(false);
       }

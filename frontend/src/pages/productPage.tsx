@@ -51,9 +51,9 @@ const ProductPage = () => {
       try {
         const data = await fetchProducts()
         setProducts(data)
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error("Error al cargar los productos")
+        toast.error(error.response?.data?.message || error.message || "Error al cargar los productos")
       } finally {
         setLoading(false)
       }
@@ -68,8 +68,8 @@ const ProductPage = () => {
         setProductTypes(typesResponse.data)
         const suppliersResponse = await api.get("/suppliers")
         setSuppliers(suppliersResponse.data)
-      } catch (error) {
-        toast.error("Error al cargar categorías, product types y suppliers")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || "Error al cargar categorías, product types y suppliers")
       }
     }
     fetchData()
@@ -241,7 +241,7 @@ const ProductPage = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-lg text-muted-foreground">Cargando productos...</p>
         </div>
-      ) : (
+      ) : filteredProducts.length > 0 ? (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial={{ opacity: 0 }}
@@ -305,6 +305,32 @@ const ProductPage = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center py-16 px-4"
+        >
+          <div className="bg-muted/50 rounded-full p-8 mb-6">
+            <Package className="w-24 h-24 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">
+            No se encontraron productos
+          </h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            {searchTerm
+              ? "No hay productos que coincidan con tu búsqueda. Intenta con otros términos."
+              : "Aún no hay productos registrados. Crea el primer producto para comenzar."}
+          </p>
+          <Button
+            onClick={() => navigate("/admin/productos/nuevo")}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Primer Producto
+          </Button>
         </motion.div>
       )}
 

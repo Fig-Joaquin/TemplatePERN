@@ -31,12 +31,12 @@ export const createUser = async (req: Request, res: Response, _next: NextFunctio
     // Extraer person_id directamente de los datos validados
     const { user_role, username, password, person_id } = validationResult.data;
     if (!person_id) {
-      res.status(400).json({ message: "Person ID missing" });
+      res.status(400).json({ message: "Falta el ID de la persona" });
       return;
     }
     const person = await personRepository.findOne({ where: { person_id } });
     if (!person) {
-      res.status(404).json({ message: "Person not found" });
+      res.status(404).json({ message: "Persona no encontrada" });
       return;
     }
     const hashedPassword = await hash(password, 10);
@@ -46,10 +46,10 @@ export const createUser = async (req: Request, res: Response, _next: NextFunctio
     user.username = username;
     user.password = hashedPassword;
     await userRepository.save(user);
-    res.status(201).json({ message: "User created successfully" });
+    res.status(201).json({ message: "Usuario creado exitosamente" });
     return;
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Error interno del servidor", error });
     return;
   }
 };
@@ -60,7 +60,7 @@ export const getAllUsers = async (_req: Request, res: Response, _next: NextFunct
     res.json(users);
     return;
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Error interno del servidor", error });
     return;
   }
 };
@@ -74,14 +74,14 @@ export const getUserById = async (req: Request, res: Response, _next: NextFuncti
     });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "Usuario no encontrado" });
       return;
     }
 
     res.json(user);
     return;
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Error interno del servidor", error });
     return;
   }
 };
@@ -99,7 +99,7 @@ export const updateUser = async (req: Request, res: Response, _next: NextFunctio
 
     const user = await userRepository.findOneBy({ user_id: parseInt(id) });
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "Usuario no encontrado" });
       return;
     }
 
@@ -110,10 +110,10 @@ export const updateUser = async (req: Request, res: Response, _next: NextFunctio
     }
 
     await userRepository.save(user);
-    res.json({ message: "User updated successfully" });
+    res.json({ message: "Usuario actualizado exitosamente" });
     return;
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Error interno del servidor", error });
     return;
   }
 };
@@ -124,15 +124,15 @@ export const deleteUser = async (req: Request, res: Response, _next: NextFunctio
     const user = await userRepository.findOneBy({ user_id: parseInt(id) });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "Usuario no encontrado" });
       return;
     }
 
     await userRepository.remove(user);
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: "Usuario eliminado exitosamente" });
     return;
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Error interno del servidor", error });
     return;
   }
 };
@@ -147,18 +147,18 @@ export const loginUser = async (req: Request, res: Response, _next: NextFunction
     });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "Usuario no encontrado" });
       return;
     }
 
     const validPassword = await compare(password, user.password);
     if (!validPassword) {
-      res.status(401).json({ message: "Invalid password" });
+      res.status(401).json({ message: "Contraseña incorrecta" });
       return;
     }
 
     res.json({
-      message: "Login successful",
+      message: "Inicio de sesión exitoso",
       user: {
         userId: user.user_id,
         username: user.username,
@@ -168,7 +168,7 @@ export const loginUser = async (req: Request, res: Response, _next: NextFunction
     });
     return;
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Error interno del servidor", error });
     return;
   }
 };

@@ -104,9 +104,9 @@ const WorkOrderEditPage = () => {
         setStockProducts(stockData);
 
         await loadWorkOrder();
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error loading data:", err);
-        toast.error("Error al cargar la información");
+        toast.error(err.response?.data?.message || err.message || "Error al cargar la información");
       }
     };
 
@@ -151,7 +151,7 @@ const WorkOrderEditPage = () => {
     } catch (err) {
       console.error("Error loading work order:", err);
       setError("No se pudo cargar la información de la orden de trabajo");
-      toast.error("Error al cargar la orden de trabajo");
+      toast.error(err.response?.data?.message || err.message || "Error al cargar la orden de trabajo");
     } finally {
       setLoading(false);
     }
@@ -514,9 +514,9 @@ const WorkOrderEditPage = () => {
 
       navigate("/admin/orden-trabajo");
       setTimeout(() => window.location.reload(), 100);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating work order:", error);
-      toast.error("Error al actualizar la orden de trabajo");
+      toast.error(error.response?.data?.message || error.message || "Error al actualizar la orden de trabajo");
     } finally {
       setSubmitting(false);
       // Clear deleted products list to avoid duplicate deletions on next save
@@ -555,9 +555,9 @@ const WorkOrderEditPage = () => {
       try {
         const employees = await fetchPersonsEmployee();
         setTechnicians(employees);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading technicians:", error);
-        toast.error("Error al cargar Mécanicos disponibles");
+        toast.error(error.response?.data?.message || error.message || "Error al cargar Mécanicos disponibles");
       }
     };
     fetchTechnicians();
@@ -570,9 +570,9 @@ const WorkOrderEditPage = () => {
           const workOrderId = Number(id);
           const assignedTechs = await getWorkOrderTechnicians(workOrderId);
           setAssignedTechnicians(assignedTechs);
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error loading assigned technicians:", error);
-          toast.error("Error al cargar Mécanicos asignados");
+          toast.error(error.response?.data?.message || error.message || "Error al cargar Mécanicos asignados");
         }
       };
       fetchAssignedTechnicians();
@@ -608,8 +608,8 @@ const WorkOrderEditPage = () => {
       await deleteWorkOrderTechnician(assignmentId);
       setAssignedTechnicians(prev => prev.filter(tech => tech.id !== assignmentId));
       toast.success("Mécanico removido correctamente");
-    } catch (error) {
-      toast.error("Error al remover Mécanico");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Error al remover Mécanico");
     }
   };
 
