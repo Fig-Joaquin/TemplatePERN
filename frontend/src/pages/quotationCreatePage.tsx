@@ -530,7 +530,6 @@ const QuotationCreatePage = () => {
                   <Button
                     variant="outline"
                     onClick={() => setShowProductModal(false)}
-                    className="hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     Cerrar
                   </Button>
