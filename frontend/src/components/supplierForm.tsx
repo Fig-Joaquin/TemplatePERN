@@ -29,7 +29,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
     <div className="p-1">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-3">
-          <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="name" className="text-sm font-medium text-muted-foreground">
             Nombre del Proveedor <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -44,7 +44,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="address" className="text-sm font-medium text-muted-foreground">
             Dirección (opcional)
           </Label>
           <Input
@@ -58,7 +58,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="city" className="text-sm font-medium text-muted-foreground">
             Ciudad (opcional)
           </Label>
           <Input
@@ -72,7 +72,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground">
             Teléfono <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -87,7 +87,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">
             Descripción (opcional)
           </Label>
           <Textarea
@@ -101,7 +101,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"

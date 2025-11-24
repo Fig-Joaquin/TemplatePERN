@@ -432,14 +432,14 @@ export default function VehicleFormPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Información básica del vehículo */}
             <div className="space-y-4">
-              <div className="border-b border-gray-200 pb-2">
+              <div className="border-b border-border pb-2">
                 <h3 className="text-lg font-semibold text-primary mb-1">Información del Vehículo</h3>
-                <p className="text-sm text-gray-600">Complete los datos técnicos y características del vehículo</p>
+                <p className="text-sm text-muted-foreground">Complete los datos técnicos y características del vehículo</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="license_plate" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="license_plate" className="text-sm font-medium text-foreground">
                     Patente <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -591,13 +591,13 @@ export default function VehicleFormPage() {
 
             {/* Información del propietario */}
             <div className="space-y-4">
-              <div className="border-b border-gray-200 pb-2">
+              <div className="border-b border-border pb-2">
                 <h3 className="text-lg font-semibold text-primary mb-1">Información del Propietario</h3>
-                <p className="text-sm text-gray-600">Seleccione el tipo de propietario y complete los datos correspondientes</p>
+                <p className="text-sm text-muted-foreground">Seleccione el tipo de propietario y complete los datos correspondientes</p>
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                <Label className="text-sm font-medium text-foreground mb-3 block">
                   Tipo de Propietario <span className="text-red-500">*</span>
                 </Label>
                 <Select
@@ -783,13 +783,13 @@ export default function VehicleFormPage() {
       <Dialog open={createPersonModalOpen} onOpenChange={setCreatePersonModalOpen}>
         <DialogContent className="max-w-lg mx-auto">
           <DialogHeader className="space-y-3">
-            <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded-full">
                 <Plus className="h-5 w-5 text-primary" />
               </div>
               Crear Nuevo Cliente
             </DialogTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Complete los datos del cliente. Los campos marcados con * son obligatorios.
             </p>
           </DialogHeader>
@@ -808,13 +808,13 @@ export default function VehicleFormPage() {
       <Dialog open={createCompanyModalOpen} onOpenChange={setCreateCompanyModalOpen}>
         <DialogContent className="max-w-lg mx-auto">
           <DialogHeader className="space-y-3">
-            <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded-full">
                 <Plus className="h-5 w-5 text-primary" />
               </div>
               Crear Nueva Empresa
             </DialogTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Complete los datos de la empresa. Los campos marcados con * son obligatorios.
             </p>
           </DialogHeader>

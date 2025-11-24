@@ -367,13 +367,13 @@ export default function EditQuotationPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="vehicle">Vehículo</Label>
                                 {currentVehicle && (
-                                    <div className="mb-2 p-3 bg-muted rounded-md">
-                                        <p className="font-medium">Vehículo actual:</p>
-                                        <p>
+                                    <div className="mb-2 p-3 rounded-md border" style={{ backgroundColor: 'var(--stat-green-bg)', borderColor: 'var(--stat-green-text)' }}>
+                                        <p className="font-medium" style={{ color: 'var(--stat-green-text)' }}>Vehículo actual:</p>
+                                        <p style={{ color: 'var(--foreground)' }}>
                                             {currentVehicle.license_plate} - {currentVehicle.model?.brand?.brand_name}{" "}
                                             {currentVehicle.model?.model_name}
                                         </p>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-sm" style={{ color: 'var(--stat-green-text-secondary)' }}>
                                             {currentVehicle.owner ? currentVehicle.owner.name : currentVehicle.company?.name}
                                         </p>
                                     </div>

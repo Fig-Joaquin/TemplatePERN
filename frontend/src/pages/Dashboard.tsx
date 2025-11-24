@@ -708,25 +708,25 @@ export const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{todayStats.workOrdersToday}</div>
-                    <div className="text-sm text-blue-800">Órdenes Hoy</div>
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--stat-blue-bg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--stat-blue-text)' }}>{todayStats.workOrdersToday}</div>
+                    <div className="text-sm" style={{ color: 'var(--stat-blue-text-secondary)' }}>Órdenes Hoy</div>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{todayStats.quotationsToday}</div>
-                    <div className="text-sm text-green-800">Cotizaciones Hoy</div>
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--stat-green-bg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--stat-green-text)' }}>{todayStats.quotationsToday}</div>
+                    <div className="text-sm" style={{ color: 'var(--stat-green-text-secondary)' }}>Cotizaciones Hoy</div>
                   </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{todayStats.totalWorkOrders}</div>
-                    <div className="text-sm text-purple-800">Total Órdenes</div>
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--stat-purple-bg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--stat-purple-text)' }}>{todayStats.totalWorkOrders}</div>
+                    <div className="text-sm" style={{ color: 'var(--stat-purple-text-secondary)' }}>Total Órdenes</div>
                   </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">{todayStats.totalQuotations}</div>
-                    <div className="text-sm text-orange-800">Total Cotizaciones</div>
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--stat-orange-bg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--stat-orange-text)' }}>{todayStats.totalQuotations}</div>
+                    <div className="text-sm" style={{ color: 'var(--stat-orange-text-secondary)' }}>Total Cotizaciones</div>
                   </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">{lowStockProducts.length}</div>
-                    <div className="text-sm text-red-800">Productos Críticos</div>
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--stat-red-bg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--stat-red-text)' }}>{lowStockProducts.length}</div>
+                    <div className="text-sm" style={{ color: 'var(--stat-red-text-secondary)' }}>Productos Críticos</div>
                   </div>
                 </div>
               </CardContent>
@@ -804,12 +804,12 @@ export const Dashboard = () => {
                 <CardContent className="space-y-3">
                   {/* Stock Bajo */}
                   {lowStockProducts.slice(0, 3).map((product) => (
-                    <div key={product.stock_product_id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div key={product.stock_product_id} className="flex items-center justify-between p-3 rounded-lg border" style={{ backgroundColor: 'var(--stat-red-bg)', borderColor: 'var(--balance-expense-border)' }}>
                       <div className="flex items-center gap-3">
-                        <Package className="h-4 w-4 text-red-500" />
+                        <Package className="h-4 w-4" style={{ color: 'var(--stat-red-text)' }} />
                         <div>
                           <p className="font-medium text-sm">{product.product?.product_name}</p>
-                          <p className="text-xs text-red-600">Stock: {product.quantity} unidades</p>
+                          <p className="text-xs" style={{ color: 'var(--stat-red-text)' }}>Stock: {product.quantity} unidades</p>
                         </div>
                       </div>
                       <Badge variant="destructive" className="text-xs">Bajo Stock</Badge>
@@ -818,12 +818,12 @@ export const Dashboard = () => {
 
                   {/* Notificaciones */}
                   {recentNotifications.slice(0, 2).map((notification, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border" style={{ backgroundColor: 'var(--stat-blue-bg)', borderColor: 'var(--balance-net-border)' }}>
                       <div className="flex items-center gap-3">
-                        <Clock className="h-4 w-4 text-blue-500" />
+                        <Clock className="h-4 w-4" style={{ color: 'var(--stat-blue-text)' }} />
                         <div>
                           <p className="font-medium text-sm">{notification.message}</p>
-                          <p className="text-xs text-blue-600">{formatDate(notification.created_at)}</p>
+                          <p className="text-xs" style={{ color: 'var(--stat-blue-text)' }}>{formatDate(notification.created_at)}</p>
                         </div>
                       </div>
                     </div>
@@ -948,30 +948,30 @@ export const Dashboard = () => {
           <div className="overflow-y-auto pr-6 pl-2 py-4 flex-1">
             {/* Resumen */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <Card className="bg-green-50 border-green-200">
+              <Card style={{ backgroundColor: 'var(--balance-income-bg)', borderColor: 'var(--balance-income-border)' }}>
                 <CardContent className="p-4">
-                  <h3 className="text-sm font-medium text-green-800 flex items-center gap-1">
+                  <h3 className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--balance-income-text)' }}>
                     <ArrowUpIcon className="w-4 h-4" /> Ingresos
                   </h3>
-                  <p className="text-xl font-bold text-green-600">{formatPriceCLP(detailsData.income)}</p>
+                  <p className="text-xl font-bold" style={{ color: 'var(--balance-income-value)' }}>{formatPriceCLP(detailsData.income)}</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-red-50 border-red-200">
+              <Card style={{ backgroundColor: 'var(--balance-expense-bg)', borderColor: 'var(--balance-expense-border)' }}>
                 <CardContent className="p-4">
-                  <h3 className="text-sm font-medium text-red-800 flex items-center gap-1">
+                  <h3 className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--balance-expense-text)' }}>
                     <ArrowDownIcon className="w-4 h-4" /> Gastos
                   </h3>
-                  <p className="text-xl font-bold text-red-600">{formatPriceCLP(detailsData.expenses)}</p>
+                  <p className="text-xl font-bold" style={{ color: 'var(--balance-expense-value)' }}>{formatPriceCLP(detailsData.expenses)}</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-blue-50 border-blue-200">
+              <Card style={{ backgroundColor: 'var(--balance-net-bg)', borderColor: 'var(--balance-net-border)' }}>
                 <CardContent className="p-4">
-                  <h3 className="text-sm font-medium text-blue-800 flex items-center gap-1">
+                  <h3 className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--balance-net-text)' }}>
                     Balance Neto
                   </h3>
-                  <p className={`text-xl font-bold ${detailsData.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                  <p className="text-xl font-bold" style={{ color: detailsData.balance >= 0 ? 'var(--balance-net-value)' : 'var(--balance-expense-value)' }}>
                     {formatPriceCLP(detailsData.balance)}
                   </p>
                 </CardContent>

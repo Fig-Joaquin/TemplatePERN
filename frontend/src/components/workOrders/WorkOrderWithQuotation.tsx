@@ -294,7 +294,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+    <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--background)' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="mb-6"
@@ -310,7 +310,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver
           </Button>
-          <Card className="backdrop-blur-sm border border-white/20 shadow-xl">
+          <Card className="border shadow-xl" style={{ backgroundColor: 'var(--card)' }}>
             <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
               <CardTitle className="text-2xl font-bold text-center">
                 🔧 Crear Orden de Trabajo con Cotización
@@ -324,11 +324,11 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card className="backdrop-blur-sm border border-white/20 shadow-xl">
+          <Card className="border shadow-xl" style={{ backgroundColor: 'var(--card)' }}>
             <CardContent className="p-8">
               <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Vehicle Type Filter */}
-                <Card className="border border-slate-200/60 shadow-sm">
+                <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Car className="w-5 h-5 text-blue-600" />
@@ -369,7 +369,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                 </Card>
 
                 {/* Vehicle Selection */}
-                <Card className="border border-slate-200/60 shadow-sm">
+                <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Search className="w-5 h-5 text-green-600" />
@@ -383,7 +383,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                         value={vehicleQuery}
                         onChange={(e) => setVehicleQuery(e.target.value)}
                         placeholder="Buscar vehículo por patente, marca, modelo o propietario..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
                       />
                       <Popover open={openVehiclePopover} onOpenChange={setOpenVehiclePopover}>
                         <PopoverTrigger asChild>
@@ -410,21 +411,29 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                                     className={cn(
                                       "w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-md",
                                       selectedVehicle?.vehicle_id === vehicle.vehicle_id
-                                        ? "bg-blue-50 border-blue-300 shadow-sm"
-                                        : "bg-white border-gray-200 hover:bg-gray-50"
+                                        ? "border-blue-300 shadow-sm"
+                                        : "hover:opacity-80"
                                     )}
+                                    style={{
+                                      backgroundColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id 
+                                        ? 'var(--stat-blue-bg)' 
+                                        : 'var(--card)',
+                                      borderColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id 
+                                        ? 'var(--balance-net-border)' 
+                                        : 'var(--border)'
+                                    }}
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                   >
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-semibold text-gray-900">
+                                        <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
                                           {vehicle.license_plate}
                                         </p>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
                                           {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
                                         </p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                                           {vehicle.owner ? vehicle.owner.name : vehicle.company?.name}
                                         </p>
                                       </div>
@@ -448,21 +457,25 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
                     {selectedVehicle && (
                       <motion.div
-                        className="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200"
+                        className="mt-4 p-4 rounded-lg border"
+                        style={{ 
+                          backgroundColor: 'var(--stat-green-bg)', 
+                          borderColor: 'var(--balance-income-border)' 
+                        }}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--balance-income-border)' }}>
+                            <CheckCircle className="w-5 h-5" style={{ color: 'var(--stat-green-text)' }} />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">
+                            <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
                               {selectedVehicle.license_plate} - {selectedVehicle.model?.brand?.brand_name}{" "}
                               {selectedVehicle.model?.model_name}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
                               Propietario: {selectedVehicle.owner ? selectedVehicle.owner.name : selectedVehicle.company?.name}
                             </p>
                           </div>
@@ -474,7 +487,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
                 {/* Quotations List */}
                 {selectedVehicle && (
-                  <Card className="border border-slate-200/60 shadow-sm">
+                  <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                     <CardHeader className="pb-4">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <FileText className="w-5 h-5 text-purple-600" />
@@ -492,9 +505,17 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                               className={cn(
                                 "w-full text-left p-4 rounded-lg border transition-all duration-200 hover:shadow-md",
                                 selectedQuotation?.quotation_id === q.quotation_id
-                                  ? "bg-purple-50 border-purple-300 shadow-sm"
-                                  : "bg-white border-gray-200 hover:bg-gray-50"
+                                  ? "border-purple-300 shadow-sm"
+                                  : "hover:opacity-80"
                               )}
+                              style={{
+                                backgroundColor: selectedQuotation?.quotation_id === q.quotation_id 
+                                  ? 'var(--stat-purple-bg)' 
+                                  : 'var(--card)',
+                                borderColor: selectedQuotation?.quotation_id === q.quotation_id 
+                                  ? 'var(--stat-purple-text)' 
+                                  : 'var(--border)'
+                              }}
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                             >
@@ -510,19 +531,19 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                                     >
                                       {translateQuotationStatus(q.quotation_status)}
                                     </Badge>
-                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <span className="text-xs flex items-center gap-1" style={{ color: 'var(--muted-foreground)' }}>
                                       <Calendar className="w-3 h-3" />
                                       {q.entry_date ? new Date(q.entry_date).toLocaleDateString('es-CL') : "-"}
                                     </span>
                                   </div>
 
-                                  <p className="text-sm text-gray-700 mb-2">
+                                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>
                                     <strong>Descripción:</strong> {q.description}
                                   </p>
 
                                   <div className="flex items-center gap-2">
-                                    <DollarSign className="w-4 h-4 text-green-600" />
-                                    <span className="font-semibold text-green-700">
+                                    <DollarSign className="w-4 h-4" style={{ color: 'var(--stat-green-text)' }} />
+                                    <span className="font-semibold" style={{ color: 'var(--stat-green-text)' }}>
                                       {formatPriceCLP(q.total_price)}
                                     </span>
                                   </div>
@@ -539,8 +560,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                         </div>
                       ) : (
                         <div className="text-center py-8">
-                          <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-gray-500">No hay cotizaciones para este vehículo</p>
+                          <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--muted-foreground)' }} />
+                          <p style={{ color: 'var(--muted-foreground)' }}>No hay cotizaciones para este vehículo</p>
                         </div>
                       )}
                     </CardContent>
@@ -549,7 +570,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
                 {/* Selected Quotation Details */}
                 {selectedQuotation && (
-                  <Card className="border border-slate-200/60 shadow-sm">
+                  <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                     <CardHeader className="pb-4">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <Calculator className="w-5 h-5 text-indigo-600" />
@@ -558,12 +579,12 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {/* Basic quotation info */}
-                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+                      <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--stat-purple-bg)', borderColor: 'var(--stat-purple-text)' }}>
                         <div className="flex justify-between items-center mb-3">
                           <Badge variant="outline" className="text-lg font-bold">
                             Cotización #{selectedQuotation.quotation_id}
                           </Badge>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--muted-foreground)' }}>
                             <Calendar className="w-4 h-4" />
                             {selectedQuotation.entry_date ? formatChileanDate(selectedQuotation.entry_date) : "-"}
                           </div>
@@ -573,28 +594,28 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-700 mb-1">Descripción:</p>
-                            <p className="text-gray-900">{selectedQuotation.description}</p>
+                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Descripción:</p>
+                            <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.description}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-700 mb-1">Estado:</p>
+                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Estado:</p>
                             <Badge variant="outline">
                               {translateQuotationStatus(selectedQuotation.quotation_status)}
                             </Badge>
                           </div>
                           <div className="md:col-span-2">
-                            <p className="text-sm font-medium text-gray-700 mb-1">Total (incl. IVA):</p>
+                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Total (incl. IVA):</p>
                             <div className="flex items-center gap-2">
-                              <DollarSign className="w-5 h-5 text-green-600" />
-                              <span className="text-xl font-bold text-green-700">
+                              <DollarSign className="w-5 h-5" style={{ color: 'var(--stat-green-text)' }} />
+                              <span className="text-xl font-bold" style={{ color: 'var(--stat-green-text)' }}>
                                 {formatPriceCLP(selectedQuotation.total_price)}
                               </span>
                             </div>
                           </div>
                           {selectedQuotation.vehicle?.mileage_history && (
                             <div className="md:col-span-2">
-                              <p className="text-sm font-medium text-gray-700 mb-1">Kilometraje Actual:</p>
-                              <p className="text-gray-900">{latestMileage ?? "N/A"}</p>
+                              <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Kilometraje Actual:</p>
+                              <p style={{ color: 'var(--foreground)' }}>{latestMileage ?? "N/A"}</p>
                             </div>
                           )}
                         </div>
@@ -605,34 +626,34 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                         <div className="space-y-4">
                           <div className="flex items-center gap-2">
                             <Package className="w-5 h-5 text-blue-600" />
-                            <h3 className="text-lg font-semibold text-gray-900">Detalles de Productos</h3>
+                            <h3 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>Detalles de Productos</h3>
                           </div>
 
-                          <div className="overflow-x-auto rounded-lg border border-gray-200">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                                <tr>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <div className="overflow-x-auto rounded-lg border" style={{ borderColor: 'var(--border)' }}>
+                            <table className="min-w-full divide-y" style={{ backgroundColor: 'var(--card)' }}>
+                              <thead style={{ backgroundColor: 'var(--card)' }}>
+                                <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
+                                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
                                     Producto
                                   </th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
                                     Descripción
                                   </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
                                     Precio Unitario
                                   </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
                                     Cantidad
                                   </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
                                     Mano de Obra
                                   </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
                                     Subtotal
                                   </th>
                                 </tr>
                               </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
+                              <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
                                 {productDetails.map((detail, index) => {
                                   const subtotalDetail =
                                     Number(detail.sale_price) * detail.quantity +
@@ -640,55 +661,55 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                                   return (
                                     <motion.tr
                                       key={detail.work_product_detail_id}
-                                      className="hover:bg-gray-50 transition-colors duration-150"
+                                      className="transition-colors duration-150"
                                       initial={{ opacity: 0, y: 20 }}
                                       animate={{ opacity: 1, y: 0 }}
                                       transition={{ duration: 0.3, delay: index * 0.1 }}
                                     >
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" style={{ color: 'var(--foreground)' }}>
                                         {detail.product?.product_name || "N/A"}
                                       </td>
-                                      <td className="px-6 py-4 text-sm text-gray-700">
+                                      <td className="px-6 py-4 text-sm" style={{ color: 'var(--muted-foreground)' }}>
                                         {detail.product?.description || "-"}
                                       </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium" style={{ color: 'var(--foreground)' }}>
                                         {formatPriceCLP(Number(detail.sale_price))}
                                       </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right" style={{ color: 'var(--foreground)' }}>
                                         {detail.quantity}
                                       </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium" style={{ color: 'var(--foreground)' }}>
                                         {formatPriceCLP(Number(detail.labor_price))}
                                       </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
                                         {formatPriceCLP(subtotalDetail)}
                                       </td>
                                     </motion.tr>
                                   );
                                 })}
                               </tbody>
-                              <tfoot className="bg-gradient-to-r from-gray-50 to-gray-100">
-                                <tr className="border-t-2 border-gray-300">
-                                  <td className="px-6 py-4 text-sm font-bold text-gray-900" colSpan={5}>
+                              <tfoot style={{ backgroundColor: 'var(--card)' }}>
+                                <tr className="border-t-2" style={{ borderColor: 'var(--border)' }}>
+                                  <td className="px-6 py-4 text-sm font-bold" style={{ color: 'var(--foreground)' }} colSpan={5}>
                                     Subtotal:
                                   </td>
-                                  <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
+                                  <td className="px-6 py-4 text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
                                     {formatPriceCLP(subtotal)}
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td className="px-6 py-4 text-sm font-bold text-gray-900" colSpan={5}>
+                                  <td className="px-6 py-4 text-sm font-bold" style={{ color: 'var(--foreground)' }} colSpan={5}>
                                     IVA (19%):
                                   </td>
-                                  <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
+                                  <td className="px-6 py-4 text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
                                     {formatPriceCLP(taxAmount)}
                                   </td>
                                 </tr>
-                                <tr className="border-t border-gray-300">
-                                  <td className="px-6 py-4 text-lg font-bold text-green-700" colSpan={5}>
+                                <tr className="border-t" style={{ borderColor: 'var(--border)' }}>
+                                  <td className="px-6 py-4 text-lg font-bold" style={{ color: 'var(--stat-green-text)' }} colSpan={5}>
                                     Total Final:
                                   </td>
-                                  <td className="px-6 py-4 text-lg font-bold text-green-700 text-right">
+                                  <td className="px-6 py-4 text-lg font-bold text-right" style={{ color: 'var(--stat-green-text)' }}>
                                     {formatPriceCLP(finalTotal)}
                                   </td>
                                 </tr>
@@ -700,43 +721,43 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
                       {/* Vehicle Information */}
                       {selectedQuotation.vehicle && (
-                        <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
                           <div className="flex items-center gap-2 mb-4">
-                            <Car className="w-5 h-5 text-green-600" />
-                            <h3 className="text-lg font-semibold text-gray-900">Información del Vehículo</h3>
+                            <Car className="w-5 h-5" style={{ color: 'var(--stat-green-text)' }} />
+                            <h3 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>Información del Vehículo</h3>
                           </div>
 
-                          <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+                          <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--stat-green-bg)', borderColor: 'var(--balance-income-border)' }}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Patente:</p>
-                                <p className="font-semibold text-gray-900">{selectedQuotation.vehicle.license_plate}</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Patente:</p>
+                                <p className="font-semibold" style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.license_plate}</p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Modelo:</p>
-                                <p className="text-gray-900">{selectedQuotation.vehicle.model?.model_name}</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Modelo:</p>
+                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.model?.model_name}</p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Marca:</p>
-                                <p className="text-gray-900">{selectedQuotation.vehicle.model?.brand?.brand_name}</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Marca:</p>
+                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.model?.brand?.brand_name}</p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Año:</p>
-                                <p className="text-gray-900">{selectedQuotation.vehicle.year}</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Año:</p>
+                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.year}</p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Color:</p>
-                                <p className="text-gray-900">{selectedQuotation.vehicle.color}</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Color:</p>
+                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.color}</p>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Kilometraje Actual:</p>
-                                <p className="text-gray-900">
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Kilometraje Actual:</p>
+                                <p style={{ color: 'var(--foreground)' }}>
                                   {latestMileage ? latestMileage.toLocaleString("es-CL") : "N/A"} Km
                                 </p>
                               </div>
                               <div className="md:col-span-2 space-y-1">
-                                <p className="text-sm font-medium text-gray-700">Propietario / Empresa:</p>
-                                <p className="text-gray-900">
+                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Propietario / Empresa:</p>
+                                <p style={{ color: 'var(--foreground)' }}>
                                   {selectedQuotation.vehicle.owner
                                     ? selectedQuotation.vehicle.owner.name
                                     : selectedQuotation.vehicle.company?.name}
@@ -744,11 +765,11 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                               </div>
                               {selectedQuotation.vehicle.mileage_history && selectedQuotation.vehicle.mileage_history.length > 0 && (
                                 <div className="md:col-span-2 space-y-2">
-                                  <p className="text-sm font-medium text-gray-700">Historial de Kilometraje:</p>
-                                  <div className="bg-white p-3 rounded border border-gray-200 max-h-32 overflow-y-auto">
+                                  <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Historial de Kilometraje:</p>
+                                  <div className="p-3 rounded border max-h-32 overflow-y-auto" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                                     <ul className="space-y-1">
                                       {selectedQuotation.vehicle.mileage_history.map((mileage) => (
-                                        <li key={mileage.mileage_history_id} className="text-sm text-gray-700">
+                                        <li key={mileage.mileage_history_id} className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
                                           <span className="font-medium">
                                             {formatChileanDate(mileage.registration_date)}:
                                           </span>{" "}
@@ -768,7 +789,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                 )}
 
                 {/* Work Order Description */}
-                <Card className="border border-slate-200/60 shadow-sm">
+                <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <FileText className="w-5 h-5 text-orange-600" />

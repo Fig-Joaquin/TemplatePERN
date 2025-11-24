@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 import { Banknote, Save, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { NumberInput } from "@/components/numberInput";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   fetchGastoById,
   createGasto,
@@ -235,13 +237,16 @@ export default function GastoFormPage() {
 
               <div>
                 <Label htmlFor="fecha_gasto">Fecha*</Label>
-                <Input
+                <DatePicker
                   id="fecha_gasto"
-                  name="expense_date"
-                  type="date"
                   value={formData.expense_date}
-                  onChange={handleChange}
-                  required
+                  onChange={(date) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      expense_date: date ? format(date, "yyyy-MM-dd") : ""
+                    }))
+                  }}
+                  placeholder="Seleccionar fecha"
                 />
               </div>
 

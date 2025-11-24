@@ -18,7 +18,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           name="rut"
           value={formData.rut}
           onChange={handleInputChange}
-          className="w-full border rounded p-2 bg-white text-gray-900"
+          className="w-full border rounded p-2"
         />
       </div>
       <div className="mb-4">
@@ -33,7 +33,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           value={formData.name}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2 bg-white text-gray-900"
+          className="w-full border rounded p-2"
           pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
         />
       </div>
@@ -49,7 +49,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           value={formData.first_surname}
           onChange={handleInputChange}
           required
-          className="w-full border rounded p-2 bg-white text-gray-900"
+          className="w-full border rounded p-2"
           pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$"
         />
       </div>
@@ -64,7 +64,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           placeholder="González"
           value={formData.second_surname}
           onChange={handleInputChange}
-          className="w-full border rounded p-2 bg-white text-gray-900"
+          className="w-full border rounded p-2"
           pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$"
         />
       </div>
@@ -79,7 +79,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           placeholder="usuario@gmail.com"
           value={formData.email}
           onChange={handleInputChange}
-          className="w-full border rounded p-2 bg-white text-gray-900"
+          className="w-full border rounded p-2"
         />
       </div>
       <div className="mb-4">
@@ -94,7 +94,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ formData, handleInputChange
           onChange={handleInputChange}
           required
           placeholder="56912345678"
-          className="w-full border rounded p-2 bg-white text-gray-900"
+          className="w-full border rounded p-2"
         />
       </div>
       {/* Campo oculto para mantener el rol */}

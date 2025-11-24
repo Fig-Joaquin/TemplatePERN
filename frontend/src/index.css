@@ -40,6 +40,37 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #e5e7eb;
   --sidebar-ring: #133270; /* Anillo en el sidebar */
+  
+  /* Tarjetas de resumen - colores de fondo */
+  --stat-blue-bg: #eff6ff;
+  --stat-blue-text: #2563eb;
+  --stat-blue-text-secondary: #1e40af;
+  --stat-green-bg: #f0fdf4;
+  --stat-green-text: #16a34a;
+  --stat-green-text-secondary: #166534;
+  --stat-purple-bg: #faf5ff;
+  --stat-purple-text: #9333ea;
+  --stat-purple-text-secondary: #6b21a8;
+  --stat-orange-bg: #fff7ed;
+  --stat-orange-text: #ea580c;
+  --stat-orange-text-secondary: #9a3412;
+  --stat-red-bg: #fef2f2;
+  --stat-red-text: #dc2626;
+  --stat-red-text-secondary: #991b1b;
+  
+  /* Balance cards */
+  --balance-income-bg: #f0fdf4;
+  --balance-income-border: #bbf7d0;
+  --balance-income-text: #166534;
+  --balance-income-value: #16a34a;
+  --balance-expense-bg: #fef2f2;
+  --balance-expense-border: #fecaca;
+  --balance-expense-text: #991b1b;
+  --balance-expense-value: #dc2626;
+  --balance-net-bg: #eff6ff;
+  --balance-net-border: #bfdbfe;
+  --balance-net-text: #1e40af;
+  --balance-net-value: #2563eb;
 }
 /* Variables para modo oscuro */
 .dark {
@@ -83,10 +114,68 @@
   --sidebar-accent-foreground: #f9fafb;
   --sidebar-border: #374151;
   --sidebar-ring: #3a59a8; /* Anillo en el sidebar */
+  
+  /* Tarjetas de resumen - colores de fondo (modo oscuro) */
+  --stat-blue-bg: #1e3a5f;
+  --stat-blue-text: #60a5fa;
+  --stat-blue-text-secondary: #93c5fd;
+  --stat-green-bg: #14532d;
+  --stat-green-text: #4ade80;
+  --stat-green-text-secondary: #86efac;
+  --stat-purple-bg: #4c1d95;
+  --stat-purple-text: #c084fc;
+  --stat-purple-text-secondary: #d8b4fe;
+  --stat-orange-bg: #7c2d12;
+  --stat-orange-text: #fb923c;
+  --stat-orange-text-secondary: #fdba74;
+  --stat-red-bg: #7f1d1d;
+  --stat-red-text: #f87171;
+  --stat-red-text-secondary: #fca5a5;
+  
+  /* Balance cards (modo oscuro) */
+  --balance-income-bg: #14532d;
+  --balance-income-border: #166534;
+  --balance-income-text: #86efac;
+  --balance-income-value: #4ade80;
+  --balance-expense-bg: #7f1d1d;
+  --balance-expense-border: #991b1b;
+  --balance-expense-text: #fca5a5;
+  --balance-expense-value: #f87171;
+  --balance-net-bg: #1e3a5f;
+  --balance-net-border: #1e40af;
+  --balance-net-text: #93c5fd;
+  --balance-net-value: #60a5fa;
 }
 
 /* Importa TailwindCSS */
 @import "tailwindcss";
+
+/* Estilos para inputs de tipo date en modo oscuro */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* Forzar el esquema de colores oscuro en los pickers nativos */
+.dark input[type="date"],
+.dark input[type="datetime-local"],
+.dark input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Esquema de colores claro para modo normal */
+:root input[type="date"],
+:root input[type="datetime-local"],
+:root input[type="time"] {
+  color-scheme: light;
+}
 
 /* Estilos base */
 body {
@@ -411,6 +500,132 @@ body {
   padding: 0.5em;
   background-color: var(--muted);
   border-radius: 0.25rem;
+}
+
+/* React Day Picker Styles */
+.rdp-root {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: var(--primary);
+  --rdp-background-color: var(--accent);
+  margin: 0;
+  width: 100%;
+}
+
+.rdp-months {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rdp-month {
+  margin: 0;
+  width: 100%;
+}
+
+.rdp-month_caption {
+  display: none;
+}
+
+.rdp-month_grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.rdp-weekdays {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.rdp-weekday {
+  width: var(--rdp-cell-size);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.rdp-week {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+}
+
+.rdp-day {
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--foreground);
+  background-color: transparent;
+  border: none;
+  transition: background-color 0.2s, color 0.2s;
+  padding: 0;
+}
+
+.rdp-day_button {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius);
+  color: inherit;
+  font-size: 0.875rem;
+}
+
+.rdp-day_button:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.rdp-selected .rdp-day_button,
+.rdp-day_button[aria-selected="true"] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.rdp-selected .rdp-day_button:hover,
+.rdp-day_button[aria-selected="true"]:hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.rdp-today .rdp-day_button {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 600;
+}
+
+.rdp-today.rdp-selected .rdp-day_button {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.rdp-outside .rdp-day_button {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+}
+
+.rdp-disabled .rdp-day_button {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rdp-hidden {
+  visibility: hidden;
 }
 
 @keyframes bounce {

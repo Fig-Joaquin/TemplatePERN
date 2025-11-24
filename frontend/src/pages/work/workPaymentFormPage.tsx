@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 import { CreditCard, Save, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { NumberInput } from "@/components/numberInput";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   fetchWorkPaymentById,
   createWorkPayment,
@@ -456,13 +458,16 @@ export default function WorkPaymentFormPage() {
 
               <div>
                 <Label htmlFor="payment_date">Fecha de Pago*</Label>
-                <Input
+                <DatePicker
                   id="payment_date"
-                  name="payment_date"
-                  type="date"
                   value={formData.payment_date}
-                  onChange={handleChange}
-                  required
+                  onChange={(date) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      payment_date: date ? format(date, "yyyy-MM-dd") : ""
+                    }))
+                  }}
+                  placeholder="Seleccionar fecha de pago"
                 />
               </div>
             </div>

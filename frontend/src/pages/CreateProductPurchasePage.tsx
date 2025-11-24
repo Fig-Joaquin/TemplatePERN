@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, ArrowLeft, Package, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   createProductPurchase,
   getProductsForPurchase,
@@ -251,22 +253,20 @@ const CreateProductPurchasePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="purchaseDate">Fecha de Compra *</Label>
-                <Input
+                <DatePicker
                   id="purchaseDate"
-                  type="date"
                   value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
-                  required
+                  onChange={(date) => setPurchaseDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  placeholder="Seleccionar fecha de compra"
                 />
               </div>
               <div>
                 <Label htmlFor="arrivalDate">Fecha de Llegada *</Label>
-                <Input
+                <DatePicker
                   id="arrivalDate"
-                  type="date"
                   value={arrivalDate}
-                  onChange={(e) => setArrivalDate(e.target.value)}
-                  required
+                  onChange={(date) => setArrivalDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  placeholder="Seleccionar fecha de llegada"
                 />
               </div>
             </div>
@@ -280,7 +280,7 @@ const CreateProductPurchasePage = () => {
                 rows={3}
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Mínimo 10 caracteres ({description.length}/500)
               </p>
             </div>
@@ -290,7 +290,7 @@ const CreateProductPurchasePage = () => {
         {/* Products */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center">
               <CardTitle>Productos a Comprar</CardTitle>
               <div className="flex gap-2 items-center">
                 <div className="flex items-center space-x-2">
@@ -301,7 +301,7 @@ const CreateProductPurchasePage = () => {
                     onChange={(e) => setShowOnlyOutOfStock(e.target.checked)}
                     className="rounded border-gray-300"
                   />
-                  <label htmlFor="showOnlyOutOfStock" className="text-sm text-gray-600">
+                  <label htmlFor="showOnlyOutOfStock" className="text-sm text-muted-foreground">
                     Solo sin stock
                   </label>
                 </div>
@@ -353,7 +353,7 @@ const CreateProductPurchasePage = () => {
                                     <Badge variant="destructive" className="text-xs">Sin stock</Badge>
                                   )}
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-sm text-muted-foreground">
                                   {product.type.type_name} - Último precio: {formatPriceCLP(product.last_purchase_price)}
                                   {stockQuantity > 0 && (
                                     <span className="ml-2 text-green-600">Stock: {stockQuantity}</span>
@@ -413,25 +413,25 @@ const CreateProductPurchasePage = () => {
 
                   <div>
                     <Label>Total</Label>
-                    <div className="flex items-center h-10 px-3 border rounded-md bg-gray-50">
+                    <div className="flex items-center h-10 px-3 border rounded-md" style={{ backgroundColor: 'var(--card)' }}>
                       <span className="font-medium">{formatPriceCLP(item.total_price)}</span>
                     </div>
                   </div>
                 </div>
 
                 {item.product && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="mt-4 p-3 rounded-lg border" style={{ backgroundColor: 'var(--stat-blue-bg)', borderColor: 'var(--stat-blue-text)' }}>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600">Tipo:</span> {item.product.type.type_name}
+                        <span className="text-muted-foreground">Tipo:</span> {item.product.type.type_name}
                       </div>
                       {item.product.supplier && (
                         <div>
-                          <span className="text-gray-600">Proveedor:</span> {item.product.supplier.supplier_name}
+                          <span className="text-muted-foreground">Proveedor:</span> {item.product.supplier.supplier_name}
                         </div>
                       )}
                       <div>
-                        <span className="text-gray-600">Precio de venta:</span> {formatPriceCLP(item.product.sale_price)}
+                        <span className="text-muted-foreground">Precio de venta:</span> {formatPriceCLP(item.product.sale_price)}
                       </div>
                       <div>
                         <Badge variant={item.purchase_status === "processed" ? "default" : "destructive"}>
@@ -451,7 +451,7 @@ const CreateProductPurchasePage = () => {
                   <p className="text-lg font-medium">
                     Total General: <span className="text-blue-600">{formatPriceCLP(calculateGrandTotal())}</span>
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {purchaseItems.length} producto{purchaseItems.length !== 1 ? 's' : ''}
                   </p>
                 </div>

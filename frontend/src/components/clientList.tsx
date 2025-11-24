@@ -22,7 +22,7 @@ const ClientList: React.FC<ClientListProps> = ({
   handleDelete,
 }) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg" style={{ backgroundColor: 'var(--card)' }}>
       {persons.length === 0 ? (
         <p>No hay información disponible.</p>
       ) : (

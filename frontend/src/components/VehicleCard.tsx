@@ -62,7 +62,12 @@ export function VehicleCard({ vehicle, onEdit, onDelete, showActions = false }: 
             <Button
               variant="outline"
               size="sm"
-              className="w-full mt-2 bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+              className="w-full mt-2"
+              style={{ 
+                backgroundColor: 'var(--stat-blue-bg)', 
+                color: 'var(--stat-blue-text)',
+                borderColor: 'var(--balance-net-border)'
+              }}
               onClick={() => navigate(`/admin/cotizaciones/nuevo?vehicleId=${vehicle.vehicle_id}`)}
             >
               <FileText className="w-4 h-4 mr-1" />
@@ -71,7 +76,12 @@ export function VehicleCard({ vehicle, onEdit, onDelete, showActions = false }: 
             <Button
               variant="outline"
               size="sm"
-              className="w-full mt-1 bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+              className="w-full mt-1"
+              style={{ 
+                backgroundColor: 'var(--stat-green-bg)', 
+                color: 'var(--stat-green-text)',
+                borderColor: 'var(--balance-income-border)'
+              }}
               onClick={() => navigate(`/admin/nueva-orden-trabajo?vehicleId=${vehicle.vehicle_id}&withoutQuotation=true`)}
             >
               <Wrench className="w-4 h-4 mr-1" />

@@ -11,7 +11,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
     <div className="p-1">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-3">
-          <Label htmlFor="rut" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="rut" className="text-sm font-medium text-muted-foreground">
             RUT (opcional)
           </Label>
           <RutInput
@@ -25,7 +25,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
 
         <div className="grid grid-cols-1 gap-4">
           <div className="space-y-3">
-            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="name" className="text-sm font-medium text-muted-foreground">
               Nombre <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -41,7 +41,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="first_surname" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="first_surname" className="text-sm font-medium text-muted-foreground">
               Primer Apellido <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -58,7 +58,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="second_surname" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="second_surname" className="text-sm font-medium text-muted-foreground">
             Segundo Apellido (opcional)
           </Label>
           <Input
@@ -73,7 +73,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
             Email (opcional)
           </Label>
           <Input
@@ -88,7 +88,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="number_phone" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="number_phone" className="text-sm font-medium text-muted-foreground">
             Teléfono <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -102,7 +102,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleInputChange, ha
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"

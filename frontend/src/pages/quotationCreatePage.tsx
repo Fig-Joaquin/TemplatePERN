@@ -230,52 +230,96 @@ const QuotationCreatePage = () => {
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Sección de selección de vehículo */}
-            <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
-              <Label className="text-lg font-semibold flex items-center gap-2">
-                <Car className="w-5 h-5 text-primary" /> {/* Icono */}
-                Vehículo
-              </Label>
+            {/* Sección de selección de vehículo - Diseño mejorado */}
+            <div className="space-y-5 bg-gradient-to-br from-card to-muted/20 dark:from-card dark:to-muted/10 p-5 rounded-xl border border-border/50 shadow-sm">
+              {/* Header de la sección */}
+              <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                <div className="p-2.5 rounded-lg bg-primary/10 dark:bg-primary/20">
+                  <Car className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <Label className="text-lg font-semibold text-foreground">Vehículo</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Selecciona el tipo de propietario y el vehículo</p>
+                </div>
+              </div>
+
+              {/* Tabs mejorados con iconos */}
               <Tabs
                 value={selectedTabIndex.toString()}
                 onValueChange={(value) => setSelectedTabIndex(Number.parseInt(value))}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50 dark:bg-muted/20 rounded-lg gap-1">
                   <TabsTrigger 
                     value="0" 
-                    className={selectedTabIndex === 0 ? "bg-primary text-destructive-foreground font-bold scale-105 shadow-md" : ""}
+                    className={cn(
+                      "flex items-center justify-center gap-2 h-full rounded-md font-medium transition-all duration-200",
+                      selectedTabIndex === 0 
+                        ? "bg-primary text-primary-foreground shadow-md" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30"
+                    )}
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                     Personas
                   </TabsTrigger>
                   <TabsTrigger 
                     value="1" 
-                    className={selectedTabIndex === 1 ? "bg-primary text-destructive-foreground font-bold scale-105 shadow-md" : ""}
+                    className={cn(
+                      "flex items-center justify-center gap-2 h-full rounded-md font-medium transition-all duration-200",
+                      selectedTabIndex === 1 
+                        ? "bg-primary text-primary-foreground shadow-md" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30"
+                    )}
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
                     Empresas
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
 
+              {/* Selector de vehículo mejorado */}
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between"
+                    className={cn(
+                      "w-full justify-between h-12 px-4 font-normal",
+                      "bg-background dark:bg-background/50 border-border/60",
+                      "hover:bg-muted/50 dark:hover:bg-muted/20 hover:border-primary/50",
+                      "transition-all duration-200",
+                      !selectedVehicle && "text-muted-foreground"
+                    )}
                   >
-                    {selectedVehicle
-                      ? `${selectedVehicle.license_plate} - ${selectedVehicle.model?.brand?.brand_name} ${selectedVehicle.model?.model_name}`
-                      : "Seleccione un vehículo..."}
+                    <div className="flex items-center gap-2 truncate">
+                      {selectedVehicle ? (
+                        <>
+                          <div className="p-1 rounded bg-primary/10 dark:bg-primary/20">
+                            <Car className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <span className="font-medium text-foreground truncate">
+                            {selectedVehicle.license_plate} - {selectedVehicle.model?.brand?.brand_name} {selectedVehicle.model?.model_name}
+                          </span>
+                        </>
+                      ) : (
+                        <span>Seleccione un vehículo...</span>
+                      )}
+                    </div>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Buscar vehículo..." className="h-9" />
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command className="bg-popover">
+                    <CommandInput placeholder="Buscar vehículo..." className="h-10" />
                     <CommandList>
-                      <CommandEmpty>No se encontró vehículo.</CommandEmpty>
+                      <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                        No se encontró vehículo.
+                      </CommandEmpty>
                       <CommandGroup>
                         <ScrollArea className="h-72">
                           {filteredVehicles.map((vehicle) => (
@@ -286,16 +330,23 @@ const QuotationCreatePage = () => {
                                 setSelectedVehicle(vehicle)
                                 setOpen(false)
                               }}
+                              className="flex items-center gap-3 py-3 px-3 cursor-pointer"
                             >
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4",
+                                  "h-4 w-4 text-primary",
                                   selectedVehicle?.vehicle_id === vehicle.vehicle_id ? "opacity-100" : "opacity-0",
                                 )}
                               />
-                              {vehicle.license_plate} - {vehicle.model?.brand?.brand_name}{" "}
-                              {vehicle.model?.model_name} -{" "}
-                              {vehicle.owner ? vehicle.owner.name : vehicle.company?.name}
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {vehicle.license_plate} - {vehicle.model?.brand?.brand_name}{" "}
+                                  {vehicle.model?.model_name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {vehicle.owner ? `👤 ${vehicle.owner.name}` : `🏢 ${vehicle.company?.name}`}
+                                </span>
+                              </div>
                             </CommandItem>
                           ))}
                         </ScrollArea>

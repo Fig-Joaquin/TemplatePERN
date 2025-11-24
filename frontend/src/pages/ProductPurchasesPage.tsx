@@ -154,12 +154,12 @@ const ProductPurchasesPage = () => {
       </div>
 
       {/* Nota informativa */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mb-6 p-4 rounded-lg border" style={{ backgroundColor: 'var(--stat-blue-bg)', borderColor: 'var(--stat-blue-text)' }}>
         <div className="flex items-start gap-3">
-          <Package className="w-5 h-5 text-blue-600 mt-0.5" />
+          <Package className="w-5 h-5 mt-0.5" style={{ color: 'var(--stat-blue-text)' }} />
           <div>
-            <h3 className="font-medium text-blue-900">Gestión de Inventario</h3>
-            <p className="text-sm text-blue-700 mt-1">
+            <h3 className="font-medium" style={{ color: 'var(--stat-blue-text)' }}>Gestión de Inventario</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--stat-blue-text-secondary)' }}>
               Los productos nuevos se crean con stock en 0. Utiliza esta sección para registrar
               compras y agregar inventario inicial a tus productos.
             </p>
@@ -182,8 +182,8 @@ const ProductPurchasesPage = () => {
       {filteredPurchases.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
-            <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-500 text-lg">
+            <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-lg">
               {searchTerm ? "No se encontraron compras que coincidan con la búsqueda" : "No hay compras registradas"}
             </p>
           </CardContent>
@@ -194,25 +194,25 @@ const ProductPurchasesPage = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="text-left p-4 font-medium">Producto</th>
-                    <th className="text-left p-4 font-medium">Tipo</th>
-                    <th className="text-left p-4 font-medium">Cantidad</th>
-                    <th className="text-left p-4 font-medium">Precio Unitario</th>
-                    <th className="text-left p-4 font-medium">Total</th>
-                    <th className="text-left p-4 font-medium">Estado</th>
-                    <th className="text-left p-4 font-medium">Fecha Compra</th>
-                    <th className="text-center p-4 font-medium">Acciones</th>
+                  <tr className="border-b" style={{ backgroundColor: 'var(--card)' }}>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Producto</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Cantidad</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Precio Unitario</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Total</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Estado</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Fecha Compra</th>
+                    <th className="text-center p-4 font-medium text-muted-foreground">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredPurchases.map((purchase) => (
-                    <tr key={purchase.product_purchase_id} className="border-b hover:bg-gray-50">
+                    <tr key={purchase.product_purchase_id} className="border-b transition-colors hover:bg-muted/50">
                       <td className="p-4">
                         <div>
                           <div className="font-medium">{purchase.product.product_name}</div>
                           {purchase.product.supplier && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                               {purchase.product.supplier.supplier_name}
                             </div>
                           )}
@@ -227,14 +227,14 @@ const ProductPurchasesPage = () => {
                       <td className="p-4 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() => handleViewDetails(purchase)}
-                              className="cursor-pointer hover:bg-blue-50"
+                              className="cursor-pointer"
                             >
                               <Eye className="mr-2 h-4 w-4 text-blue-600" />
                               Ver Detalles
@@ -243,7 +243,7 @@ const ProductPurchasesPage = () => {
                             {purchase.purchase_status === "processed" ? (
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(purchase, "returned")}
-                                className="cursor-pointer hover:bg-orange-50"
+                                className="cursor-pointer"
                               >
                                 <Edit className="mr-2 h-4 w-4 text-orange-600" />
                                 Marcar como Devuelto
@@ -251,7 +251,7 @@ const ProductPurchasesPage = () => {
                             ) : (
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(purchase, "processed")}
-                                className="cursor-pointer hover:bg-green-50"
+                                className="cursor-pointer"
                               >
                                 <Edit className="mr-2 h-4 w-4 text-green-600" />
                                 Marcar como Procesado
@@ -260,7 +260,7 @@ const ProductPurchasesPage = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => handleDeleteClick(purchase)}
-                              className="cursor-pointer text-red-600 hover:bg-red-50"
+                              className="cursor-pointer text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Eliminar
@@ -287,42 +287,42 @@ const ProductPurchasesPage = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Producto</label>
+                  <label className="text-sm font-medium text-muted-foreground">Producto</label>
                   <p className="text-sm">{selectedPurchase.product.product_name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Tipo</label>
+                  <label className="text-sm font-medium text-muted-foreground">Tipo</label>
                   <p className="text-sm">{selectedPurchase.product.type.type_name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Cantidad</label>
+                  <label className="text-sm font-medium text-muted-foreground">Cantidad</label>
                   <p className="text-sm">{selectedPurchase.quantity}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Precio Unitario</label>
+                  <label className="text-sm font-medium text-muted-foreground">Precio Unitario</label>
                   <p className="text-sm">{formatPriceCLP(selectedPurchase.purchase_price)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Impuesto</label>
+                  <label className="text-sm font-medium text-muted-foreground">Impuesto</label>
                   <p className="text-sm">{selectedPurchase.tax.tax_rate}%</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Total</label>
+                  <label className="text-sm font-medium text-muted-foreground">Total</label>
                   <p className="text-sm font-medium">{formatPriceCLP(selectedPurchase.total_price)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Estado</label>
+                  <label className="text-sm font-medium text-muted-foreground">Estado</label>
                   <div className="mt-1">
                     {getStatusBadge(selectedPurchase.purchase_status)}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Fecha de Compra</label>
+                  <label className="text-sm font-medium text-muted-foreground">Fecha de Compra</label>
                   <p className="text-sm">{formatDate(selectedPurchase.purchase_history.purchase_date)}</p>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Descripción de la Compra</label>
+                <label className="text-sm font-medium text-muted-foreground">Descripción de la Compra</label>
                 <p className="text-sm mt-1">{selectedPurchase.purchase_history.description}</p>
               </div>
             </div>

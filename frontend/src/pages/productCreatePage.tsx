@@ -323,12 +323,12 @@ const ProductCreatePage = () => {
                   </div>
 
                   {/* Nota sobre el stock */}
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--stat-blue-bg)', borderColor: 'var(--stat-blue-text)' }}>
                     <div className="flex items-start gap-3">
-                      <Package className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <Package className="w-5 h-5 mt-0.5" style={{ color: 'var(--stat-blue-text)' }} />
                       <div>
-                        <h4 className="font-medium text-blue-900">Stock Inicial</h4>
-                        <p className="text-sm text-blue-700 mt-1">
+                        <h4 className="font-medium" style={{ color: 'var(--stat-blue-text)' }}>Stock Inicial</h4>
+                        <p className="text-sm mt-1" style={{ color: 'var(--stat-blue-text-secondary)' }}>
                           El producto se creará con stock en 0. Para agregar inventario inicial,
                           ve a <strong>"Compras de Productos"</strong> después de crear el producto.
                         </p>
