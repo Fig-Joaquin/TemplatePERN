@@ -24,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
 import { fetchVehicles } from "../services/vehicleService"
 import { createQuotation } from "../services/quotationService"
-import { getTaxById } from "@/services/taxService"
+import { getActiveTax } from "@/services/taxService"
 import { createWorkProductDetail } from "@/services/workProductDetail"
 import type { Quotation, Vehicle, Product, StockProduct, WorkProductDetail } from "../types/interfaces"
 import { fetchProducts } from "../services/productService"
@@ -35,11 +35,14 @@ import { formatPriceCLP } from "@/utils/formatPriceCLP"
 
 const fetchTax = async () => {
   try {
-    const res = await getTaxById(1)
-    const TAX_RATE = res.tax_rate / 100
-    return TAX_RATE
+    const res = await getActiveTax()
+    // Asegurar que tax_rate sea número (PostgreSQL puede devolverlo como string)
+    const taxRateNum = Number(res.tax_rate)
+    const TAX_RATE = taxRateNum / 100
+    return { rate: TAX_RATE, taxId: res.tax_id, taxRatePercent: taxRateNum }
   } catch (error) {
-    toast.error("Error al cargar stock de productos")
+    toast.error("Error al cargar el impuesto activo")
+    return { rate: 0.19, taxId: 1, taxRatePercent: 19 } // Fallback a IVA 19%
   }
 }
 
@@ -55,7 +58,7 @@ const QuotationCreatePage = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const vehicleIdFromUrl = queryParams.get('vehicleId');
-  
+
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicleQuery] = useState("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -67,6 +70,8 @@ const QuotationCreatePage = () => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [taxRate, setTaxRate] = useState<number>(0);
+  const [activeTaxId, setActiveTaxId] = useState<number>(1);
+  const [taxRatePercent, setTaxRatePercent] = useState<number>(19);
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
   useEffect(() => {
@@ -74,7 +79,7 @@ const QuotationCreatePage = () => {
       try {
         const res = await fetchVehicles();
         setVehicles(res);
-        
+
         // Si hay un vehicleId en la URL, seleccionar ese vehículo
         if (vehicleIdFromUrl) {
           const vehicleFromUrl = res.find(v => v.vehicle_id === Number(vehicleIdFromUrl));
@@ -86,7 +91,7 @@ const QuotationCreatePage = () => {
         toast.error(error.response?.data?.message || error.message || "Error al cargar vehículos");
       }
     };
-    
+
     const fetchProductsData = async () => {
       try {
         const res = await fetchProducts();
@@ -108,9 +113,11 @@ const QuotationCreatePage = () => {
     fetchVehiclesData();
     fetchProductsData();
     fetchStockProductsData();
-    fetchTax().then((rate) => {
-      if (rate !== undefined) {
-        setTaxRate(rate);
+    fetchTax().then((taxData) => {
+      if (taxData) {
+        setTaxRate(taxData.rate);
+        setActiveTaxId(taxData.taxId);
+        setTaxRatePercent(taxData.taxRatePercent);
       }
     });
   }, [vehicleIdFromUrl]);
@@ -154,10 +161,15 @@ const QuotationCreatePage = () => {
     }
     setLoading(true)
     try {
+      // Crear cotización con la tasa de IVA histórica
       const newQuotation: Quotation = {
         vehicle_id: selectedVehicle.vehicle_id,
         quotation_status: "pending",
         total_price: Math.trunc(totalPrice),
+        // Guardar la tasa de IVA del momento de creación (asegurar que sea número)
+        tax_rate: Number(taxRatePercent),
+        subtotal: Math.trunc(subtotalWithoutTax),
+        tax_amount: Math.trunc(taxAmount),
         ...(description && description.trim() !== "" && { description }),
       }
 
@@ -170,7 +182,8 @@ const QuotationCreatePage = () => {
             product_id: product?.product_id as number,
             quantity,
             labor_price: laborPrice,
-            tax_id: 1, // Valor por defecto para IVA (19%)
+            tax_id: activeTaxId, // Usar el ID del impuesto activo
+            applied_tax_rate: taxRatePercent, // Guardar la tasa aplicada
             sale_price: product
               ? calculateTotalWithMargin(
                 Number(product.sale_price),
@@ -250,12 +263,12 @@ const QuotationCreatePage = () => {
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50 dark:bg-muted/20 rounded-lg gap-1">
-                  <TabsTrigger 
-                    value="0" 
+                  <TabsTrigger
+                    value="0"
                     className={cn(
                       "flex items-center justify-center gap-2 h-full rounded-md font-medium transition-all duration-200",
-                      selectedTabIndex === 0 
-                        ? "bg-primary text-primary-foreground shadow-md" 
+                      selectedTabIndex === 0
+                        ? "bg-primary text-primary-foreground shadow-md"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30"
                     )}
                   >
@@ -264,12 +277,12 @@ const QuotationCreatePage = () => {
                     </svg>
                     Personas
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="1" 
+                  <TabsTrigger
+                    value="1"
                     className={cn(
                       "flex items-center justify-center gap-2 h-full rounded-md font-medium transition-all duration-200",
-                      selectedTabIndex === 1 
-                        ? "bg-primary text-primary-foreground shadow-md" 
+                      selectedTabIndex === 1
+                        ? "bg-primary text-primary-foreground shadow-md"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30"
                     )}
                   >
@@ -468,7 +481,7 @@ const QuotationCreatePage = () => {
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between p-2 rounded bg-accent/5">
-                          <span>IVA (19%):</span>
+                          <span>IVA ({taxRatePercent}%):</span>
                           <span className="font-medium">{formatPriceCLP(taxAmount)}</span>
                         </div>
                         <div className="flex justify-between p-2 rounded bg-primary/10 font-bold">

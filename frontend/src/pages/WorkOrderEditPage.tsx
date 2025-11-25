@@ -64,6 +64,7 @@ import {
   deleteWorkOrderTechnician,
 } from "@/services/workOrderTechnicianService";
 import { Person, WorkOrderTechnician } from "@/types/interfaces";
+import { getActiveTax } from "@/services/taxService";
 
 const WorkOrderEditPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,7 +82,9 @@ const WorkOrderEditPage = () => {
   const [, setSelectedProductId] = useState<number | null>(null);
   const [, setProductQuantity] = useState<number>(1);
   const [, setProductLaborPrice] = useState<number>(0);
-  const [taxRate] = useState<number>(0.19);
+  const [taxRate, setTaxRate] = useState<number>(0.19);
+  const [activeTaxId, setActiveTaxId] = useState<number>(1);
+  const [taxRatePercent, setTaxRatePercent] = useState<number>(19);
   // Para distinguir órdenes basadas en cotización
   const [isQuotationBased, setIsQuotationBased] = useState<boolean>(false);
   const [quotationProducts, setQuotationProducts] = useState<any[]>([]);
@@ -102,6 +105,19 @@ const WorkOrderEditPage = () => {
         // Cargar stock
         const stockData = await getStockProducts();
         setStockProducts(stockData);
+
+        // Cargar tasa de impuesto activa
+        try {
+          const taxData = await getActiveTax();
+          // Asegurar que tax_rate sea número (PostgreSQL puede devolverlo como string)
+          const taxRateNum = Number(taxData.tax_rate);
+          const rate = taxRateNum / 100;
+          setTaxRate(rate);
+          setActiveTaxId(taxData.tax_id);
+          setTaxRatePercent(taxRateNum);
+        } catch (taxErr) {
+          console.warn("Error loading tax, using default 19%:", taxErr);
+        }
 
         await loadWorkOrder();
       } catch (err: any) {
@@ -402,6 +418,9 @@ const WorkOrderEditPage = () => {
         description,
         order_status: status as "finished" | "in_progress" | "not_started",
         total_amount: totalAmount,
+        tax_rate: Number(taxRatePercent),
+        subtotal: Math.trunc(subtotal),
+        tax_amount: Math.trunc(ivaAmount),
       });
 
       // Process deletions first - Only use the productsToDelete list to avoid duplicates
@@ -457,7 +476,8 @@ const WorkOrderEditPage = () => {
           sale_price: Number(Number(product.sale_price).toFixed(2)),
           labor_price: Number(Number(product.labor_price || 0).toFixed(2)),
           discount: Number(product.discount || 0),
-          tax_id: Number(product.tax_id || 1),
+          tax_id: Number(product.tax_id || activeTaxId),
+          applied_tax_rate: Number(taxRatePercent),
           ...(isQuotationBased
             ? { quotation_id: Number(orderData.quotation.quotation_id) }
             : { work_order_id: Number(id) }
@@ -1044,7 +1064,7 @@ const WorkOrderEditPage = () => {
                   </div>
                   <div className="p-3 rounded bg-accent/5">
                     <div className="flex justify-between">
-                      <span>IVA (19%):</span>
+                      <span>IVA ({taxRatePercent}%):</span>
                       <span className="font-medium">{formatPriceCLP(ivaAmount)}</span>
                     </div>
                   </div>

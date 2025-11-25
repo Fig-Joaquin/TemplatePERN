@@ -16,6 +16,13 @@ const WorkOrderSchemaBase = z.object({
     }).max(1000, {
         message: "La descripción no puede exceder los 1000 caracteres"
     }),
+    // Nuevos campos para mantener la tasa de IVA histórica
+    tax_rate: z.number()
+        .min(0, { message: "La tasa de impuesto no puede ser negativa" })
+        .max(100, { message: "La tasa de impuesto no puede ser mayor al 100%" })
+        .optional(),
+    subtotal: z.number().min(0).optional(),
+    tax_amount: z.number().min(0).optional(),
 });
 
 // Schema with transform for creation

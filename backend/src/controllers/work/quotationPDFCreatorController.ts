@@ -178,9 +178,13 @@ export const generateQuotationPDF = async (req: Request, res: Response): Promise
 
         let subTotal = 0;
         let totalIVA = 0;
+        // Obtener la tasa de IVA del primer detalle o usar la de la cotización
+        let displayTaxRate = 19; // Default
 
-        details.forEach(detail => {
-            const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+        for (const detail of details) {
+            // Preferir applied_tax_rate (histórico) sobre tax.tax_rate
+            const taxRate = Number(detail.applied_tax_rate ?? detail.tax?.tax_rate ?? 19) / 100;
+            displayTaxRate = taxRate * 100; // Guardar para mostrar en el PDF
             const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
             const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
             const laborPrice = Number(detail.labor_price || 0);
@@ -208,7 +212,7 @@ export const generateQuotationPDF = async (req: Request, res: Response): Promise
             totalIVA += iva;
             // Incrementar la posición en Y incluyendo el margen inferior del product name
             yPos += 25 + productMarginTop + productMarginBottom;
-        });
+        }
 
         // Línea separadora antes de los totales
         doc.lineWidth(0.5)
@@ -226,7 +230,7 @@ export const generateQuotationPDF = async (req: Request, res: Response): Promise
             .text(formatPriceCLP(subTotal), totalX, yPos);
 
         yPos += 20;
-        doc.text('IVA (19.00%)', labelX, yPos)
+        doc.text(`IVA (${displayTaxRate.toFixed(2)}%)`, labelX, yPos)
             .text(formatPriceCLP(totalIVA), totalX, yPos);
 
         // Línea gruesa antes del total final

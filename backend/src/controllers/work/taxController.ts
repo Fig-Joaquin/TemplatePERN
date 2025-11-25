@@ -14,9 +14,36 @@ export const getAllTaxes = async (_req: Request, res: Response, _next: NextFunct
     }
 };
 
+/**
+ * Obtiene el impuesto activo (is_default = true).
+ * Si no hay ninguno marcado como default, devuelve el primero disponible.
+ * Este endpoint debe usarse para nuevas cotizaciones/órdenes de trabajo.
+ */
+export const getActiveTax = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        // Buscar primero por is_default = true
+        let tax = await taxRepository.findOne({ where: { is_default: true } });
+        
+        // Si no hay ninguno marcado como default, buscar por código "IVA"
+        tax ??= await taxRepository.findOne({ where: { code: "IVA" } });
+        
+        // Si aún no hay, obtener el primero disponible
+        tax ??= await taxRepository.findOne({ where: {} });
+        
+        if (!tax) {
+            res.status(404).json({ message: "No hay impuestos configurados en el sistema" });
+            return;
+        }
+
+        res.json(tax);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener el impuesto activo", error });
+    }
+};
+
 export const getTaxById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number.parseInt(req.params.id);
         if (Number.isNaN(id)) {
             res.status(400).json({ message: "El ID debe ser un número válido" });
             return;
@@ -55,7 +82,7 @@ export const createTax = async (req: Request, res: Response, _next: NextFunction
 
 export const updateTax = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number.parseInt(req.params.id);
         if (Number.isNaN(id)) {
             res.status(400).json({ message: "El ID debe ser un número válido" });
             return;
@@ -86,7 +113,7 @@ export const updateTax = async (req: Request, res: Response, _next: NextFunction
 
 export const deleteTax = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number.parseInt(req.params.id);
         if (Number.isNaN(id)) {
             res.status(400).json({ message: "El ID debe ser un número válido" });
             return;

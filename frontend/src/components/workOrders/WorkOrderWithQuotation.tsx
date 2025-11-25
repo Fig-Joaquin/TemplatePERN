@@ -29,7 +29,7 @@ import { createWorkOrder } from "../../services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "../../services/workProductDetail";
 import { getStockProducts, updateStockProduct } from "../../services/stockProductService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
-import { getTaxById } from "@/services/taxService";
+import { getActiveTax } from "@/services/taxService";
 import { getChileanISOString, formatChileanDate } from "@/utils/dateUtils";
 import { translateQuotationStatus } from "@/utils/statusTranslations";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
   const [loading, setLoading] = useState(false);
   const [productDetails, setProductDetails] = useState<WorkProductDetail[]>([]);
   const [taxRate, setTaxRate] = useState<number>(0);
+  const [taxRatePercent, setTaxRatePercent] = useState<number>(19);
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
 
   // Nuevo estado para filtrar el tipo: "all", "person" o "company"
@@ -100,9 +101,12 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
   useEffect(() => {
     const fetchTax = async () => {
       try {
-        const res = await getTaxById(1);
-        const tax = res.tax_rate / 100;
+        const res = await getActiveTax();
+        // Asegurar que tax_rate sea número (PostgreSQL puede devolverlo como string)
+        const taxRateNum = Number(res.tax_rate);
+        const tax = taxRateNum / 100;
         setTaxRate(tax);
+        setTaxRatePercent(taxRateNum);
       } catch (error: any) {
         toast.error(error.response?.data?.message || error.message || "Error al cargar impuesto");
       }
@@ -212,12 +216,20 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
     setLoading(true);
     try {
+      // Calcular subtotal e IVA
+      const subtotalWithoutTax = finalTotal / (1 + taxRate);
+      const taxAmountCalc = finalTotal - subtotalWithoutTax;
+
       const workOrderPayload: Partial<WorkOrderInput> = {
         vehicle_id: selectedVehicle.vehicle_id,
         quotation_id: selectedQuotation.quotation_id,
         total_amount: Math.trunc(finalTotal),
         description,
         order_date: getChileanISOString(), // Usar formato ISO con hora chilena preservada
+        // Guardar la tasa de IVA del momento de creación
+        tax_rate: Number(taxRatePercent),
+        subtotal: Math.trunc(subtotalWithoutTax),
+        tax_amount: Math.trunc(taxAmountCalc),
       };
 
       console.log("Enviando orden con fecha chilena:", workOrderPayload.order_date);
@@ -415,11 +427,11 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                                         : "hover:opacity-80"
                                     )}
                                     style={{
-                                      backgroundColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id 
-                                        ? 'var(--stat-blue-bg)' 
+                                      backgroundColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id
+                                        ? 'var(--stat-blue-bg)'
                                         : 'var(--card)',
-                                      borderColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id 
-                                        ? 'var(--balance-net-border)' 
+                                      borderColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id
+                                        ? 'var(--balance-net-border)'
                                         : 'var(--border)'
                                     }}
                                     whileHover={{ scale: 1.02 }}
@@ -458,9 +470,9 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                     {selectedVehicle && (
                       <motion.div
                         className="mt-4 p-4 rounded-lg border"
-                        style={{ 
-                          backgroundColor: 'var(--stat-green-bg)', 
-                          borderColor: 'var(--balance-income-border)' 
+                        style={{
+                          backgroundColor: 'var(--stat-green-bg)',
+                          borderColor: 'var(--balance-income-border)'
                         }}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -509,11 +521,11 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                                   : "hover:opacity-80"
                               )}
                               style={{
-                                backgroundColor: selectedQuotation?.quotation_id === q.quotation_id 
-                                  ? 'var(--stat-purple-bg)' 
+                                backgroundColor: selectedQuotation?.quotation_id === q.quotation_id
+                                  ? 'var(--stat-purple-bg)'
                                   : 'var(--card)',
-                                borderColor: selectedQuotation?.quotation_id === q.quotation_id 
-                                  ? 'var(--stat-purple-text)' 
+                                borderColor: selectedQuotation?.quotation_id === q.quotation_id
+                                  ? 'var(--stat-purple-text)'
                                   : 'var(--border)'
                               }}
                               whileHover={{ scale: 1.02 }}
@@ -699,7 +711,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
                                 </tr>
                                 <tr>
                                   <td className="px-6 py-4 text-sm font-bold" style={{ color: 'var(--foreground)' }} colSpan={5}>
-                                    IVA (19%):
+                                    IVA ({taxRatePercent}%):
                                   </td>
                                   <td className="px-6 py-4 text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
                                     {formatPriceCLP(taxAmount)}

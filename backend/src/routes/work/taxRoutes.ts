@@ -2,6 +2,7 @@ import { Router } from "express";
 import { 
 
 getAllTaxes,
+getActiveTax,
 getTaxById,
 createTax,
 updateTax,
@@ -11,6 +12,7 @@ deleteTax
 const router = Router();
 
 router.get("/", getAllTaxes);
+router.get("/active", getActiveTax); // Nuevo endpoint para obtener el impuesto activo
 router.get("/:id", getTaxById);
 router.post("/", createTax);
 router.put("/:id", updateTax);

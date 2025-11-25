@@ -88,8 +88,10 @@ export interface Quotation {
   quotation_status: QuotationStatus
   total_price: number
   details?: WorkProductDetail[];
-  
-  // Agrega otras propiedades relevantes si es necesario
+  // Campos para mantener la tasa de IVA histórica
+  tax_rate?: number;      // Tasa de IVA aplicada al momento de crear la cotización
+  subtotal?: number;      // Subtotal sin IVA
+  tax_amount?: number;    // Monto del IVA calculado
 }
 
 export interface WorkOrder {
@@ -103,6 +105,10 @@ export interface WorkOrder {
   quotation?: Quotation
   technicians?: Array<WorkOrderTechnician | Person>
   productDetails?: WorkProductDetail[]
+  // Campos para mantener la tasa de IVA histórica
+  tax_rate?: number;      // Tasa de IVA aplicada al momento de crear la orden
+  subtotal?: number;      // Subtotal sin IVA
+  tax_amount?: number;    // Monto del IVA calculado
 }
 
 export interface WorkProductDetail {
@@ -119,6 +125,7 @@ export interface WorkProductDetail {
   sale_price: number
   discount: number
   labor_price: number
+  applied_tax_rate?: number; // Tasa de IVA aplicada al momento de crear el detalle
 }
 
 export interface Product {
@@ -165,6 +172,9 @@ export interface ProductCategory {
 export interface Tax {
   tax_id: number
   tax_rate: number
+  code?: string;      // Código del impuesto (ej: "IVA")
+  name?: string;      // Nombre del impuesto
+  is_default?: boolean; // Indica si es el impuesto activo/por defecto
 }
 
 export interface NumberInputProps {
@@ -208,6 +218,10 @@ export interface WorkOrderInput {
   entry_date?: string;
   total_amount: number;
   order_date?: string;
+  // Campos para mantener la tasa de IVA histórica
+  tax_rate?: number;
+  subtotal?: number;
+  tax_amount?: number;
 }
 
 export interface WorkOrderUpdateInput {

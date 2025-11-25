@@ -37,7 +37,7 @@ export default function QuotationPage() {
   // First, add a state for controlling the delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [quotationToDelete, setQuotationToDelete] = useState<number | null>(null)
-  
+
   // Estado para manejar la actualización de estado
   const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null)
 
@@ -84,11 +84,11 @@ export default function QuotationPage() {
     setUpdatingStatusId(quotationId)
     try {
       const result = await updateQuotationStatus(quotationId, newStatus)
-      
+
       // Actualizar el estado local de las cotizaciones
-      setQuotations(prevQuotations => 
-        prevQuotations.map(q => 
-          q.quotation_id === quotationId 
+      setQuotations(prevQuotations =>
+        prevQuotations.map(q =>
+          q.quotation_id === quotationId
             ? { ...q, quotation_status: newStatus }
             : q
         )
@@ -225,8 +225,8 @@ export default function QuotationPage() {
                             </TableHeader>
                             <TableBody>
                               {quotation.details.map((detail, index) => {
-                                // Get tax rate from detail
-                                const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+                                // Get tax rate from detail - preferir applied_tax_rate (histórico) sobre tax.tax_rate
+                                const taxRate = Number(detail.applied_tax_rate ?? detail.tax?.tax_rate ?? 19) / 100;
                                 // Get profit margin from product
                                 const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
 
@@ -247,7 +247,7 @@ export default function QuotationPage() {
                                     <TableCell>{formatPriceCLP(Number(detail.labor_price))}</TableCell>
                                     <TableCell>
                                       {formatPriceCLP(finalPrice)}
-                                      <span className="text-xs text-gray-500 block">(IVA incluido)</span>
+                                      <span className="text-xs text-gray-500 block">(IVA {taxRate * 100}% incluido)</span>
                                     </TableCell>
                                   </TableRow>
                                 );
@@ -258,7 +258,7 @@ export default function QuotationPage() {
                                   {formatPriceCLP(
                                     quotation.details.reduce((total, detail) => {
                                       const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
-                                      const taxRate = Number(detail.tax?.tax_rate || 0) / 100;
+                                      const taxRate = Number(detail.applied_tax_rate ?? detail.tax?.tax_rate ?? 19) / 100;
                                       const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
                                       const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
                                       return total + (subtotalBeforeTax * (1 + taxRate));
@@ -296,12 +296,12 @@ export default function QuotationPage() {
                   </div>
                 </DialogContent>
               </Dialog>
-              
+
               {/* Dropdown para cambiar estado */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="flex items-center"
                     disabled={updatingStatusId === quotation.quotation_id}
@@ -311,7 +311,7 @@ export default function QuotationPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleStatusChange(quotation.quotation_id!, "approved")}
                     disabled={quotation.quotation_status === "approved"}
                     className="flex items-center gap-2"
@@ -322,7 +322,7 @@ export default function QuotationPage() {
                       <span className="text-xs text-muted-foreground ml-2">(Crea orden de trabajo)</span>
                     )}
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleStatusChange(quotation.quotation_id!, "pending")}
                     disabled={quotation.quotation_status === "pending"}
                     className="flex items-center gap-2"
@@ -330,7 +330,7 @@ export default function QuotationPage() {
                     <Clock className="w-4 h-4 text-yellow-600" />
                     <span>Pendiente</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleStatusChange(quotation.quotation_id!, "rejected")}
                     disabled={quotation.quotation_status === "rejected"}
                     className="flex items-center gap-2"
@@ -340,7 +340,7 @@ export default function QuotationPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               <Button
                 variant="outline"
                 size="sm"

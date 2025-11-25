@@ -23,7 +23,7 @@ import { formatDate } from "@/utils/formDate";
 import { toast } from "react-toastify";
 import { deleteWorkOrder } from "@/services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
-import { getTaxById } from "@/services/taxService";
+import { getActiveTax } from "@/services/taxService";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 import { MoreHorizontal, Edit, UserPlus, Trash2 } from "lucide-react";
 
@@ -90,18 +90,30 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
     }
   }, [quotation, productDetails, initialDetails]);
 
-  // Cargar tax rate (IVA)
+  // Cargar tax rate (IVA) - Usar el guardado en el documento si existe, sino obtener el activo
   useEffect(() => {
     const fetchTax = async () => {
+      // Si la orden tiene una tasa de IVA guardada, usarla (histórica)
+      if (workOrder.tax_rate !== undefined && workOrder.tax_rate !== null) {
+        setTaxRate(Number(workOrder.tax_rate) / 100);
+        return;
+      }
+      // Si la cotización tiene una tasa de IVA guardada, usarla
+      if (quotation?.tax_rate !== undefined && quotation?.tax_rate !== null) {
+        setTaxRate(Number(quotation.tax_rate) / 100);
+        return;
+      }
+      // Fallback: obtener el impuesto activo del sistema
       try {
-        const res = await getTaxById(1);
-        setTaxRate(res.tax_rate / 100);
+        const res = await getActiveTax();
+        setTaxRate(Number(res.tax_rate) / 100);
       } catch (error: any) {
         toast.error(error.response?.data?.message || error.message || "Error al cargar el impuesto");
+        setTaxRate(0.19); // Fallback a 19%
       }
     };
     fetchTax();
-  }, []);
+  }, [workOrder.tax_rate, quotation?.tax_rate]);
 
   // Fetch assigned technicians
   useEffect(() => {

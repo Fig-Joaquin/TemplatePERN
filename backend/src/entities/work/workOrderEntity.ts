@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from "typeorm";
-import { IsString, IsNumber, Min } from "class-validator";
+import { IsString, IsNumber, Min, IsOptional, Max } from "class-validator";
 import { Vehicle, Quotation, Debtor, WorkProductDetail, WorkPayment } from "..";
 import { WorkOrderTechnician } from "./workOrderTechnician";
 
@@ -32,6 +32,36 @@ export class WorkOrder {
     @IsNumber()
     @Min(0, { message: "El monto total no puede ser negativo" })
     total_amount!: number;
+
+    /**
+     * Tasa de IVA aplicada al momento de crear la orden de trabajo.
+     * Este valor se guarda para mantener la consistencia histórica,
+     * independientemente de los cambios futuros en la tabla de impuestos.
+     */
+    @Column({ type: "decimal", precision: 5, scale: 2, nullable: true })
+    @IsNumber()
+    @IsOptional()
+    @Min(0, { message: "La tasa de impuesto no puede ser negativa" })
+    @Max(100, { message: "La tasa de impuesto no puede ser mayor al 100%" })
+    tax_rate?: number;
+
+    /**
+     * Subtotal sin IVA (precio neto)
+     */
+    @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+    @IsNumber()
+    @IsOptional()
+    @Min(0)
+    subtotal?: number;
+
+    /**
+     * Monto del IVA calculado
+     */
+    @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+    @IsNumber()
+    @IsOptional()
+    @Min(0)
+    tax_amount?: number;
 
     @Column({ 
         type: "enum",

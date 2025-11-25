@@ -28,7 +28,7 @@ import { fetchProducts } from "../../services/productService";
 import { getStockProducts, updateStockProduct } from "../../services/stockProductService";
 import { createWorkOrder } from "../../services/workOrderService";
 import { createWorkProductDetail } from "../../services/workProductDetail";
-import { getTaxById } from "@/services/taxService";
+import { getActiveTax } from "@/services/taxService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,8 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [taxRate, setTaxRate] = useState<number>(0);
+  const [activeTaxId, setActiveTaxId] = useState<number>(1);
+  const [taxRatePercent, setTaxRatePercent] = useState<number>(19);
 
   // Estados de UI
   const [vehicleQuery, setVehicleQuery] = useState("");
@@ -85,8 +87,13 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         const stockData = await getStockProducts();
         setStockProducts(stockData);
 
-        const tax = await getTaxById(1);
-        setTaxRate(tax.tax_rate / 100);
+        // Obtener el impuesto activo del sistema
+        const tax = await getActiveTax();
+        // Asegurar que tax_rate sea número (PostgreSQL puede devolverlo como string)
+        const taxRateNum = Number(tax.tax_rate);
+        setTaxRate(taxRateNum / 100);
+        setActiveTaxId(tax.tax_id);
+        setTaxRatePercent(taxRateNum);
       } catch (error: any) {
         toast.error(error.response?.data?.message || error.message || "Error al cargar datos iniciales");
       }
@@ -171,12 +178,20 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     setLoading(true);
 
     try {
+      // Calcular subtotal sin IVA para la orden
+      const subtotalWithoutTax = finalTotal / (1 + taxRate);
+      const taxAmountCalc = finalTotal - subtotalWithoutTax;
+
       const workOrderData: WorkOrderInput = {
         vehicle_id: selectedVehicle.vehicle_id,
         description,
         order_status: "not_started",
-        order_date: new Date().toISOString().split('T')[0], // Convert to string format
+        order_date: new Date().toISOString().split('T')[0],
         total_amount: finalTotal,
+        // Guardar la tasa de IVA del momento de creación (asegurar que sea número)
+        tax_rate: Number(taxRatePercent),
+        subtotal: Math.trunc(subtotalWithoutTax),
+        tax_amount: Math.trunc(taxAmountCalc),
       };
 
       const workOrder = await createWorkOrder(workOrderData);
@@ -192,10 +207,11 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
           work_order_id: workOrder.work_order_id,
           product_id: selectedProduct.productId,
           quantity: selectedProduct.quantity,
-          sale_price: finalProductPrice, // Use sale_price instead of unit_price
+          sale_price: finalProductPrice,
           discount: 0,
           labor_price: selectedProduct.laborPrice,
-          tax_id: 1,
+          tax_id: activeTaxId, // Usar el ID del impuesto activo
+          applied_tax_rate: taxRatePercent, // Guardar la tasa aplicada
         };
 
         await createWorkProductDetail(workProductDetailData);

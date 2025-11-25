@@ -47,16 +47,16 @@ const VehicleSearchPage = () => {
     try {
       const foundVehicle = await fetchVehicleByLicensePlate(licensePlate.trim()) as VehicleWithDetails;
       setVehicle(foundVehicle);
-      
+
       // Extraer las cotizaciones y órdenes de trabajo que vienen en la respuesta
       if (foundVehicle.quotations) {
         setQuotations(foundVehicle.quotations);
       }
-      
+
       if (foundVehicle.workOrders) {
         setWorkOrders(foundVehicle.workOrders);
       }
-      
+
       toast.success("Vehículo encontrado exitosamente");
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Vehículo no encontrado en el sistema";
@@ -113,7 +113,7 @@ const VehicleSearchPage = () => {
       'finished': { variant: 'default' as const, label: 'Completada', className: 'bg-green-600 text-white' },
       'cancelled': { variant: 'destructive' as const, label: 'Cancelada', className: '' }
     };
-    
+
     return statusMap[status as keyof typeof statusMap] || { variant: 'outline' as const, label: status, className: 'border-slate-400 bg-slate-100 text-slate-700' };
   };
 
@@ -158,7 +158,7 @@ const VehicleSearchPage = () => {
             {productDetails.length} {productDetails.length === 1 ? 'producto' : 'productos'}
           </Badge>
         </div>
-        
+
         <div className="space-y-3">
           {productDetails.map((detail, index) => {
             const product = detail.product;
@@ -195,7 +195,7 @@ const VehicleSearchPage = () => {
                         x{quantity}
                       </Badge>
                     </div>
-                    
+
                     {/* Tags de categoría */}
                     {(product?.type?.type_name || product?.type?.category?.category_name || product?.supplier?.name) && (
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -331,7 +331,7 @@ const VehicleSearchPage = () => {
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-3xl"></div>
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/20">
@@ -378,9 +378,9 @@ const VehicleSearchPage = () => {
                 <Car className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               </div>
               <div className="flex gap-2">
-                <Button 
-                  onClick={handleSearch} 
-                  disabled={loading || !licensePlate.trim()} 
+                <Button
+                  onClick={handleSearch}
+                  disabled={loading || !licensePlate.trim()}
                   size="lg"
                   className="h-14 px-8 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
                 >
@@ -429,7 +429,7 @@ const VehicleSearchPage = () => {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <h2 className="text-3xl font-bold tracking-wider">{vehicle.license_plate}</h2>
-                        <Badge 
+                        <Badge
                           variant={vehicle.vehicle_status === "running" ? "secondary" : "destructive"}
                           className={`text-sm px-3 py-1 ${vehicle.vehicle_status === "running" ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}
                         >
@@ -506,7 +506,7 @@ const VehicleSearchPage = () => {
                       Propietario
                     </div>
                     <Separator />
-                    
+
                     {vehicle.owner ? (
                       <div className="space-y-3">
                         <div className="flex items-center gap-3 p-3 bg-blue-100 rounded-lg border border-blue-200">
@@ -593,13 +593,12 @@ const VehicleSearchPage = () => {
                           .sort((a, b) => new Date(b.registration_date).getTime() - new Date(a.registration_date).getTime())
                           .slice(0, 4)
                           .map((record, index) => (
-                            <div 
-                              key={record.mileage_history_id} 
-                              className={`flex justify-between items-center p-3 rounded-lg transition-colors ${
-                                index === 0 
-                                  ? 'bg-green-100 border border-green-200' 
+                            <div
+                              key={record.mileage_history_id}
+                              className={`flex justify-between items-center p-3 rounded-lg transition-colors ${index === 0
+                                  ? 'bg-green-100 border border-green-200'
                                   : 'bg-slate-100 hover:bg-slate-200'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-slate-500" />
@@ -632,13 +631,12 @@ const VehicleSearchPage = () => {
             {/* Tabs mejoradas para cotizaciones y órdenes de trabajo */}
             <Tabs defaultValue="quotations" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2 h-14 p-1.5 bg-slate-100 border border-slate-200 rounded-xl shadow-sm">
-                <TabsTrigger 
+                <TabsTrigger
                   value="quotations"
-                  className={`flex items-center justify-center gap-2 h-full rounded-lg font-semibold transition-all duration-300 ${
-                    activeTab === 'quotations' 
-                      ? 'bg-primary text-white shadow-lg' 
+                  className={`flex items-center justify-center gap-2 h-full rounded-lg font-semibold transition-all duration-300 ${activeTab === 'quotations'
+                      ? 'bg-primary text-white shadow-lg'
                       : 'text-slate-600 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   <FileText className="w-5 h-5" />
                   <span>Cotizaciones</span>
@@ -646,13 +644,12 @@ const VehicleSearchPage = () => {
                     {quotations.length}
                   </Badge>
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="workorders"
-                  className={`flex items-center justify-center gap-2 h-full rounded-lg font-semibold transition-all duration-300 ${
-                    activeTab === 'workorders' 
-                      ? 'bg-primary text-white shadow-lg' 
+                  className={`flex items-center justify-center gap-2 h-full rounded-lg font-semibold transition-all duration-300 ${activeTab === 'workorders'
+                      ? 'bg-primary text-white shadow-lg'
                       : 'text-slate-600 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   <Wrench className="w-5 h-5" />
                   <span>Órdenes de Trabajo</span>
@@ -679,8 +676,8 @@ const VehicleSearchPage = () => {
                     {quotations.length > 0 ? (
                       <div className="space-y-4">
                         {quotations.map((quotation, index) => (
-                          <Card 
-                            key={quotation.quotation_id} 
+                          <Card
+                            key={quotation.quotation_id}
                             className="border-l-4 border-l-orange-500 hover:shadow-md transition-all duration-300 overflow-hidden bg-white"
                           >
                             <CardContent className="p-0">
@@ -689,7 +686,7 @@ const VehicleSearchPage = () => {
                                   {/* Info izquierda */}
                                   <div className="space-y-3 flex-1">
                                     <div className="flex items-center gap-3 flex-wrap">
-                                      <Badge 
+                                      <Badge
                                         variant={getStatusBadge(quotation.quotation_status).variant}
                                         className={`text-sm px-3 py-1 ${getStatusBadge(quotation.quotation_status).className}`}
                                       >
@@ -709,17 +706,17 @@ const VehicleSearchPage = () => {
                                       </p>
                                     )}
                                   </div>
-                                  
+
                                   {/* Info derecha - Precios */}
                                   <div className="lg:text-right space-y-1 p-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl min-w-[200px] border border-green-200">
                                     <div className="text-xs text-slate-500 space-y-0.5">
                                       <div className="flex justify-between lg:justify-end gap-4">
                                         <span>Subtotal neto:</span>
-                                        <span className="font-mono">{formatPrice(quotation.total_price / 1.19)}</span>
+                                        <span className="font-mono">{formatPrice(quotation.subtotal || (quotation.total_price / (1 + (quotation.tax_rate || 19) / 100)))}</span>
                                       </div>
                                       <div className="flex justify-between lg:justify-end gap-4">
-                                        <span>IVA (19%):</span>
-                                        <span className="font-mono">{formatPrice(quotation.total_price * 0.19 / 1.19)}</span>
+                                        <span>IVA ({quotation.tax_rate || 19}%):</span>
+                                        <span className="font-mono">{formatPrice(quotation.tax_amount || (quotation.total_price - (quotation.subtotal || (quotation.total_price / (1 + (quotation.tax_rate || 19) / 100)))))}</span>
                                       </div>
                                     </div>
                                     <Separator className="my-2" />
@@ -731,10 +728,10 @@ const VehicleSearchPage = () => {
                                     </div>
                                   </div>
                                 </div>
-                                
+
                                 {/* Collapsible para detalles de productos */}
                                 {(quotation as any).productDetails && (quotation as any).productDetails.length > 0 && (
-                                  <Collapsible 
+                                  <Collapsible
                                     open={expandedQuotations.has(quotation.quotation_id!)}
                                     onOpenChange={() => toggleQuotationExpanded(quotation.quotation_id!)}
                                     className="mt-4"
@@ -748,16 +745,16 @@ const VehicleSearchPage = () => {
                                         <Badge variant="secondary" className="ml-2 bg-orange-100 text-orange-700">
                                           {(quotation as any).productDetails.length}
                                         </Badge>
-                                        {expandedQuotations.has(quotation.quotation_id!) ? 
-                                          <ChevronUp className="w-5 h-5 ml-2" /> : 
+                                        {expandedQuotations.has(quotation.quotation_id!) ?
+                                          <ChevronUp className="w-5 h-5 ml-2" /> :
                                           <ChevronDown className="w-5 h-5 ml-2" />
                                         }
                                       </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="mt-4 animate-in slide-in-from-top-2 duration-300">
                                       <div className="bg-slate-100 rounded-xl p-4 border border-slate-200">
-                                        <ProductDetailsComponent 
-                                          productDetails={(quotation as any).productDetails} 
+                                        <ProductDetailsComponent
+                                          productDetails={(quotation as any).productDetails}
                                           title="Productos de la Cotización"
                                         />
                                       </div>
@@ -799,8 +796,8 @@ const VehicleSearchPage = () => {
                     {workOrders.length > 0 ? (
                       <div className="space-y-4">
                         {workOrders.map((workOrder, index) => (
-                          <Card 
-                            key={workOrder.work_order_id} 
+                          <Card
+                            key={workOrder.work_order_id}
                             className="border-l-4 border-l-blue-500 hover:shadow-md transition-all duration-300 overflow-hidden bg-white"
                           >
                             <CardContent className="p-0">
@@ -809,7 +806,7 @@ const VehicleSearchPage = () => {
                                   {/* Info izquierda */}
                                   <div className="space-y-3 flex-1">
                                     <div className="flex items-center gap-3 flex-wrap">
-                                      <Badge 
+                                      <Badge
                                         variant={getStatusBadge(workOrder.order_status || 'not_started').variant}
                                         className={`text-sm px-3 py-1 ${getStatusBadge(workOrder.order_status || 'not_started').className}`}
                                       >
@@ -835,17 +832,17 @@ const VehicleSearchPage = () => {
                                       </p>
                                     )}
                                   </div>
-                                  
+
                                   {/* Info derecha - Precios */}
                                   <div className="lg:text-right space-y-1 p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl min-w-[200px] border border-blue-200">
                                     <div className="text-xs text-slate-500 space-y-0.5">
                                       <div className="flex justify-between lg:justify-end gap-4">
                                         <span>Subtotal neto:</span>
-                                        <span className="font-mono">{formatPrice((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) / 1.19)}</span>
+                                        <span className="font-mono">{formatPrice(workOrder.subtotal || ((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) / (1 + (workOrder.tax_rate || 19) / 100)))}</span>
                                       </div>
                                       <div className="flex justify-between lg:justify-end gap-4">
-                                        <span>IVA (19%):</span>
-                                        <span className="font-mono">{formatPrice((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) * 0.19 / 1.19)}</span>
+                                        <span>IVA ({workOrder.tax_rate || 19}%):</span>
+                                        <span className="font-mono">{formatPrice(workOrder.tax_amount || ((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) - (workOrder.subtotal || ((workOrder.total_amount || (workOrder.quotation?.total_price || 0)) / (1 + (workOrder.tax_rate || 19) / 100)))))}</span>
                                       </div>
                                     </div>
                                     <Separator className="my-2" />
@@ -860,7 +857,7 @@ const VehicleSearchPage = () => {
 
                                 {/* Collapsible para detalles de productos */}
                                 {(workOrder as any).productDetails && (workOrder as any).productDetails.length > 0 && (
-                                  <Collapsible 
+                                  <Collapsible
                                     open={expandedWorkOrders.has(workOrder.work_order_id!)}
                                     onOpenChange={() => toggleWorkOrderExpanded(workOrder.work_order_id!)}
                                     className="mt-4"
@@ -874,16 +871,16 @@ const VehicleSearchPage = () => {
                                         <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700">
                                           {(workOrder as any).productDetails.length}
                                         </Badge>
-                                        {expandedWorkOrders.has(workOrder.work_order_id!) ? 
-                                          <ChevronUp className="w-5 h-5 ml-2" /> : 
+                                        {expandedWorkOrders.has(workOrder.work_order_id!) ?
+                                          <ChevronUp className="w-5 h-5 ml-2" /> :
                                           <ChevronDown className="w-5 h-5 ml-2" />
                                         }
                                       </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="mt-4 animate-in slide-in-from-top-2 duration-300">
                                       <div className="bg-slate-100 rounded-xl p-4 border border-slate-200">
-                                        <ProductDetailsComponent 
-                                          productDetails={(workOrder as any).productDetails} 
+                                        <ProductDetailsComponent
+                                          productDetails={(workOrder as any).productDetails}
                                           title="Productos de la Orden de Trabajo"
                                         />
                                       </div>

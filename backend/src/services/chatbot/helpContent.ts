@@ -71,7 +71,7 @@ export function getHelpFor(topic: "vehicle" | "quotation" | "workOrder"): string
         `3. En el selector "Seleccione un vehículo…" verás solo los vehículos del tipo elegido; selecciona el correspondiente.\n` +
         `4. En **Repuestos Seleccionados**, presiona **Añadir Repuesto**. Se abrirá un modal con el inventario (precio y stock). Marca con la "palomita" los repuestos a usar y cierra el modal.\n` +
         `5. Para cada repuesto seleccionado, ajusta la **Cantidad** y la **Mano de obra**. El total por ítem se calcula con ambos valores.\n` +
-        `6. Revisa los totales automáticos al final: **Subtotal Productos**, **Total Mano de Obra**, **IVA (19%)** y **Total Final** (con IVA).\n` +
+        `6. Revisa los totales automáticos al final: **Subtotal Productos**, **Total Mano de Obra**, **IVA** y **Total Final** (con IVA).\n` +
         `7. Agrega una **Descripción** de la cotización.\n` +
         `8. Haz clic en **Crear Cotización** para guardar.` +
         `\n\n` +

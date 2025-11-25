@@ -12,6 +12,21 @@ export const getTaxes = async () => {
   }
 }
 
+/**
+ * Obtiene el impuesto activo/por defecto del sistema.
+ * Este es el impuesto que debe usarse para nuevas cotizaciones y órdenes de trabajo.
+ * Para documentos existentes, usar el tax_rate guardado en el propio documento.
+ */
+export const getActiveTax = async (): Promise<Tax> => {
+  try {
+    const response = await api.get(`${API_URL}/active`)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching active tax:", error)
+    throw error
+  }
+}
+
 export const getTaxById = async (id: number) => {
   try {
     const response = await api.get(`${API_URL}/${id}`)

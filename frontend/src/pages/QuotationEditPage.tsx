@@ -12,7 +12,7 @@ import {
 } from "@/services/workProductDetail"
 import { fetchVehicles } from "@/services/vehicleService"
 import { fetchProducts } from "@/services/productService"
-import { getTaxById } from "@/services/taxService"
+import { getActiveTax } from "@/services/taxService"
 import { Button } from "@/components/ui/button"
 import { NumberInput } from "@/components/numberInput"
 import { Label } from "@/components/ui/label"
@@ -41,11 +41,14 @@ interface SelectedProduct {
 
 const fetchTax = async () => {
     try {
-        const res = await getTaxById(1)
-        const TAX_RATE = res.tax_rate / 100
-        return TAX_RATE
+        const res = await getActiveTax()
+        // Asegurar que tax_rate sea número (PostgreSQL puede devolverlo como string)
+        const taxRateNum = Number(res.tax_rate)
+        const TAX_RATE = taxRateNum / 100
+        return { rate: TAX_RATE, taxId: res.tax_id, taxRatePercent: taxRateNum }
     } catch (error) {
-        toast.error("Error al cargar stock de productos")
+        toast.error("Error al cargar el impuesto activo")
+        return { rate: 0.19, taxId: 1, taxRatePercent: 19 } // Fallback a IVA 19%
     }
 }
 
@@ -69,6 +72,8 @@ export default function EditQuotationPage() {
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
     const [showProductModal, setShowProductModal] = useState(false)
     const [taxRate, setTaxRate] = useState<number>(0)
+    const [activeTaxId, setActiveTaxId] = useState<number>(1)
+    const [taxRatePercent, setTaxRatePercent] = useState<number>(19)
 
     // Track which details should be deleted
     const [detailsToDelete, setDetailsToDelete] = useState<number[]>([])
@@ -132,9 +137,11 @@ export default function EditQuotationPage() {
 
                 console.log("Product details:", details)
 
-                fetchTax().then((rate) => {
-                    if (rate !== undefined) {
-                        setTaxRate(rate)
+                fetchTax().then((taxData) => {
+                    if (taxData) {
+                        setTaxRate(taxData.rate)
+                        setActiveTaxId(taxData.taxId)
+                        setTaxRatePercent(taxData.taxRatePercent)
                     }
                 })
             } catch (error: any) {
@@ -224,6 +231,9 @@ export default function EditQuotationPage() {
                 quotation_status: status,
                 vehicle_id: selectedVehicleId || undefined,
                 total_price: Math.trunc(totalPrice),
+                tax_rate: Number(taxRatePercent), // Guardar la tasa de IVA usada (asegurar que sea número)
+                subtotal: Math.trunc(subtotalWithoutTax), // Guardar el subtotal
+                tax_amount: Math.trunc(taxAmount), // Guardar el monto de IVA
             }
 
             // Update the quotation
@@ -257,34 +267,36 @@ export default function EditQuotationPage() {
                     if (originalDetail && (originalDetail.quantity !== quantity || originalDetail.labor_price !== laborPrice)) {
                         await deleteWorkProductDetail(workProductDetailId)
 
-                        // Create a new detail with updated values - FIX: Just store base sale price
+                        // Create a new detail with updated values
                         await createWorkProductDetail({
                             quotation_id: Number.parseInt(id),
                             product_id: productId,
                             quantity,
                             labor_price: laborPrice,
-                            tax_id: 1,
+                            tax_id: activeTaxId, // Usar el ID del impuesto activo
+                            applied_tax_rate: taxRatePercent, // Guardar la tasa aplicada
                             sale_price: calculateTotalWithMargin(
                                 Number(product.sale_price),
-                                1, // Use 1 for quantity here as the quantity is separate
+                                1,
                                 Number(product.profit_margin),
-                            ), // Apply the profit margin to sale_price
+                            ),
                             discount: 0,
                         })
                     }
                 } else {
-                    // Create a new detail - FIX: Just store base sale price
+                    // Create a new detail
                     await createWorkProductDetail({
                         quotation_id: Number.parseInt(id),
                         product_id: productId,
                         quantity,
                         labor_price: laborPrice,
-                        tax_id: 1,
+                        tax_id: activeTaxId, // Usar el ID del impuesto activo
+                        applied_tax_rate: taxRatePercent, // Guardar la tasa aplicada
                         sale_price: calculateTotalWithMargin(
                             Number(product.sale_price),
-                            1, // Use 1 for quantity here as the quantity is separate
+                            1,
                             Number(product.profit_margin),
-                        ), // Apply the profit margin to sale_price
+                        ),
                         discount: 0,
                     })
                 }
@@ -556,7 +568,7 @@ export default function EditQuotationPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex justify-between p-2 rounded bg-accent/5">
-                                            <span>IVA (19%):</span>
+                                            <span>IVA ({taxRatePercent}%):</span>
                                             <span className="font-medium">{formatPriceCLP(taxAmount)}</span>
                                         </div>
                                         <div className="flex justify-between p-2 rounded bg-primary/10 font-bold">
