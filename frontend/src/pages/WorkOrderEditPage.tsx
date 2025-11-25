@@ -655,11 +655,11 @@ const WorkOrderEditPage = () => {
       </div>
 
       {isQuotationBased && (
-        <div className="p-4 border rounded-md bg-blue-50 border-blue-200 flex items-start gap-3 mb-4">
-          <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+        <div className="p-4 border rounded-md flex items-start gap-3 mb-4" style={{ backgroundColor: 'var(--stat-blue-bg)', borderColor: 'var(--balance-net-border)' }}>
+          <Info className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--stat-blue-text)' }} />
           <div>
-            <h3 className="font-semibold text-blue-800">Orden basada en cotización</h3>
-            <p className="text-blue-700">
+            <h3 className="font-semibold" style={{ color: 'var(--stat-blue-text-secondary)' }}>Orden basada en cotización</h3>
+            <p style={{ color: 'var(--stat-blue-text)' }}>
               Esta orden de trabajo está asociada a la cotización #{orderData.quotation.quotation_id}.
               Los productos que agregue se asociarán a esta cotización.
             </p>
@@ -669,11 +669,11 @@ const WorkOrderEditPage = () => {
 
       {/* Mostrar aviso si hay cambios sin guardar */}
       {hasUnsavedChanges && (
-        <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200 flex items-start gap-3 mb-4">
-          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <div className="p-4 border rounded-md flex items-start gap-3 mb-4" style={{ backgroundColor: 'var(--stat-orange-bg)', borderColor: 'var(--stat-orange-text)' }}>
+          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--stat-orange-text)' }} />
           <div>
-            <h3 className="font-semibold text-yellow-800">Cambios sin guardar</h3>
-            <p className="text-yellow-700">
+            <h3 className="font-semibold" style={{ color: 'var(--stat-orange-text-secondary)' }}>Cambios sin guardar</h3>
+            <p style={{ color: 'var(--stat-orange-text)' }}>
               Tiene cambios sin guardar. Asegúrese de guardar antes de salir.
             </p>
           </div>

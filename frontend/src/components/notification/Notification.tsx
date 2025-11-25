@@ -105,12 +105,12 @@ export default function Notifications({ notifications, setNotifications, onClose
   const getNotificationStyles = (type: "success" | "warning" | "info") => {
     switch (type) {
       case "success":
-        return "bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800";
+        return "notification-success";
       case "warning":
-        return "bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800";
+        return "notification-warning";
       case "info":
       default:
-        return "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800";
+        return "notification-info";
     }
   };
 

@@ -150,6 +150,25 @@
 /* Importa TailwindCSS */
 @import "tailwindcss";
 
+/* Estilos para notificaciones */
+.notification-success {
+  background-color: var(--balance-income-bg);
+  border-color: var(--balance-income-border);
+  color: var(--balance-income-text);
+}
+
+.notification-warning {
+  background-color: var(--balance-expense-bg);
+  border-color: var(--balance-expense-border);
+  color: var(--balance-expense-text);
+}
+
+.notification-info {
+  background-color: var(--stat-blue-bg);
+  border-color: var(--balance-net-border);
+  color: var(--stat-blue-text);
+}
+
 /* Estilos para inputs de tipo date en modo oscuro */
 .dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
