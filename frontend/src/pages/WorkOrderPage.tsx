@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const WorkOrdersPage = () => {
   const [workOrders, setWorkOrders] = useState<any[]>([]);
@@ -253,7 +254,7 @@ const WorkOrdersPage = () => {
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value as "recent" | "oldest")}
-            className="border rounded p-2"
+            className="border rounded p-2 bg-background text-foreground border-border"
           >
             <option value="recent">Más recientes</option>
             <option value="oldest">Más antiguas</option>
@@ -292,23 +293,23 @@ const WorkOrdersPage = () => {
         <>
           {viewMode === "table" ? (
             // Vista en Tabla
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border px-4 py-2 text-left">ID</th>
-                    <th className="border px-4 py-2 text-left">Fecha</th>
-                    <th className="border px-4 py-2 text-right">Total</th>
-                    <th className="border px-4 py-2 text-left">Estado</th>
-                    <th className="border px-4 py-2 text-left">Patente</th>
-                    <th className="border px-4 py-2 text-left">Dueño</th>
-                    <th className="border px-4 py-2 text-left">Teléfono</th>
-                    <th className="border px-4 py-2 text-left">Cotización</th>
-                    <th className="border px-4 py-2 text-left">Mécanico</th>
-                    <th className="border px-4 py-2 text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="rounded-md border" style={{ backgroundColor: 'var(--card)' }}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Patente</TableHead>
+                    <TableHead>Dueño</TableHead>
+                    <TableHead>Teléfono</TableHead>
+                    <TableHead>Cotización</TableHead>
+                    <TableHead>Mécanico</TableHead>
+                    <TableHead className="text-center">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {visibleWorkOrders.map((wo) => {
                     // Datos del vehículo
                     const vehicle = wo.vehicle;
@@ -345,20 +346,20 @@ const WorkOrdersPage = () => {
                     }
 
                     return (
-                      <tr key={wo.work_order_id} className="hover:bg-gray-50">
-                        <td className="border px-4 py-2">{wo.work_order_id}</td>
-                        <td className="border px-4 py-2">{formatDate(wo.order_date)}</td>
-                        <td className="border px-4 py-2 text-right">{formatPriceCLP(wo.total_amount)}</td>
-                        <td className="border px-4 py-2">{translateStatus(wo.order_status)}</td>
-                        <td className="border px-4 py-2">{plate}</td>
-                        <td className="border px-4 py-2">{ownerName}</td>
-                        <td className="border px-4 py-2">+{ownerPhone}</td>
-                        <td className="border px-4 py-2">{wo.quotation ? "Sí" : "No"}</td>
-                        <td className="border px-4 py-2">{technicianNames}</td>
-                        <td className="border px-4 py-2 text-center">
+                      <TableRow key={wo.work_order_id}>
+                        <TableCell>{wo.work_order_id}</TableCell>
+                        <TableCell>{formatDate(wo.order_date)}</TableCell>
+                        <TableCell className="text-right">{formatPriceCLP(wo.total_amount)}</TableCell>
+                        <TableCell>{translateStatus(wo.order_status)}</TableCell>
+                        <TableCell>{plate}</TableCell>
+                        <TableCell>{ownerName}</TableCell>
+                        <TableCell>+{ownerPhone}</TableCell>
+                        <TableCell>{wo.quotation ? "Sí" : "No"}</TableCell>
+                        <TableCell>{technicianNames}</TableCell>
+                        <TableCell className="text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 focus:bg-gray-100">
+                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted focus:bg-muted">
                                 <span className="sr-only">Abrir menú</span>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -366,41 +367,41 @@ const WorkOrdersPage = () => {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() => setSelectedWorkOrder(wo)}
-                                className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50"
+                                className="cursor-pointer hover:bg-blue-500/10 focus:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:focus:bg-blue-500/20"
                               >
-                                <Eye className="mr-2 h-4 w-4 text-blue-600" />
+                                <Eye className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 Ver Detalles
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => navigate(`/admin/orden-trabajo/editar/${wo.work_order_id}`)}
-                                className="cursor-pointer hover:bg-green-50 focus:bg-green-50"
+                                className="cursor-pointer hover:bg-green-500/10 focus:bg-green-500/10 dark:hover:bg-green-500/20 dark:focus:bg-green-500/20"
                               >
-                                <Edit className="mr-2 h-4 w-4 text-green-600" />
+                                <Edit className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
                                 Editar
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleCreateDebtor(wo)}
-                                className="cursor-pointer hover:bg-orange-50 focus:bg-orange-50"
+                                className="cursor-pointer hover:bg-orange-500/10 focus:bg-orange-500/10 dark:hover:bg-orange-500/20 dark:focus:bg-orange-500/20"
                               >
-                                <UserPlus className="mr-2 h-4 w-4 text-orange-600" />
+                                <UserPlus className="mr-2 h-4 w-4 text-orange-600 dark:text-orange-400" />
                                 Crear Deudor
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => handleDeleteClick(wo)}
-                                className="cursor-pointer text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600"
+                                className="cursor-pointer text-red-600 dark:text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 dark:hover:bg-red-500/20 dark:focus:bg-red-500/20"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Eliminar
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           ) : (
             // Vista en Tarjetas

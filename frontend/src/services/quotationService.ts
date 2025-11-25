@@ -1,5 +1,5 @@
 import api from "../utils/axiosConfig"
-import type { Quotation } from "../types/interfaces"
+import type { Quotation, QuotationStatus, WorkOrder } from "../types/interfaces"
 
 export const fetchQuotations = async (_quotationsData: Quotation[]): Promise<Quotation[]> => {
   const { data } = await api.get<Quotation[]>("/quotations")
@@ -18,6 +18,14 @@ export const createQuotation = async (quotationData: Partial<Quotation>): Promis
 
 export const updateQuotation = async (quotationId: number, quotationData: Partial<Quotation>): Promise<Quotation> => {
   const { data } = await api.put<Quotation>(`/quotations/${quotationId}`, quotationData)
+  return data
+}
+
+export const updateQuotationStatus = async (
+  quotationId: number, 
+  status: QuotationStatus
+): Promise<{ message: string; quotation: Quotation; workOrder?: WorkOrder }> => {
+  const { data } = await api.patch(`/quotations/${quotationId}/status`, { status })
   return data
 }
 

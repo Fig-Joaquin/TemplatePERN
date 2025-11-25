@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { Quotation, WorkProductDetail } from "@/types/interfaces"
-import { fetchQuotations, deleteQuotation, downloadQuotationPDF } from "@/services/quotationService"
+import type { Quotation, WorkProductDetail, QuotationStatus } from "@/types/interfaces"
+import { fetchQuotations, deleteQuotation, downloadQuotationPDF, updateQuotationStatus } from "@/services/quotationService"
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/columns"
@@ -15,11 +15,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { formatDate } from "@/utils/formDate"
 import { VehicleCard } from "@/components/VehicleCard"
-import { FileText, Plus, Edit, Search } from "lucide-react"
+import { FileText, Plus, Edit, Search, CheckCircle, XCircle, Clock, ArrowRightLeft } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
@@ -31,6 +37,9 @@ export default function QuotationPage() {
   // First, add a state for controlling the delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [quotationToDelete, setQuotationToDelete] = useState<number | null>(null)
+  
+  // Estado para manejar la actualización de estado
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null)
 
   // Helper function to translate status - vamos a modificar esto para que también devuelva la variante
   const getStatusBadge = (status: string) => {
@@ -69,6 +78,36 @@ export default function QuotationPage() {
     }
     fetchData()
   }, [])
+
+  // Función para cambiar el estado de la cotización
+  const handleStatusChange = async (quotationId: number, newStatus: QuotationStatus) => {
+    setUpdatingStatusId(quotationId)
+    try {
+      const result = await updateQuotationStatus(quotationId, newStatus)
+      
+      // Actualizar el estado local de las cotizaciones
+      setQuotations(prevQuotations => 
+        prevQuotations.map(q => 
+          q.quotation_id === quotationId 
+            ? { ...q, quotation_status: newStatus }
+            : q
+        )
+      )
+
+      // Mostrar mensaje de éxito
+      if (newStatus === 'approved' && result.workOrder) {
+        toast.success(`Cotización aprobada y orden de trabajo #${result.workOrder.work_order_id} creada automáticamente`)
+      } else {
+        toast.success(result.message)
+      }
+    } catch (error: any) {
+      console.error("Error al actualizar el estado:", error)
+      const errorMessage = error.response?.data?.message || "Error al actualizar el estado de la cotización"
+      toast.error(errorMessage)
+    } finally {
+      setUpdatingStatusId(null)
+    }
+  }
 
   // Then modify the deleteQuotation handling
   const handleDeleteClick = (quotationId: number) => {
@@ -140,10 +179,10 @@ export default function QuotationPage() {
         cell: ({ row }: { row: { original: Quotation & { details: WorkProductDetail[] } } }) => {
           const quotation = row.original
           return (
-            <div className="flex space-x-2">
+            <div className="flex items-center justify-end gap-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline">Ver detalles</Button>
+                  <Button variant="outline" size="sm">Ver detalles</Button>
                 </DialogTrigger>
                 <DialogContent className="bg-card text-card-foreground max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                   <DialogHeader>
@@ -257,12 +296,58 @@ export default function QuotationPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+              
+              {/* Dropdown para cambiar estado */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center"
+                    disabled={updatingStatusId === quotation.quotation_id}
+                  >
+                    <ArrowRightLeft className="w-4 h-4 mr-1" />
+                    {updatingStatusId === quotation.quotation_id ? "..." : "Estado"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => handleStatusChange(quotation.quotation_id!, "approved")}
+                    disabled={quotation.quotation_status === "approved"}
+                    className="flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Aprobar</span>
+                    {quotation.quotation_status !== "approved" && (
+                      <span className="text-xs text-muted-foreground ml-2">(Crea orden de trabajo)</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleStatusChange(quotation.quotation_id!, "pending")}
+                    disabled={quotation.quotation_status === "pending"}
+                    className="flex items-center gap-2"
+                  >
+                    <Clock className="w-4 h-4 text-yellow-600" />
+                    <span>Pendiente</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleStatusChange(quotation.quotation_id!, "rejected")}
+                    disabled={quotation.quotation_status === "rejected"}
+                    className="flex items-center gap-2"
+                  >
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <span>Rechazar</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               <Button
                 variant="outline"
+                size="sm"
                 className="flex items-center"
                 onClick={() => navigate(`/admin/cotizaciones/editar/${quotation.quotation_id}`)}
               >
-                <Edit className="w-4 h-4 mr-2" />
+                <Edit className="w-4 h-4 mr-1" />
                 Editar
               </Button>
             </div>

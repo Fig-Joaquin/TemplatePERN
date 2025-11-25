@@ -22,7 +22,7 @@ app.use(cookieParser()); // Middleware para manejar cookies
 app.use(cors({
     origin: process.env.FRONTEND_URL, // Permitir el frontend
     credentials: true, // Permite enviar cookies y cabeceras de autenticación
-    methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // Métodos permitidos
 }));
 
 // ! Rutas de acceso API

@@ -105,12 +105,12 @@ export default function Notifications({ notifications, setNotifications, onClose
   const getNotificationStyles = (type: "success" | "warning" | "info") => {
     switch (type) {
       case "success":
-        return "bg-green-50 border-green-200";
+        return "bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800";
       case "warning":
-        return "bg-amber-50 border-amber-200";
+        return "bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800";
       case "info":
       default:
-        return "bg-blue-50 border-blue-200";
+        return "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800";
     }
   };
 
@@ -165,13 +165,13 @@ export default function Notifications({ notifications, setNotifications, onClose
                 <div className="flex gap-3 pr-6">
                   {getNotificationIcon(n.type || "info")}
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{n.message}</p>
+                    <p className="text-sm font-medium text-foreground">{n.message}</p>
                     <div className="flex justify-between items-center mt-2">
                       <div className="flex items-center text-xs text-muted-foreground gap-1.5">
                         <Clock className="h-3 w-3" />
                         {formatDate ? formatDate(new Date(n.created_at)) : new Date(n.created_at).toLocaleString()}
                       </div>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs dark:border-border">
                         {n.type === "success" ? "Completado" : n.type === "warning" ? "Atención" : "Información"}
                         {n.work_order_id && " • Orden #" + n.work_order_id}
                       </Badge>

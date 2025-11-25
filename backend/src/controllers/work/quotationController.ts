@@ -5,6 +5,7 @@ import { QuotationSchema, QuotationUpdateSchema } from "../../schema/work/quotat
 import { Vehicle } from "../../entities"; // <-- nueva importación
 import { WorkOrder } from "../../entities/work/workOrderEntity"; // <-- nueva importación
 import { WorkProductDetail } from "../../entities/work/workProductDetailEntity"; // <-- nueva importación
+import { DeepPartial } from "typeorm";
 
 const quotationRepository = AppDataSource.getRepository(Quotation); // <-- nuevo repositorio
 const workProductDetailRepository = AppDataSource.getRepository(WorkProductDetail);
@@ -207,6 +208,112 @@ export const getQuotationsByVehicleLicensePlate = async (req: Request, res: Resp
         console.error("Error al obtener cotizaciones por patente:", error);
         res.status(500).json({ 
             message: "Error al obtener cotizaciones por patente", 
+            error: error instanceof Error ? error.message : error 
+        });
+    }
+};
+
+// Nuevo endpoint para cambiar el estado de una cotización
+export const updateQuotationStatus = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            res.status(400).json({ message: "ID inválido" });
+            return;
+        }
+
+        const { status } = req.body;
+        if (!status || !["approved", "rejected", "pending"].includes(status)) {
+            res.status(400).json({ message: "Estado inválido. Debe ser: approved, rejected o pending" });
+            return;
+        }
+
+        const quotation = await quotationRepository.findOne({
+            where: { quotation_id: id },
+            relations: ["vehicle", "vehicle.model", "vehicle.model.brand", "vehicle.owner", "vehicle.company"]
+        });
+
+        if (!quotation) {
+            res.status(404).json({ message: "Cotización no encontrada" });
+            return;
+        }
+
+        // Verificar si ya tiene una orden de trabajo activa
+        const existingWorkOrder = await workOrderRepository.findOne({
+            where: { 
+                quotation: { quotation_id: quotation.quotation_id },
+                order_status: "not_started"
+            }
+        });
+
+        // Si se está aprobando y no existe una orden de trabajo, crear una automáticamente
+        let createdWorkOrder = null;
+        if (status === "approved" && !existingWorkOrder) {
+            // Obtener los detalles de productos de la cotización para calcular el total
+            const productDetails = await workProductDetailRepository.find({
+                where: { quotation: { quotation_id: quotation.quotation_id } },
+                relations: ["product", "tax"]
+            });
+
+            // Calcular el total de la cotización (usando el total_price de la cotización)
+            const totalAmount = quotation.total_price || 0;
+
+            // Crear la orden de trabajo automáticamente
+            const newWorkOrder = workOrderRepository.create({
+                vehicle: quotation.vehicle,
+                quotation: quotation,
+                description: quotation.description || `Orden de trabajo basada en cotización #${quotation.quotation_id}`,
+                order_status: "not_started",
+                total_amount: totalAmount,
+                order_date: new Date()
+            } as DeepPartial<WorkOrder>);
+
+            await workOrderRepository.save(newWorkOrder);
+
+            // Actualizar los detalles de producto para vincularlos a la orden de trabajo
+            if (productDetails.length > 0) {
+                await workProductDetailRepository
+                    .createQueryBuilder()
+                    .update(WorkProductDetail)
+                    .set({ work_order: newWorkOrder })
+                    .where("quotation_id = :quotationId", { quotationId: quotation.quotation_id })
+                    .andWhere("work_order_id IS NULL")
+                    .execute();
+            }
+
+            // Cargar la orden con todas las relaciones
+            createdWorkOrder = await workOrderRepository.findOne({
+                where: { work_order_id: newWorkOrder.work_order_id },
+                relations: [
+                    "vehicle",
+                    "vehicle.model",
+                    "vehicle.model.brand",
+                    "vehicle.owner",
+                    "vehicle.company",
+                    "quotation",
+                    "productDetails",
+                    "productDetails.product",
+                    "productDetails.tax"
+                ]
+            });
+        }
+
+        // Actualizar el estado de la cotización
+        quotation.quotation_status = status;
+        await quotationRepository.save(quotation);
+
+        // Devolver la respuesta con la cotización actualizada y la orden creada (si aplica)
+        res.json({ 
+            message: status === "approved" && createdWorkOrder 
+                ? "Cotización aprobada y orden de trabajo creada exitosamente" 
+                : "Estado de cotización actualizado exitosamente",
+            quotation,
+            workOrder: createdWorkOrder
+        });
+    } catch (error) {
+        console.error("Error al actualizar el estado de la cotización:", error);
+        res.status(500).json({ 
+            message: "Error al actualizar el estado de la cotización", 
             error: error instanceof Error ? error.message : error 
         });
     }

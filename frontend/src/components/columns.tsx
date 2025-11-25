@@ -92,6 +92,7 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
   },
   {
     id: "actions",
+    header: () => <div className="text-center">Acciones</div>,
     cell: ({ row }) => {
       const quotation = row.original
       return (

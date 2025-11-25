@@ -262,12 +262,12 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
                 <ScrollArea className="h-[300px] overflow-x-auto">
                   <table className="min-w-full border-collapse">
                     <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border px-4 py-2 text-left">Producto</th>
-                        <th className="border px-4 py-2 text-right">Cantidad</th>
-                        <th className="border px-4 py-2 text-right">Precio Unitario</th>
-                        <th className="border px-4 py-2 text-right">Mano de Obra</th>
-                        <th className="border px-4 py-2 text-right">Subtotal</th>
+                      <tr className="bg-muted">
+                        <th className="border border-border px-4 py-2 text-left">Producto</th>
+                        <th className="border border-border px-4 py-2 text-right">Cantidad</th>
+                        <th className="border border-border px-4 py-2 text-right">Precio Unitario</th>
+                        <th className="border border-border px-4 py-2 text-right">Mano de Obra</th>
+                        <th className="border border-border px-4 py-2 text-right">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -276,20 +276,20 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
                           Number(detail.sale_price) * Number(detail.quantity) +
                           Number(detail.labor_price);
                         return (
-                          <tr key={idx} className="hover:bg-gray-50">
-                            <td className="border px-4 py-2">
+                          <tr key={idx} className="hover:bg-muted/50">
+                            <td className="border border-border px-4 py-2">
                               {detail.product?.product_name || "N/A"}
                             </td>
-                            <td className="border px-4 py-2 text-right">
+                            <td className="border border-border px-4 py-2 text-right">
                               {detail.quantity}
                             </td>
-                            <td className="border px-4 py-2 text-right">
+                            <td className="border border-border px-4 py-2 text-right">
                               {formatPriceCLP(Number(detail.sale_price))}
                             </td>
-                            <td className="border px-4 py-2 text-right">
+                            <td className="border border-border px-4 py-2 text-right">
                               {formatPriceCLP(Number(detail.labor_price))}
                             </td>
-                            <td className="border px-4 py-2 text-right">
+                            <td className="border border-border px-4 py-2 text-right">
                               {formatPriceCLP(subtotalDetail)}
                             </td>
                           </tr>
@@ -297,27 +297,27 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-gray-200">
-                        <td className="border px-4 py-2 font-bold" colSpan={4}>
+                      <tr className="bg-muted">
+                        <td className="border border-border px-4 py-2 font-bold" colSpan={4}>
                           Subtotal:
                         </td>
-                        <td className="border px-4 py-2 text-right font-bold">
+                        <td className="border border-border px-4 py-2 text-right font-bold">
                           {formatPriceCLP(subtotal)}
                         </td>
                       </tr>
-                      <tr className="bg-gray-200">
-                        <td className="border px-4 py-2 font-bold" colSpan={4}>
+                      <tr className="bg-muted">
+                        <td className="border border-border px-4 py-2 font-bold" colSpan={4}>
                           IVA ({(taxRate * 100).toFixed(0)}%):
                         </td>
-                        <td className="border px-4 py-2 text-right font-bold">
+                        <td className="border border-border px-4 py-2 text-right font-bold">
                           {formatPriceCLP(taxAmount)}
                         </td>
                       </tr>
-                      <tr className="bg-gray-200">
-                        <td className="border px-4 py-2 font-bold" colSpan={4}>
+                      <tr className="bg-muted">
+                        <td className="border border-border px-4 py-2 font-bold" colSpan={4}>
                           Total Final:
                         </td>
-                        <td className="border px-4 py-2 text-right font-bold">
+                        <td className="border border-border px-4 py-2 text-right font-bold">
                           {formatPriceCLP(finalTotal)}
                         </td>
                       </tr>
