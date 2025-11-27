@@ -24,3 +24,13 @@ export const updateWorkPayment = async (id: number, workPayment: Partial<WorkPay
 export const deleteWorkPayment = async (id: number): Promise<void> => {
   await api.delete(`/workPayments/${id}`);
 };
+
+// Obtener pagos por orden de trabajo
+export const fetchWorkPaymentsByWorkOrderId = async (workOrderId: number): Promise<WorkPayment[]> => {
+  const response = await api.get("/workPayments");
+  const allPayments: WorkPayment[] = response.data;
+  // Filtrar pagos de la orden específica que no estén cancelados
+  return allPayments.filter(
+    (payment) => payment.work_order?.work_order_id === workOrderId && payment.payment_status !== "cancelado"
+  );
+};

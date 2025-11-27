@@ -518,24 +518,12 @@ const VehicleSearchPage = () => {
                         </div>
                         {vehicle.owner.number_phone && (
                           <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg">
-                            <span className="flex items-center gap-2 text-slate-600">
-                              <Phone className="w-4 h-4" />
-                              Teléfono
-                            </span>
-                            <a href={`tel:${vehicle.owner.number_phone}`} className="font-semibold text-primary hover:underline">
-                              {vehicle.owner.number_phone}
-                            </a>
+
                           </div>
                         )}
                         {vehicle.owner.email && (
                           <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg">
-                            <span className="flex items-center gap-2 text-slate-600">
-                              <Mail className="w-4 h-4" />
-                              Email
-                            </span>
-                            <a href={`mailto:${vehicle.owner.email}`} className="font-semibold text-primary hover:underline text-sm truncate max-w-[180px]">
-                              {vehicle.owner.email}
-                            </a>
+
                           </div>
                         )}
                       </div>
@@ -554,9 +542,7 @@ const VehicleSearchPage = () => {
                               <Phone className="w-4 h-4" />
                               Teléfono
                             </span>
-                            <a href={`tel:${vehicle.company.phone}`} className="font-semibold text-primary hover:underline">
-                              {vehicle.company.phone}
-                            </a>
+
                           </div>
                         )}
                         {vehicle.company.email && (
@@ -565,9 +551,7 @@ const VehicleSearchPage = () => {
                               <Mail className="w-4 h-4" />
                               Email
                             </span>
-                            <a href={`mailto:${vehicle.company.email}`} className="font-semibold text-primary hover:underline text-sm truncate max-w-[180px]">
-                              {vehicle.company.email}
-                            </a>
+
                           </div>
                         )}
                       </div>
@@ -596,8 +580,8 @@ const VehicleSearchPage = () => {
                             <div
                               key={record.mileage_history_id}
                               className={`flex justify-between items-center p-3 rounded-lg transition-colors ${index === 0
-                                  ? 'bg-green-100 border border-green-200'
-                                  : 'bg-slate-100 hover:bg-slate-200'
+                                ? 'bg-green-100 border border-green-200'
+                                : 'bg-slate-100 hover:bg-slate-200'
                                 }`}
                             >
                               <div className="flex items-center gap-2">
@@ -634,8 +618,8 @@ const VehicleSearchPage = () => {
                 <TabsTrigger
                   value="quotations"
                   className={`flex items-center justify-center gap-2 h-full rounded-lg font-semibold transition-all duration-300 ${activeTab === 'quotations'
-                      ? 'bg-primary text-white shadow-lg'
-                      : 'text-slate-600 hover:bg-slate-200'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-slate-600 hover:bg-slate-200'
                     }`}
                 >
                   <FileText className="w-5 h-5" />
@@ -647,8 +631,8 @@ const VehicleSearchPage = () => {
                 <TabsTrigger
                   value="workorders"
                   className={`flex items-center justify-center gap-2 h-full rounded-lg font-semibold transition-all duration-300 ${activeTab === 'workorders'
-                      ? 'bg-primary text-white shadow-lg'
-                      : 'text-slate-600 hover:bg-slate-200'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'text-slate-600 hover:bg-slate-200'
                     }`}
                 >
                   <Wrench className="w-5 h-5" />

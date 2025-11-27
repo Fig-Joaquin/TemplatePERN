@@ -7,22 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronsUpDown,
-  Car,
   User,
   Building2,
   FileText,
-  Calculator,
   Search,
   CheckCircle,
-  Calendar,
-  Package,
-  DollarSign,
-  ArrowLeft
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { motion } from "framer-motion";
 import { fetchVehicles } from "../../services/vehicleService";
 import { fetchQuotations } from "../../services/quotationService";
 import { createWorkOrder } from "../../services/workOrderService";
@@ -120,7 +112,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
       fetchQuotations([])
         .then((allQuotations) => {
           const filtered = allQuotations.filter((q) => {
-            const qVehicleId = q.vehicle_id || (q.vehicle && q.vehicle.vehicle_id);
+            const qVehicleId = q.vehicle_id || q.vehicle?.vehicle_id;
             return qVehicleId === selectedVehicle.vehicle_id;
           });
           filtered.sort(
@@ -155,7 +147,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
       const fetchProductDetails = async () => {
         try {
           const details = await getWorkProductDetailsByQuotationId(
-            selectedQuotation!.quotation_id!
+            selectedQuotation.quotation_id!
           );
           setProductDetails(details);
         } catch (error: any) {
@@ -257,7 +249,7 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
           sp.product?.product_id === detail.product_id
         );
 
-        if (stockProduct && stockProduct.stock_product_id !== undefined) {
+        if (stockProduct?.stock_product_id !== undefined) {
           const updatedQuantity = Math.max(0, stockProduct.quantity - detail.quantity);
 
           // Update the stock in the database
@@ -300,554 +292,352 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
   // Obtener el kilometraje actual del vehículo, a partir del registro más reciente
   const latestMileage = selectedQuotation?.vehicle?.mileage_history?.length
-    ? selectedQuotation.vehicle.mileage_history.sort(
+    ? [...selectedQuotation.vehicle.mileage_history].sort(
       (a, b) => new Date(b.registration_date).getTime() - new Date(a.registration_date).getTime()
     )[0].current_mileage
     : null;
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--background)' }}>
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Button
-            onClick={() => window.history.back()}
-            variant="outline"
-            className="mb-4 hover:shadow-md transition-all duration-200"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
-          </Button>
-          <Card className="border shadow-xl" style={{ backgroundColor: 'var(--card)' }}>
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
-              <CardTitle className="text-2xl font-bold text-center">
-                🔧 Crear Orden de Trabajo con Cotización
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </motion.div>
+    <div className="space-y-6">
+      {/* Filtro por Tipo de Propietario */}
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Filtro por Tipo de Propietario</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Button
+              variant={selectedType === "all" ? "default" : "outline"}
+              onClick={() => setSelectedType("all")}
+              type="button"
+              size="sm"
+              className="flex-1"
+            >
+              Todos
+            </Button>
+            <Button
+              variant={selectedType === "person" ? "default" : "outline"}
+              onClick={() => setSelectedType("person")}
+              type="button"
+              size="sm"
+              className="flex-1"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Personas
+            </Button>
+            <Button
+              variant={selectedType === "company" ? "default" : "outline"}
+              onClick={() => setSelectedType("company")}
+              type="button"
+              size="sm"
+              className="flex-1"
+            >
+              <Building2 className="w-4 h-4 mr-2" />
+              Empresas
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <Card className="border shadow-xl" style={{ backgroundColor: 'var(--card)' }}>
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Vehicle Type Filter */}
-                <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Car className="w-5 h-5 text-blue-600" />
-                      Filtro por Tipo de Propietario
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-3">
-                      <Button
-                        variant={selectedType === "all" ? "default" : "outline"}
-                        onClick={() => setSelectedType("all")}
-                        type="button"
-                        className="flex-1 transition-all duration-200"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Todos
-                      </Button>
-                      <Button
-                        variant={selectedType === "person" ? "default" : "outline"}
-                        onClick={() => setSelectedType("person")}
-                        type="button"
-                        className="flex-1 transition-all duration-200"
-                      >
-                        <User className="w-4 h-4 mr-2" />
-                        Personas
-                      </Button>
-                      <Button
-                        variant={selectedType === "company" ? "default" : "outline"}
-                        onClick={() => setSelectedType("company")}
-                        type="button"
-                        className="flex-1 transition-all duration-200"
-                      >
-                        <Building2 className="w-4 h-4 mr-2" />
-                        Empresas
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Vehicle Selection */}
-                <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Search className="w-5 h-5 text-green-600" />
-                      Selección de Vehículo
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={vehicleQuery}
-                        onChange={(e) => setVehicleQuery(e.target.value)}
-                        placeholder="Buscar vehículo por patente, marca, modelo o propietario..."
-                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-                      />
-                      <Popover open={openVehiclePopover} onOpenChange={setOpenVehiclePopover}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 hover:shadow-md transition-all duration-200"
-                          >
-                            <ChevronsUpDown className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full min-w-[600px]">
-                          <ScrollArea className="h-80">
-                            {filteredVehicles.length > 0 ? (
-                              <div className="space-y-2">
-                                {filteredVehicles.map((vehicle) => (
-                                  <motion.button
-                                    key={vehicle.vehicle_id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedVehicle(vehicle);
-                                      setOpenVehiclePopover(false);
-                                      setSelectedQuotation(null);
-                                    }}
-                                    className={cn(
-                                      "w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-md",
-                                      selectedVehicle?.vehicle_id === vehicle.vehicle_id
-                                        ? "border-blue-300 shadow-sm"
-                                        : "hover:opacity-80"
-                                    )}
-                                    style={{
-                                      backgroundColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id
-                                        ? 'var(--stat-blue-bg)'
-                                        : 'var(--card)',
-                                      borderColor: selectedVehicle?.vehicle_id === vehicle.vehicle_id
-                                        ? 'var(--balance-net-border)'
-                                        : 'var(--border)'
-                                    }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
-                                          {vehicle.license_plate}
-                                        </p>
-                                        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                                          {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
-                                        </p>
-                                        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                                          {vehicle.owner ? vehicle.owner.name : vehicle.company?.name}
-                                        </p>
-                                      </div>
-                                      {selectedVehicle?.vehicle_id === vehicle.vehicle_id && (
-                                        <CheckCircle className="w-5 h-5 text-blue-600" />
-                                      )}
-                                    </div>
-                                  </motion.button>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-center py-8">
-                                <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                <p className="text-gray-500">No se encontraron vehículos</p>
-                              </div>
-                            )}
-                          </ScrollArea>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {selectedVehicle && (
-                      <motion.div
-                        className="mt-4 p-4 rounded-lg border"
-                        style={{
-                          backgroundColor: 'var(--stat-green-bg)',
-                          borderColor: 'var(--balance-income-border)'
-                        }}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--balance-income-border)' }}>
-                            <CheckCircle className="w-5 h-5" style={{ color: 'var(--stat-green-text)' }} />
-                          </div>
-                          <div>
-                            <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
-                              {selectedVehicle.license_plate} - {selectedVehicle.model?.brand?.brand_name}{" "}
-                              {selectedVehicle.model?.model_name}
-                            </p>
-                            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                              Propietario: {selectedVehicle.owner ? selectedVehicle.owner.name : selectedVehicle.company?.name}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Quotations List */}
-                {selectedVehicle && (
-                  <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-purple-600" />
-                        Cotizaciones Disponibles
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {vehicleQuotations.length > 0 ? (
-                        <div className="space-y-4">
-                          {vehicleQuotations.map((q) => (
-                            <motion.button
-                              key={q.quotation_id}
-                              type="button"
-                              onClick={() => setSelectedQuotation(q)}
-                              className={cn(
-                                "w-full text-left p-4 rounded-lg border transition-all duration-200 hover:shadow-md",
-                                selectedQuotation?.quotation_id === q.quotation_id
-                                  ? "border-purple-300 shadow-sm"
-                                  : "hover:opacity-80"
-                              )}
-                              style={{
-                                backgroundColor: selectedQuotation?.quotation_id === q.quotation_id
-                                  ? 'var(--stat-purple-bg)'
-                                  : 'var(--card)',
-                                borderColor: selectedQuotation?.quotation_id === q.quotation_id
-                                  ? 'var(--stat-purple-text)'
-                                  : 'var(--border)'
-                              }}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      ID: {q.quotation_id}
-                                    </Badge>
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      {translateQuotationStatus(q.quotation_status)}
-                                    </Badge>
-                                    <span className="text-xs flex items-center gap-1" style={{ color: 'var(--muted-foreground)' }}>
-                                      <Calendar className="w-3 h-3" />
-                                      {q.entry_date ? new Date(q.entry_date).toLocaleDateString('es-CL') : "-"}
-                                    </span>
-                                  </div>
-
-                                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>
-                                    <strong>Descripción:</strong> {q.description}
-                                  </p>
-
-                                  <div className="flex items-center gap-2">
-                                    <DollarSign className="w-4 h-4" style={{ color: 'var(--stat-green-text)' }} />
-                                    <span className="font-semibold" style={{ color: 'var(--stat-green-text)' }}>
-                                      {formatPriceCLP(q.total_price)}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {selectedQuotation?.quotation_id === q.quotation_id && (
-                                  <div className="ml-3">
-                                    <CheckCircle className="w-5 h-5 text-purple-600" />
-                                  </div>
-                                )}
-                              </div>
-                            </motion.button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--muted-foreground)' }} />
-                          <p style={{ color: 'var(--muted-foreground)' }}>No hay cotizaciones para este vehículo</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Selected Quotation Details */}
-                {selectedQuotation && (
-                  <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Calculator className="w-5 h-5 text-indigo-600" />
-                        Detalles de la Cotización Seleccionada
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Basic quotation info */}
-                      <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--stat-purple-bg)', borderColor: 'var(--stat-purple-text)' }}>
-                        <div className="flex justify-between items-center mb-3">
-                          <Badge variant="outline" className="text-lg font-bold">
-                            Cotización #{selectedQuotation.quotation_id}
-                          </Badge>
-                          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                            <Calendar className="w-4 h-4" />
-                            {selectedQuotation.entry_date ? formatChileanDate(selectedQuotation.entry_date) : "-"}
-                          </div>
-                        </div>
-
-                        <Separator className="my-3" />
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Descripción:</p>
-                            <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.description}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Estado:</p>
-                            <Badge variant="outline">
-                              {translateQuotationStatus(selectedQuotation.quotation_status)}
-                            </Badge>
-                          </div>
-                          <div className="md:col-span-2">
-                            <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Total (incl. IVA):</p>
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="w-5 h-5" style={{ color: 'var(--stat-green-text)' }} />
-                              <span className="text-xl font-bold" style={{ color: 'var(--stat-green-text)' }}>
-                                {formatPriceCLP(selectedQuotation.total_price)}
-                              </span>
-                            </div>
-                          </div>
-                          {selectedQuotation.vehicle?.mileage_history && (
-                            <div className="md:col-span-2">
-                              <p className="text-sm font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Kilometraje Actual:</p>
-                              <p style={{ color: 'var(--foreground)' }}>{latestMileage ?? "N/A"}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Product Details Table */}
-                      {productDetails && productDetails.length > 0 && (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2">
-                            <Package className="w-5 h-5 text-blue-600" />
-                            <h3 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>Detalles de Productos</h3>
-                          </div>
-
-                          <div className="overflow-x-auto rounded-lg border" style={{ borderColor: 'var(--border)' }}>
-                            <table className="min-w-full divide-y" style={{ backgroundColor: 'var(--card)' }}>
-                              <thead style={{ backgroundColor: 'var(--card)' }}>
-                                <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                                    Producto
-                                  </th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                                    Descripción
-                                  </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                                    Precio Unitario
-                                  </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                                    Cantidad
-                                  </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                                    Mano de Obra
-                                  </th>
-                                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
-                                    Subtotal
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                                {productDetails.map((detail, index) => {
-                                  const subtotalDetail =
-                                    Number(detail.sale_price) * detail.quantity +
-                                    Number(detail.labor_price);
-                                  return (
-                                    <motion.tr
-                                      key={detail.work_product_detail_id}
-                                      className="transition-colors duration-150"
-                                      initial={{ opacity: 0, y: 20 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                                    >
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" style={{ color: 'var(--foreground)' }}>
-                                        {detail.product?.product_name || "N/A"}
-                                      </td>
-                                      <td className="px-6 py-4 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                                        {detail.product?.description || "-"}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium" style={{ color: 'var(--foreground)' }}>
-                                        {formatPriceCLP(Number(detail.sale_price))}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right" style={{ color: 'var(--foreground)' }}>
-                                        {detail.quantity}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium" style={{ color: 'var(--foreground)' }}>
-                                        {formatPriceCLP(Number(detail.labor_price))}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
-                                        {formatPriceCLP(subtotalDetail)}
-                                      </td>
-                                    </motion.tr>
-                                  );
-                                })}
-                              </tbody>
-                              <tfoot style={{ backgroundColor: 'var(--card)' }}>
-                                <tr className="border-t-2" style={{ borderColor: 'var(--border)' }}>
-                                  <td className="px-6 py-4 text-sm font-bold" style={{ color: 'var(--foreground)' }} colSpan={5}>
-                                    Subtotal:
-                                  </td>
-                                  <td className="px-6 py-4 text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
-                                    {formatPriceCLP(subtotal)}
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="px-6 py-4 text-sm font-bold" style={{ color: 'var(--foreground)' }} colSpan={5}>
-                                    IVA ({taxRatePercent}%):
-                                  </td>
-                                  <td className="px-6 py-4 text-sm font-bold text-right" style={{ color: 'var(--foreground)' }}>
-                                    {formatPriceCLP(taxAmount)}
-                                  </td>
-                                </tr>
-                                <tr className="border-t" style={{ borderColor: 'var(--border)' }}>
-                                  <td className="px-6 py-4 text-lg font-bold" style={{ color: 'var(--stat-green-text)' }} colSpan={5}>
-                                    Total Final:
-                                  </td>
-                                  <td className="px-6 py-4 text-lg font-bold text-right" style={{ color: 'var(--stat-green-text)' }}>
-                                    {formatPriceCLP(finalTotal)}
-                                  </td>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Vehicle Information */}
-                      {selectedQuotation.vehicle && (
-                        <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
-                          <div className="flex items-center gap-2 mb-4">
-                            <Car className="w-5 h-5" style={{ color: 'var(--stat-green-text)' }} />
-                            <h3 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>Información del Vehículo</h3>
-                          </div>
-
-                          <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--stat-green-bg)', borderColor: 'var(--balance-income-border)' }}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Patente:</p>
-                                <p className="font-semibold" style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.license_plate}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Modelo:</p>
-                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.model?.model_name}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Marca:</p>
-                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.model?.brand?.brand_name}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Año:</p>
-                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.year}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Color:</p>
-                                <p style={{ color: 'var(--foreground)' }}>{selectedQuotation.vehicle.color}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Kilometraje Actual:</p>
-                                <p style={{ color: 'var(--foreground)' }}>
-                                  {latestMileage ? latestMileage.toLocaleString("es-CL") : "N/A"} Km
-                                </p>
-                              </div>
-                              <div className="md:col-span-2 space-y-1">
-                                <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Propietario / Empresa:</p>
-                                <p style={{ color: 'var(--foreground)' }}>
-                                  {selectedQuotation.vehicle.owner
-                                    ? selectedQuotation.vehicle.owner.name
-                                    : selectedQuotation.vehicle.company?.name}
-                                </p>
-                              </div>
-                              {selectedQuotation.vehicle.mileage_history && selectedQuotation.vehicle.mileage_history.length > 0 && (
-                                <div className="md:col-span-2 space-y-2">
-                                  <p className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>Historial de Kilometraje:</p>
-                                  <div className="p-3 rounded border max-h-32 overflow-y-auto" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                                    <ul className="space-y-1">
-                                      {selectedQuotation.vehicle.mileage_history.map((mileage) => (
-                                        <li key={mileage.mileage_history_id} className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                                          <span className="font-medium">
-                                            {formatChileanDate(mileage.registration_date)}:
-                                          </span>{" "}
-                                          {mileage.current_mileage.toLocaleString("es-CL")} km
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Work Order Description */}
-                <Card className="border shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-orange-600" />
-                      Descripción de la Orden de Trabajo
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Ingrese una descripción detallada para la orden de trabajo..."
-                      rows={4}
-                      className="w-full min-h-[120px] resize-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
-                    />
-                  </CardContent>
-                </Card>
-
-                <motion.div
-                  className="flex justify-end pt-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
+      {/* Selección de Vehículo */}
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Selección de Vehículo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={vehicleQuery}
+              onChange={(e) => setVehicleQuery(e.target.value)}
+              placeholder="Buscar vehículo por patente, marca, modelo o propietario..."
+              className="w-full pl-10 pr-12 py-2.5 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <Popover open={openVehiclePopover} onOpenChange={setOpenVehiclePopover}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2"
                 >
-                  <Button
-                    type="submit"
-                    disabled={loading || !selectedQuotation}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    size="lg"
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Creando...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5" />
-                        Crear Orden de Trabajo
-                      </div>
+                  <ChevronsUpDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[500px] p-0" align="end">
+                <ScrollArea className="h-80">
+                  {filteredVehicles.length > 0 ? (
+                    <div className="p-1">
+                      {filteredVehicles.map((vehicle) => (
+                        <button
+                          key={vehicle.vehicle_id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVehicle(vehicle);
+                            setOpenVehiclePopover(false);
+                            setSelectedQuotation(null);
+                          }}
+                          className={cn(
+                            "w-full text-left p-3 rounded-md transition-colors",
+                            selectedVehicle?.vehicle_id === vehicle.vehicle_id
+                              ? "bg-primary/10 border border-primary/30"
+                              : "hover:bg-muted"
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{vehicle.license_plate}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {vehicle.owner ? vehicle.owner.name : vehicle.company?.name}
+                              </p>
+                            </div>
+                            {selectedVehicle?.vehicle_id === vehicle.vehicle_id && (
+                              <CheckCircle className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-muted-foreground">No se encontraron vehículos</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {selectedVehicle && (
+            <div className="mt-4 p-3 rounded-md border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">
+                    {selectedVehicle.license_plate} - {selectedVehicle.model?.brand?.brand_name}{" "}
+                    {selectedVehicle.model?.model_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Propietario: {selectedVehicle.owner ? selectedVehicle.owner.name : selectedVehicle.company?.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Lista de Cotizaciones */}
+      {selectedVehicle && (
+        <Card className="border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium">Cotizaciones Disponibles</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {vehicleQuotations.length > 0 ? (
+              <div className="space-y-2">
+                {vehicleQuotations.map((q) => (
+                  <button
+                    key={q.quotation_id}
+                    type="button"
+                    onClick={() => setSelectedQuotation(q)}
+                    className={cn(
+                      "w-full text-left p-4 rounded-md border transition-colors",
+                      selectedQuotation?.quotation_id === q.quotation_id
+                        ? "bg-primary/5 border-primary/40"
+                        : "hover:bg-muted/50"
                     )}
-                  </Button>
-                </motion.div>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-medium">#{q.quotation_id}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {translateQuotationStatus(q.quotation_status)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {q.entry_date ? new Date(q.entry_date).toLocaleDateString('es-CL') : "-"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                          {q.description}
+                        </p>
+                        <p className="text-sm font-semibold">
+                          {formatPriceCLP(q.total_price)}
+                        </p>
+                      </div>
+                      {selectedQuotation?.quotation_id === q.quotation_id && (
+                        <CheckCircle className="w-4 h-4 text-primary ml-3" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">No hay cotizaciones para este vehículo</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Detalles de la Cotización Seleccionada */}
+      {selectedQuotation && (
+        <Card className="border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium">Detalles de la Cotización #{selectedQuotation.quotation_id}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Info básica */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-md bg-muted/30 border">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Estado</p>
+                <Badge variant="outline">{translateQuotationStatus(selectedQuotation.quotation_status)}</Badge>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Fecha</p>
+                <p className="text-sm font-medium">{selectedQuotation.entry_date ? formatChileanDate(selectedQuotation.entry_date) : "-"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Kilometraje</p>
+                <p className="text-sm font-medium">{latestMileage ? `${latestMileage.toLocaleString("es-CL")} km` : "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Total</p>
+                <p className="text-sm font-semibold text-primary">{formatPriceCLP(selectedQuotation.total_price)}</p>
+              </div>
+            </div>
+
+            {/* Descripción */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Descripción</p>
+              <p className="text-sm">{selectedQuotation.description}</p>
+            </div>
+
+            {/* Tabla de productos */}
+            {productDetails && productDetails.length > 0 && (
+              <div>
+                <p className="text-sm font-medium mb-3">Productos ({productDetails.length})</p>
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Producto</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Precio</th>
+                        <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">Cant.</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">M.O.</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {productDetails.map((detail) => {
+                        const subtotalDetail = Number(detail.sale_price) * detail.quantity + Number(detail.labor_price);
+                        return (
+                          <tr key={detail.work_product_detail_id}>
+                            <td className="px-4 py-2.5">
+                              <p className="font-medium">{detail.product?.product_name || "N/A"}</p>
+                              <p className="text-xs text-muted-foreground">{detail.product?.description || ""}</p>
+                            </td>
+                            <td className="px-4 py-2.5 text-right">{formatPriceCLP(Number(detail.sale_price))}</td>
+                            <td className="px-4 py-2.5 text-center">{detail.quantity}</td>
+                            <td className="px-4 py-2.5 text-right">{formatPriceCLP(Number(detail.labor_price))}</td>
+                            <td className="px-4 py-2.5 text-right font-medium">{formatPriceCLP(subtotalDetail)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="bg-muted/30">
+                      <tr className="border-t">
+                        <td colSpan={4} className="px-4 py-2 text-right text-sm">Subtotal:</td>
+                        <td className="px-4 py-2 text-right font-medium">{formatPriceCLP(subtotal)}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan={4} className="px-4 py-2 text-right text-sm">IVA ({taxRatePercent}%):</td>
+                        <td className="px-4 py-2 text-right font-medium">{formatPriceCLP(taxAmount)}</td>
+                      </tr>
+                      <tr className="border-t">
+                        <td colSpan={4} className="px-4 py-2.5 text-right font-semibold">Total:</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-primary">{formatPriceCLP(finalTotal)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Info del vehículo */}
+            {selectedQuotation.vehicle && (
+              <div className="pt-4 border-t">
+                <p className="text-sm font-medium mb-3">Información del Vehículo</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-md bg-muted/30 border">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Patente</p>
+                    <p className="text-sm font-medium">{selectedQuotation.vehicle.license_plate}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Marca / Modelo</p>
+                    <p className="text-sm">{selectedQuotation.vehicle.model?.brand?.brand_name} {selectedQuotation.vehicle.model?.model_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Año</p>
+                    <p className="text-sm">{selectedQuotation.vehicle.year}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Color</p>
+                    <p className="text-sm">{selectedQuotation.vehicle.color}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground mb-1">Propietario</p>
+                    <p className="text-sm">
+                      {selectedQuotation.vehicle.owner
+                        ? selectedQuotation.vehicle.owner.name
+                        : selectedQuotation.vehicle.company?.name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Descripción de la Orden */}
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Descripción de la Orden</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Descripción detallada del trabajo..."
+            rows={3}
+            className="resize-none"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Botón de acción */}
+      <div className="flex justify-end gap-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate(-1)}
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={loading || !selectedQuotation}
+        >
+          {loading ? "Creando..." : "Crear Orden de Trabajo"}
+        </Button>
       </div>
     </div>
   );

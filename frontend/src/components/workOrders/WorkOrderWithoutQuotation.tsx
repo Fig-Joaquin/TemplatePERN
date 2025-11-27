@@ -8,18 +8,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronsUpDown,
-  Package,
   Plus,
-  Car,
   User,
   Building2,
-  ShoppingCart,
-  Calculator,
   Search,
-  AlertCircle,
   CheckCircle,
   X,
-  FileText
 } from "lucide-react";
 
 import { NumberInput } from "@/components/numberInput";
@@ -33,7 +27,6 @@ import { getActiveTax } from "@/services/taxService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { motion, AnimatePresence } from "framer-motion";
 import { SparePartsModal } from "@/components/quotations/SparePartsModal";
 import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog";
 import type { Vehicle, Product, StockProduct, WorkOrderInput, WorkProductDetail } from "../../types/interfaces";
@@ -172,7 +165,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     // Validar stock
     const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
     const availableStock = stockProduct?.quantity || 0;
-    
+
     if (quantity > availableStock) {
       toast.error(`Stock insuficiente. Disponible: ${availableStock}`);
       return;
@@ -186,11 +179,6 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     } else {
       setSelectedProducts([...selectedProducts, { productId, quantity, laborPrice }]);
     }
-  };
-
-  const handleProductSelect = (productId: number, quantity: number = 1, laborPrice: number = 0) => {
-    handleProductChange(productId, quantity, laborPrice);
-    setShowProductModal(false);
   };
 
   const handleRemoveProduct = (productId: number) => {
@@ -297,75 +285,72 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
 
   return (
     <div className="space-y-6">
-      {/* Sección de Vehículo */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="w-5 h-5 text-blue-600" />
-            Seleccionar Vehículo
-          </CardTitle>
+      {/* Filtro por Tipo de Propietario */}
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Filtro por Tipo de Propietario</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Button
+              variant={selectedType === "all" ? "default" : "outline"}
+              onClick={() => setSelectedType("all")}
+              type="button"
+              size="sm"
+              className="flex-1"
+            >
+              Todos
+            </Button>
+            <Button
+              variant={selectedType === "person" ? "default" : "outline"}
+              onClick={() => setSelectedType("person")}
+              type="button"
+              size="sm"
+              className="flex-1"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Personas
+            </Button>
+            <Button
+              variant={selectedType === "company" ? "default" : "outline"}
+              onClick={() => setSelectedType("company")}
+              type="button"
+              size="sm"
+              className="flex-1"
+            >
+              <Building2 className="w-4 h-4 mr-2" />
+              Empresas
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Selección de Vehículo */}
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Selección de Vehículo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Filtro por Tipo de Propietario */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800">
-                Filtro por Tipo de Propietario
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-3">
-                <Button
-                  variant={selectedType === "all" ? "default" : "outline"}
-                  onClick={() => setSelectedType("all")}
-                  type="button"
-                  className="flex-1 transition-all duration-200 hover:shadow-md"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Todos
-                </Button>
-                <Button
-                  variant={selectedType === "person" ? "default" : "outline"}
-                  onClick={() => setSelectedType("person")}
-                  type="button"
-                  className="flex-1 transition-all duration-200 hover:shadow-md"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Personas
-                </Button>
-                <Button
-                  variant={selectedType === "company" ? "default" : "outline"}
-                  onClick={() => setSelectedType("company")}
-                  type="button"
-                  className="flex-1 transition-all duration-200 hover:shadow-md"
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Empresas
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="relative">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={vehicleQuery}
-                onChange={(e) => setVehicleQuery(e.target.value)}
-                placeholder="Buscar por patente o nombre..."
-                className="w-full pl-10 pr-12 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <Popover open={openVehiclePopover} onOpenChange={setOpenVehiclePopover}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="absolute right-1 top-1 hover:shadow-md transition-all duration-200">
-                    <ChevronsUpDown className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <ScrollArea className="h-72">
-                    {filteredVehicles.length > 0 ? (
-                      filteredVehicles.map((vehicle) => (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={vehicleQuery}
+              onChange={(e) => setVehicleQuery(e.target.value)}
+              placeholder="Buscar por patente o nombre..."
+              className="w-full pl-10 pr-12 py-2.5 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <Popover open={openVehiclePopover} onOpenChange={setOpenVehiclePopover}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2">
+                  <ChevronsUpDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0" align="end">
+                <ScrollArea className="h-72">
+                  {filteredVehicles.length > 0 ? (
+                    <div className="p-1">
+                      {filteredVehicles.map((vehicle) => (
                         <button
                           key={vehicle.vehicle_id}
                           type="button"
@@ -374,136 +359,118 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
                             setOpenVehiclePopover(false);
                             setVehicleQuery("");
                           }}
-                          className="w-full p-3 text-left hover:bg-accent border-b border-border last:border-b-0 transition-all duration-200 hover:shadow-sm"
+                          className="w-full p-3 text-left hover:bg-muted rounded-md transition-colors"
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium">{vehicle.license_plate}</div>
-                              <div className="text-sm text-muted-foreground">
+                              <p className="font-medium text-sm">{vehicle.license_plate}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {vehicle.owner ? vehicle.owner.name : vehicle.company?.name || "Sin propietario"}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
+                              </p>
+                              <p className="text-xs text-muted-foreground">
                                 {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
-                              </div>
+                              </p>
                             </div>
-                            <Badge variant={vehicle.vehicle_status === "running" ? "default" : "destructive"}>
-                              {vehicle.vehicle_status === "running" ? "Funcionando" : "Fuera de servicio"}
+                            <Badge variant={vehicle.vehicle_status === "running" ? "default" : "destructive"} className="text-xs">
+                              {vehicle.vehicle_status === "running" ? "Activo" : "Inactivo"}
                             </Badge>
                           </div>
                         </button>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-muted-foreground">
-                        No se encontraron vehículos
-                      </div>
-                    )}
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-            </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No se encontraron vehículos
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {selectedVehicle && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-accent/30 rounded-lg border"
-            >
+            <div className="p-3 rounded-md border bg-muted/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-primary" />
                   <div>
-                    <div className="font-medium">{selectedVehicle.license_plate}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <p className="font-medium text-sm">{selectedVehicle.license_plate}</p>
+                    <p className="text-xs text-muted-foreground">
                       {selectedVehicle.owner ? selectedVehicle.owner.name : selectedVehicle.company?.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       {selectedVehicle.model?.brand?.brand_name} {selectedVehicle.model?.model_name}
-                    </div>
+                    </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle(null)} className="hover:shadow-md transition-all duration-200">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle(null)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Sección de Productos */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-orange-600" />
-            Productos y Servicios
-          </CardTitle>
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Productos y Servicios</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Button onClick={() => setShowProductModal(true)} className="w-full hover:shadow-md transition-all duration-200">
+            <Button onClick={() => setShowProductModal(true)} variant="outline" className="w-full">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Producto
             </Button>
 
             {selectedProducts.length > 0 && (
               <div className="space-y-3">
-                <h4 className="font-medium">Productos Seleccionados:</h4>
-                <AnimatePresence>
-                  {selectedProducts.map(({ productId, quantity, laborPrice }) => {
-                    const product = products.find(p => p.product_id === productId);
-                    if (!product) return null;
+                <p className="text-sm font-medium">Productos Seleccionados ({selectedProducts.length})</p>
+                {selectedProducts.map(({ productId, quantity, laborPrice }) => {
+                  const product = products.find(p => p.product_id === productId);
+                  if (!product) return null;
 
-                    const profitMargin = Number(product.profit_margin);
-                    const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
-                    const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
+                  const profitMargin = Number(product.profit_margin);
+                  const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
+                  const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
 
-                    return (
-                      <motion.div
-                        key={productId}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="p-4 border border-border rounded-lg space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{product.product_name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Stock disponible: {stockProduct ? stockProduct.quantity : 0}
-                            </div>
-                            <div className="text-sm font-medium text-green-600">
-                              Precio: {formatPriceCLP(finalPrice)}
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm" onClick={() => handleRemoveProduct(productId)} className="hover:shadow-md transition-all duration-200">
-                            <X className="w-4 h-4 text-destructive" />
-                          </Button>
+                  return (
+                    <div key={productId} className="p-4 border rounded-md space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{product.product_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Stock: {stockProduct ? stockProduct.quantity : 0} | Precio: {formatPriceCLP(finalPrice)}
+                          </p>
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveProduct(productId)}>
+                          <X className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Cantidad</Label>
-                            <NumberInput
-                              value={quantity}
-                              onChange={(value) => handleQuantityChange(productId, value)}
-                              min={1}
-                              max={stockProduct ? stockProduct.quantity : 1}
-                            />
-                          </div>
-                          <div>
-                            <Label>Precio Mano de Obra</Label>
-                            <NumberInput
-                              value={laborPrice}
-                              onChange={(value) => handleLaborPriceChange(productId, value)}
-                              min={0}
-                            />
-                          </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-xs">Cantidad</Label>
+                          <NumberInput
+                            value={quantity}
+                            onChange={(value) => handleQuantityChange(productId, value)}
+                            min={1}
+                            max={stockProduct ? stockProduct.quantity : 1}
+                          />
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                        <div>
+                          <Label className="text-xs">Mano de Obra</Label>
+                          <NumberInput
+                            value={laborPrice}
+                            onChange={(value) => handleLaborPriceChange(productId, value)}
+                            min={0}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -511,66 +478,64 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
       </Card>
 
       {/* Descripción */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Descripción del Trabajo</CardTitle>
+      <Card className="border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Descripción del Trabajo</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe el trabajo a realizar..."
-            rows={4}
+            rows={3}
+            className="resize-none"
           />
         </CardContent>
       </Card>
 
       {/* Resumen de Costos */}
       {selectedProducts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-green-600" />
-              Resumen de Costos
-            </CardTitle>
+        <Card className="border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium">Resumen de Costos</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Subtotal Productos:</span>
+              <span className="text-muted-foreground">Subtotal Productos:</span>
               <span>{formatPriceCLP(totalProductPrice)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Mano de Obra:</span>
+              <span className="text-muted-foreground">Mano de Obra:</span>
               <span>{formatPriceCLP(totalLaborPrice)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Subtotal:</span>
+              <span className="text-muted-foreground">Subtotal:</span>
               <span>{formatPriceCLP(subtotalBeforeTax)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>IVA ({Math.round(taxRate * 100)}%):</span>
+              <span className="text-muted-foreground">IVA ({Math.round(taxRate * 100)}%):</span>
               <span>{formatPriceCLP(taxAmount)}</span>
             </div>
-            <Separator />
-            <div className="flex justify-between font-bold text-lg">
+            <Separator className="my-2" />
+            <div className="flex justify-between font-semibold">
               <span>Total:</span>
-              <span className="text-green-600">{formatPriceCLP(finalTotal)}</span>
+              <span className="text-primary">{formatPriceCLP(finalTotal)}</span>
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Botones de Acción */}
-      <div className="flex gap-4">
-        <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1 hover:shadow-md transition-all duration-200">
+      <div className="flex gap-3 justify-end pt-2">
+        <Button type="button" variant="outline" onClick={() => navigate(-1)}>
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} disabled={loading || !selectedVehicle || selectedProducts.length === 0} className="flex-1 hover:shadow-md transition-all duration-200">
+        <Button onClick={handleSubmit} disabled={loading || !selectedVehicle || selectedProducts.length === 0}>
           {loading ? "Creando..." : "Crear Orden de Trabajo"}
         </Button>
       </div>
 
-      {/* Modal de Selección de Productos - Nuevo diseño */}
+      {/* Modal de Selección de Productos */}
       <SparePartsModal
         open={showProductModal}
         onOpenChange={setShowProductModal}
@@ -586,7 +551,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         showStock={true}
         requireStock={true}
         title="Seleccionar Productos"
-        description="Selecciona los productos para la orden de trabajo. Solo productos con stock disponible."
+        description="Selecciona los productos para la orden de trabajo."
       />
 
       {/* Modal para crear producto rápido */}

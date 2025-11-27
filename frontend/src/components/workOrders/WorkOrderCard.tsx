@@ -21,16 +21,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
 import { toast } from "react-toastify";
-import { deleteWorkOrder } from "@/services/workOrderService";
+import { deleteWorkOrder, updateWorkOrder } from "@/services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
 import { getActiveTax } from "@/services/taxService";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
-import { MoreHorizontal, Edit, UserPlus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, UserPlus, Trash2, Play, Pause, CheckCircle, CreditCard } from "lucide-react";
 
 interface WorkOrderCardProps {
   workOrder: any; // Ajusta según tu interfaz WorkOrder con las relaciones necesarias.
   onDelete?: (id: number) => void;
   onCreateDebtor?: (workOrder: any) => void;
+  onStartOrder?: (workOrder: any) => void;
+  onPauseOrder?: (workOrder: any) => void;
+  onFinishOrder?: (workOrder: any) => void;
 }
 
 const statusTranslations: Record<string, string> = {
@@ -45,7 +48,7 @@ const statusColors: Record<string, string> = {
   not_started: "text-red-600",
 };
 
-const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardProps) => {
+const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPauseOrder, onFinishOrder }: WorkOrderCardProps) => {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [loadedDetails, setLoadedDetails] = useState<any[]>([]);
@@ -146,6 +149,48 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
       onCreateDebtor(workOrder);
     }
     setOpen(false); // Cerrar el modal después de crear el deudor
+  };
+
+  const handleStartOrder = async () => {
+    try {
+      await updateWorkOrder(work_order_id, { order_status: "in_progress" });
+      toast.success(`Orden #${work_order_id} iniciada correctamente`);
+      if (onStartOrder) {
+        onStartOrder(workOrder);
+      }
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error al iniciar la orden:", error);
+      toast.error(error.response?.data?.message || error.message || "Error al iniciar la orden");
+    }
+  };
+
+  const handlePauseOrder = async () => {
+    try {
+      await updateWorkOrder(work_order_id, { order_status: "not_started" });
+      toast.success(`Orden #${work_order_id} pausada correctamente`);
+      if (onPauseOrder) {
+        onPauseOrder(workOrder);
+      }
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error al pausar la orden:", error);
+      toast.error(error.response?.data?.message || error.message || "Error al pausar la orden");
+    }
+  };
+
+  const handleFinishOrder = async () => {
+    try {
+      await updateWorkOrder(work_order_id, { order_status: "finished" });
+      toast.success(`Orden #${work_order_id} finalizada correctamente`);
+      if (onFinishOrder) {
+        onFinishOrder(workOrder);
+      }
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error al finalizar la orden:", error);
+      toast.error(error.response?.data?.message || error.message || "Error al finalizar la orden");
+    }
   };
 
   const handleDeleteConfirmed = async () => {
@@ -387,6 +432,40 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor }: WorkOrderCardPro
                   >
                     <Edit className="mr-2 h-4 w-4 text-green-600" />
                     Editar
+                  </DropdownMenuItem>
+                  {order_status === "not_started" && (
+                    <DropdownMenuItem
+                      onClick={handleStartOrder}
+                      className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50"
+                    >
+                      <Play className="mr-2 h-4 w-4 text-blue-600" />
+                      Iniciar Orden
+                    </DropdownMenuItem>
+                  )}
+                  {order_status === "in_progress" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={handlePauseOrder}
+                        className="cursor-pointer hover:bg-yellow-50 focus:bg-yellow-50"
+                      >
+                        <Pause className="mr-2 h-4 w-4 text-yellow-600" />
+                        Pausar Orden
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={handleFinishOrder}
+                        className="cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4 text-emerald-600" />
+                        Finalizar Orden
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => navigate(`/admin/finanzas/pagos/nuevo?workOrderId=${work_order_id}`)}
+                    className="cursor-pointer hover:bg-primary/10 focus:bg-primary/10"
+                  >
+                    <CreditCard className="mr-2 h-4 w-4 text-primary" />
+                    Registrar Pago
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleCreateDebtor}

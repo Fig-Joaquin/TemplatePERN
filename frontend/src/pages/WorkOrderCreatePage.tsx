@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import WorkOrderWithQuotation from "@/components/workOrders/WorkOrderWithQuotation";
 import WorkOrderWithoutQuotation from "@/components/workOrders/WorkOrderWithoutQuotation";
 import { motion } from "framer-motion";
-import { FileText, Plus, ArrowLeft, Wrench, Quote } from "lucide-react";
+import { ArrowLeft, Wrench, FileCheck, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const WorkOrderCreatePage = () => {
   const location = useLocation();
@@ -19,133 +20,160 @@ const WorkOrderCreatePage = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="container mx-auto p-6 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="container mx-auto px-4 sm:px-6 py-6 max-w-6xl"
     >
-      {/* Encabezado mejorado */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate("/admin/orden-trabajo")}
-            className="hover:bg-primary/10"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Plus className="w-8 h-8 text-primary" />
-              </div>
-              Nueva Orden de Trabajo
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Crea una nueva orden de trabajo con o sin cotización previa
-            </p>
-          </div>
-        </div>
+      {/* Header */}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/admin/orden-trabajo")}
+          className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a órdenes
+        </Button>
+
+        <h1 className="text-2xl font-semibold text-foreground">
+          Nueva Orden de Trabajo
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Seleccione el método de creación
+        </p>
       </div>
 
-      {/* Cards de opciones mejoradas */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
-        <Card className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${activeTab === "with" ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
-          }`} onClick={() => setActiveTab("with")}>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-full w-fit">
-              <Quote className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+      {/* Selection Cards */}
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
+        {/* Con Cotización */}
+        <Card
+          className={cn(
+            "cursor-pointer transition-all duration-200 border",
+            activeTab === "with"
+              ? "border-primary bg-primary/5 dark:bg-primary/10"
+              : "border-border hover:border-muted-foreground/30"
+          )}
+          onClick={() => setActiveTab("with")}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="p-2 rounded-md bg-muted">
+                <FileCheck className="w-5 h-5 text-foreground" />
+              </div>
+              {activeTab === "with" && (
+                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="w-3 h-3 text-primary-foreground" />
+                </div>
+              )}
             </div>
-            <CardTitle className="text-blue-700 dark:text-blue-300">Con Cotización</CardTitle>
-            <CardDescription>
-              Crear orden basada en una cotización existente. Los productos y servicios ya están definidos.
+            <CardTitle className="text-base font-medium mt-3">
+              Con Cotización
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Basada en una cotización aprobada con productos y precios definidos.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+          <CardContent className="pt-0">
+            <ul className="text-xs text-muted-foreground space-y-1.5">
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
                 Productos pre-aprobados
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
                 Precios acordados
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                Proceso más rápido
+                <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
+                Proceso simplificado
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        <Card className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${activeTab === "without" ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
-          }`} onClick={() => setActiveTab("without")}>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-full w-fit">
-              <Wrench className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+        {/* Sin Cotización */}
+        <Card
+          className={cn(
+            "cursor-pointer transition-all duration-200 border",
+            activeTab === "without"
+              ? "border-primary bg-primary/5 dark:bg-primary/10"
+              : "border-border hover:border-muted-foreground/30"
+          )}
+          onClick={() => setActiveTab("without")}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="p-2 rounded-md bg-muted">
+                <Wrench className="w-5 h-5 text-foreground" />
+              </div>
+              {activeTab === "without" && (
+                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="w-3 h-3 text-primary-foreground" />
+                </div>
+              )}
             </div>
-            <CardTitle className="text-orange-700 dark:text-orange-300">Sin Cotización</CardTitle>
-            <CardDescription>
-              Crear orden de trabajo directamente, ideal para mantenimientos o reparaciones urgentes.
+            <CardTitle className="text-base font-medium mt-3">
+              Sin Cotización
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Orden directa para trabajos urgentes o mantenimientos programados.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+          <CardContent className="pt-0">
+            <ul className="text-xs text-muted-foreground space-y-1.5">
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                Flexibilidad total
+                <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
+                Configuración manual
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
                 Ideal para emergencias
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                Configuración manual
+                <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
+                Control total
               </li>
             </ul>
           </CardContent>
         </Card>
       </div>
 
-      {/* Contenido de las pestañas */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      {/* Form Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="hidden">
           <TabsTrigger value="with">Con Cotización</TabsTrigger>
           <TabsTrigger value="without">Sin Cotización</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="with" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Orden de Trabajo con Cotización
+        <TabsContent value="with" className="mt-0">
+          <Card className="border">
+            <CardHeader className="border-b bg-muted/40 py-4">
+              <CardTitle className="text-base font-medium">
+                Crear con Cotización
               </CardTitle>
-              <CardDescription>
-                Selecciona una cotización existente para crear la orden de trabajo
+              <CardDescription className="text-sm">
+                Seleccione una cotización existente para continuar
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <WorkOrderWithQuotation preselectedVehicleId={vehicleIdFromUrl ? Number(vehicleIdFromUrl) : undefined} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="without" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wrench className="w-5 h-5" />
-                Orden de Trabajo sin Cotización
+        <TabsContent value="without" className="mt-0">
+          <Card className="border">
+            <CardHeader className="border-b bg-muted/40 py-4">
+              <CardTitle className="text-base font-medium">
+                Crear sin Cotización
               </CardTitle>
-              <CardDescription>
-                Configura manualmente los productos y servicios para la orden de trabajo
+              <CardDescription className="text-sm">
+                Configure manualmente los productos y servicios
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <WorkOrderWithoutQuotation preselectedVehicleId={vehicleIdFromUrl ? Number(vehicleIdFromUrl) : undefined} />
             </CardContent>
           </Card>

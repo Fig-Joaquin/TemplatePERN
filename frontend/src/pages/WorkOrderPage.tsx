@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Table as TableIcon, LayoutGrid, FileText, MoreHorizontal, Eye, Edit, UserPlus, Trash2 } from "lucide-react";
+import { Search, Table as TableIcon, LayoutGrid, MoreHorizontal, Eye, Edit, UserPlus, Trash2, Plus, Play, Pause, CheckCircle, CreditCard } from "lucide-react";
 import { toast } from "react-toastify";
-import { getAllWorkOrders, deleteWorkOrder } from "@/services/workOrderService";
+import { getAllWorkOrders, deleteWorkOrder, updateWorkOrder } from "@/services/workOrderService";
 import { createDebtor } from "@/services/debtorService";
 import WorkOrderCard from "@/components/workOrders/WorkOrderCard";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const WorkOrdersPage = () => {
   const [workOrders, setWorkOrders] = useState<any[]>([]);
@@ -89,6 +98,42 @@ const WorkOrdersPage = () => {
   const handleDeleteCancel = () => {
     setShowDeleteConfirm(false);
     setWorkOrderToDelete(null);
+  };
+
+  // Función para iniciar una orden de trabajo
+  const handleStartWorkOrder = async (workOrder: any) => {
+    try {
+      await updateWorkOrder(workOrder.work_order_id, { order_status: "in_progress" });
+      toast.success(`Orden #${workOrder.work_order_id} iniciada correctamente`);
+      loadWorkOrders();
+    } catch (error: any) {
+      console.error("Error al iniciar la orden:", error);
+      toast.error(error?.response?.data?.message || "Error al iniciar la orden");
+    }
+  };
+
+  // Función para pausar una orden de trabajo (volver a no iniciado)
+  const handlePauseWorkOrder = async (workOrder: any) => {
+    try {
+      await updateWorkOrder(workOrder.work_order_id, { order_status: "not_started" });
+      toast.success(`Orden #${workOrder.work_order_id} pausada correctamente`);
+      loadWorkOrders();
+    } catch (error: any) {
+      console.error("Error al pausar la orden:", error);
+      toast.error(error?.response?.data?.message || "Error al pausar la orden");
+    }
+  };
+
+  // Función para finalizar una orden de trabajo
+  const handleFinishWorkOrder = async (workOrder: any) => {
+    try {
+      await updateWorkOrder(workOrder.work_order_id, { order_status: "finished" });
+      toast.success(`Orden #${workOrder.work_order_id} finalizada correctamente`);
+      loadWorkOrders();
+    } catch (error: any) {
+      console.error("Error al finalizar la orden:", error);
+      toast.error(error?.response?.data?.message || "Error al finalizar la orden");
+    }
   };
 
   // Función para abrir el modal de crear deudor
@@ -228,168 +273,201 @@ const WorkOrdersPage = () => {
 
   return (
     <motion.div
-      className="container mx-auto p-6 space-y-6"
+      className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3 }}
     >
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            Órdenes de Trabajo
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gestión de órdenes de trabajo
+          </p>
+        </div>
+        <Button onClick={() => navigate("/admin/nueva-orden-trabajo")}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Orden
+        </Button>
+      </div>
 
-      {/* Encabezado: título, buscador, selector de ordenación, toggle de vista y botón "Nueva Orden" */}
-      <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
-        <FileText className="w-8 h-8" />
-        Órdenes de Trabajo
-      </h1>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative w-72">
-            <Input
-              type="text"
-              placeholder="Buscar por matrícula, teléfono o nombre..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            <Search className="absolute left-3 top-2.5 w-5 h-5 text-muted-foreground" />
-          </div>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as "recent" | "oldest")}
-            className="border rounded p-2 bg-background text-foreground border-border"
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Buscar por patente, teléfono o nombre..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        <Select value={sortOrder} onValueChange={(value: "recent" | "oldest") => setSortOrder(value)}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recent">Más recientes</SelectItem>
+            <SelectItem value="oldest">Más antiguas</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="flex border rounded-md">
+          <Button
+            variant={viewMode === "table" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("table")}
+            className="rounded-r-none"
           >
-            <option value="recent">Más recientes</option>
-            <option value="oldest">Más antiguas</option>
-          </select>
-          {/* Botones para alternar vista */}
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === "table" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("table")}
-            >
-              <TableIcon className="w-5 h-5" />
-              Tabla
-            </Button>
-            <Button
-              variant={viewMode === "card" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("card")}
-            >
-              <LayoutGrid className="w-5 h-5" />
-              Tarjetas
-            </Button>
-          </div>
-          <Button onClick={() => navigate("/admin/nueva-orden-trabajo")}>
-            Nueva Orden
+            <TableIcon className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === "card" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("card")}
+            className="rounded-l-none border-l"
+          >
+            <LayoutGrid className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-muted-foreground">Cargando...</p>
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-muted border-t-primary rounded-full animate-spin"></div>
         </div>
       ) : visibleWorkOrders.length > 0 ? (
         <>
           {viewMode === "table" ? (
-            // Vista en Tabla
-            <div className="rounded-md border" style={{ backgroundColor: 'var(--card)' }}>
+            <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Patente</TableHead>
-                    <TableHead>Dueño</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Cotización</TableHead>
-                    <TableHead>Mécanico</TableHead>
-                    <TableHead className="text-center">Acciones</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-medium">ID</TableHead>
+                    <TableHead className="font-medium">Fecha</TableHead>
+                    <TableHead className="font-medium text-right">Total</TableHead>
+                    <TableHead className="font-medium">Estado</TableHead>
+                    <TableHead className="font-medium">Patente</TableHead>
+                    <TableHead className="font-medium">Cliente</TableHead>
+                    <TableHead className="font-medium">Teléfono</TableHead>
+                    <TableHead className="font-medium">Cotización</TableHead>
+                    <TableHead className="font-medium">Mecánico</TableHead>
+                    <TableHead className="font-medium text-center w-16">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visibleWorkOrders.map((wo) => {
-                    // Datos del vehículo
                     const vehicle = wo.vehicle;
-                    const plate = vehicle?.license_plate || "No especificado";
+                    const plate = vehicle?.license_plate || "—";
                     const owner = vehicle?.owner;
                     const ownerName = owner
                       ? `${owner.name} ${owner.first_surname}`
                       : vehicle?.company
                         ? vehicle.company.name
-                        : "No especificado";
+                        : "—";
                     const ownerPhone = owner
-                      ? owner.number_phone || "No especificado"
+                      ? owner.number_phone || "—"
                       : vehicle?.company
-                        ? vehicle.company.phone || "No especificado"
-                        : "No especificado";
+                        ? vehicle.company.phone || "—"
+                        : "—";
 
-                    // Nueva implementación para mostrar técnicos igual que en WorkOrderCard
                     const assignedTechnicians = techniciansByOrderId[wo.work_order_id] || [];
-                    let technicianNames = "No asignado";
+                    let technicianNames = "—";
 
                     if (assignedTechnicians.length > 0) {
                       technicianNames = assignedTechnicians
                         .map(tech => {
-                          if (!tech || !tech.technician) return "Mécanico sin datos";
-                          const name = `${tech.technician.name || "Sin nombre"} ${tech.technician.first_surname || ""}`;
-                          const date = tech.assigned_at ?
-                            new Date(tech.assigned_at).toLocaleDateString('es-CL', {
-                              day: '2-digit',
-                              month: '2-digit'
-                            }) : '';
-                          return date ? `${name} (${date})` : name;
+                          if (!tech?.technician) return "Sin datos";
+                          return `${tech.technician.name || ""} ${tech.technician.first_surname || ""}`.trim();
                         })
                         .join(', ');
                     }
 
+                    const getStatusBadge = (status: string) => {
+                      const styles: Record<string, string> = {
+                        finished: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+                        in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                        not_started: "bg-muted text-muted-foreground",
+                      };
+                      return (
+                        <Badge variant="secondary" className={cn("font-normal", styles[status] || styles.not_started)}>
+                          {translateStatus(status)}
+                        </Badge>
+                      );
+                    };
+
                     return (
-                      <TableRow key={wo.work_order_id}>
-                        <TableCell>{wo.work_order_id}</TableCell>
+                      <TableRow key={wo.work_order_id} className="hover:bg-muted/30">
+                        <TableCell className="font-medium">#{wo.work_order_id}</TableCell>
                         <TableCell>{formatDate(wo.order_date)}</TableCell>
-                        <TableCell className="text-right">{formatPriceCLP(wo.total_amount)}</TableCell>
-                        <TableCell>{translateStatus(wo.order_status)}</TableCell>
-                        <TableCell>{plate}</TableCell>
-                        <TableCell>{ownerName}</TableCell>
-                        <TableCell>+{ownerPhone}</TableCell>
-                        <TableCell>{wo.quotation ? "Sí" : "No"}</TableCell>
-                        <TableCell>{technicianNames}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-right font-medium">{formatPriceCLP(wo.total_amount)}</TableCell>
+                        <TableCell>{getStatusBadge(wo.order_status)}</TableCell>
+                        <TableCell className="font-mono text-sm">{plate}</TableCell>
+                        <TableCell className="max-w-[140px] truncate">{ownerName}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {ownerPhone !== "—" ? `+${ownerPhone}` : "—"}
+                        </TableCell>
+                        <TableCell>
+                          {wo.quotation ? (
+                            <Badge variant="outline" className="font-normal">Sí</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">No</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-[120px] truncate text-muted-foreground">
+                          {technicianNames}
+                        </TableCell>
+                        <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted focus:bg-muted">
-                                <span className="sr-only">Abrir menú</span>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => setSelectedWorkOrder(wo)}
-                                className="cursor-pointer hover:bg-blue-500/10 focus:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:focus:bg-blue-500/20"
-                              >
-                                <Eye className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <DropdownMenuItem onClick={() => setSelectedWorkOrder(wo)}>
+                                <Eye className="mr-2 h-4 w-4" />
                                 Ver Detalles
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/admin/orden-trabajo/editar/${wo.work_order_id}`)}
-                                className="cursor-pointer hover:bg-green-500/10 focus:bg-green-500/10 dark:hover:bg-green-500/20 dark:focus:bg-green-500/20"
-                              >
-                                <Edit className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                              <DropdownMenuItem onClick={() => navigate(`/admin/orden-trabajo/editar/${wo.work_order_id}`)}>
+                                <Edit className="mr-2 h-4 w-4" />
                                 Editar
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleCreateDebtor(wo)}
-                                className="cursor-pointer hover:bg-orange-500/10 focus:bg-orange-500/10 dark:hover:bg-orange-500/20 dark:focus:bg-orange-500/20"
-                              >
-                                <UserPlus className="mr-2 h-4 w-4 text-orange-600 dark:text-orange-400" />
+                              {wo.order_status === "not_started" && (
+                                <DropdownMenuItem onClick={() => handleStartWorkOrder(wo)}>
+                                  <Play className="mr-2 h-4 w-4" />
+                                  Iniciar Orden
+                                </DropdownMenuItem>
+                              )}
+                              {wo.order_status === "in_progress" && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handlePauseWorkOrder(wo)}>
+                                    <Pause className="mr-2 h-4 w-4" />
+                                    Pausar Orden
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleFinishWorkOrder(wo)}>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Finalizar Orden
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuItem onClick={() => navigate(`/admin/finanzas/pagos/nuevo?workOrderId=${wo.work_order_id}`)}>
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Registrar Pago
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCreateDebtor(wo)}>
+                                <UserPlus className="mr-2 h-4 w-4" />
                                 Crear Deudor
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => handleDeleteClick(wo)}
-                                className="cursor-pointer text-red-600 dark:text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 dark:hover:bg-red-500/20 dark:focus:bg-red-500/20"
+                                className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Eliminar
@@ -404,79 +482,69 @@ const WorkOrdersPage = () => {
               </Table>
             </div>
           ) : (
-            // Vista en Tarjetas
-            <motion.div
-              className="grid grid-cols-1 gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
+            <div className="grid grid-cols-1 gap-4">
               <AnimatePresence>
                 {visibleWorkOrders.map((wo) => (
                   <motion.div
                     key={wo.work_order_id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                   >
                     <WorkOrderCard
                       workOrder={wo}
                       onCreateDebtor={handleCreateDebtor}
+                      onStartOrder={() => loadWorkOrders()}
                     />
                   </motion.div>
                 ))}
               </AnimatePresence>
-            </motion.div>
+            </div>
           )}
+
           {visibleWorkOrders.length < sortedWorkOrders.length && (
-            <div className="flex justify-center mt-4">
-              <Button onClick={handleLoadMore}>Cargar más</Button>
+            <div className="flex justify-center mt-6">
+              <Button variant="outline" onClick={handleLoadMore}>
+                Cargar más ({sortedWorkOrders.length - visibleWorkOrders.length} restantes)
+              </Button>
             </div>
           )}
         </>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center justify-center py-16 px-4"
-        >
-          <div className="bg-muted/50 rounded-full p-8 mb-6">
-            <FileText className="w-24 h-24 text-muted-foreground" />
-          </div>
-          <h2 className="text-2xl font-semibold text-foreground mb-2">
-            No se encontraron órdenes de trabajo
-          </h2>
-          <p className="text-muted-foreground text-center max-w-md mb-6">
-            {searchTerm
-              ? "No hay órdenes que coincidan con tu búsqueda. Intenta con otros términos."
-              : "Aún no hay órdenes de trabajo registradas. Crea la primera orden para comenzar."}
-          </p>
-          <Button
-            onClick={() => navigate("/admin/nueva-orden-trabajo")}
-            className="flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Crear Primera Orden
-          </Button>
-        </motion.div>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+            <h2 className="text-lg font-medium text-foreground mb-1">
+              No se encontraron órdenes
+            </h2>
+            <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
+              {searchTerm
+                ? "No hay órdenes que coincidan con tu búsqueda."
+                : "Aún no hay órdenes de trabajo registradas."}
+            </p>
+            <Button onClick={() => navigate("/admin/nueva-orden-trabajo")}>
+              <Plus className="w-4 h-4 mr-2" />
+              Crear Orden
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Modal para ver detalles en vista de tabla */}
+      {/* Modal para ver detalles */}
       {selectedWorkOrder && (
         <Dialog open={true} onOpenChange={() => setSelectedWorkOrder(null)}>
-          <DialogContent className="bg-card text-card-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Detalles de la Orden #{selectedWorkOrder.work_order_id}
+                Orden de Trabajo #{selectedWorkOrder.work_order_id}
               </DialogTitle>
             </DialogHeader>
-            {/* Usamos la misma card existente */}
-            <WorkOrderCard
-              workOrder={selectedWorkOrder}
-              onCreateDebtor={handleCreateDebtor}
-            />
+            <div className="mt-4">
+              <WorkOrderCard
+                workOrder={selectedWorkOrder}
+                onCreateDebtor={handleCreateDebtor}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -484,38 +552,37 @@ const WorkOrdersPage = () => {
       {/* Modal de confirmación para eliminar */}
       {showDeleteConfirm && workOrderToDelete && (
         <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-destructive">¡Advertencia! Eliminación Permanente</DialogTitle>
+              <DialogTitle>Eliminar Orden de Trabajo</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-center font-medium text-foreground">
-                ¿Estás seguro de que deseas eliminar la orden de trabajo <strong>#{workOrderToDelete.work_order_id}</strong>?
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                ¿Confirma la eliminación de la orden <strong className="text-foreground">#{workOrderToDelete.work_order_id}</strong>?
               </p>
-              <div className="bg-muted border border-border rounded-md p-3 text-sm">
-                <p className="text-foreground"><strong>Orden:</strong> #{workOrderToDelete.work_order_id}</p>
-                <p className="text-foreground"><strong>Estado:</strong> {translateStatus(workOrderToDelete.order_status)}</p>
-                <p className="text-foreground"><strong>Vehículo:</strong> {workOrderToDelete.vehicle?.license_plate || "N/A"}</p>
+
+              <div className="bg-muted rounded-md p-3 text-sm space-y-1 mb-4">
+                <p><span className="text-muted-foreground">Estado:</span> {translateStatus(workOrderToDelete.order_status)}</p>
+                <p><span className="text-muted-foreground">Vehículo:</span> {workOrderToDelete.vehicle?.license_plate || "N/A"}</p>
               </div>
-              <div className="bg-accent/10 border border-accent/20 rounded-md p-3 text-sm">
-                <p className="text-foreground"><strong>ATENCIÓN:</strong> Esta acción realizará lo siguiente:</p>
-                <ul className="list-disc pl-5 mt-2 space-y-1 text-foreground">
-                  <li>Eliminará la orden de trabajo permanentemente</li>
-                  <li>Restaurará el stock de productos utilizados</li>
-                  <li>Eliminará todos los pagos asociados</li>
-                  <li>Eliminará todos los técnicos asignados</li>
+
+              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm">
+                <p className="font-medium text-destructive mb-2">Esta acción:</p>
+                <ul className="text-muted-foreground space-y-1 text-xs">
+                  <li>• Eliminará la orden permanentemente</li>
+                  <li>• Restaurará el stock de productos</li>
+                  <li>• Eliminará pagos y técnicos asociados</li>
                 </ul>
-                <p className="mt-2 font-semibold text-foreground">Esta acción no se puede deshacer.</p>
               </div>
             </div>
-            <div className="flex justify-end mt-4 gap-2">
+            <DialogFooter>
               <Button variant="outline" onClick={handleDeleteCancel}>
                 Cancelar
               </Button>
               <Button variant="destructive" onClick={handleDeleteConfirm}>
-                Eliminar permanentemente
+                Eliminar
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
@@ -525,60 +592,48 @@ const WorkOrdersPage = () => {
         <Dialog open={showCreateDebtorModal} onOpenChange={setShowCreateDebtorModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-orange-600" />
-                Crear Deudor
-              </DialogTitle>
+              <DialogTitle>Crear Deudor</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-muted border border-border rounded-md p-3 text-sm">
-                <p className="text-foreground"><strong>Orden de Trabajo:</strong> #{workOrderForDebtor.work_order_id}</p>
-                <p className="text-foreground"><strong>Vehículo:</strong> {workOrderForDebtor.vehicle?.license_plate || "N/A"}</p>
-                <p className="text-foreground"><strong>Cliente:</strong> {
+            <div className="py-4 space-y-4">
+              <div className="bg-muted rounded-md p-3 text-sm space-y-1">
+                <p><span className="text-muted-foreground">Orden:</span> #{workOrderForDebtor.work_order_id}</p>
+                <p><span className="text-muted-foreground">Vehículo:</span> {workOrderForDebtor.vehicle?.license_plate || "N/A"}</p>
+                <p><span className="text-muted-foreground">Cliente:</span> {
                   workOrderForDebtor.vehicle?.owner
                     ? `${workOrderForDebtor.vehicle.owner.name} ${workOrderForDebtor.vehicle.owner.first_surname}`
                     : workOrderForDebtor.vehicle?.company?.name || "N/A"
                 }</p>
-                <p className="text-foreground"><strong>Total de la Orden:</strong> {formatPriceCLP(workOrderForDebtor.total_amount)}</p>
+                <p><span className="text-muted-foreground">Total:</span> <span className="font-medium">{formatPriceCLP(workOrderForDebtor.total_amount)}</span></p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="debtor-description">Descripción de la Deuda</Label>
+                <Label htmlFor="debtor-description">Descripción</Label>
                 <Textarea
                   id="debtor-description"
                   value={debtorDescription}
                   onChange={(e) => setDebtorDescription(e.target.value)}
-                  placeholder="Describe el motivo de la deuda..."
+                  placeholder="Motivo de la deuda..."
                   rows={3}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="debtor-amount">Monto de la Deuda</Label>
+                <Label htmlFor="debtor-amount">Monto</Label>
                 <Input
                   id="debtor-amount"
                   type="number"
                   value={debtorAmount}
-                  onChange={(e) => setDebtorAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setDebtorAmount(Number.parseFloat(e.target.value) || 0)}
                   min="0"
-                  step="0.01"
                 />
               </div>
             </div>
 
-            <DialogFooter className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCreateDebtorCancel}
-                disabled={creatingDebtor}
-              >
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCreateDebtorCancel} disabled={creatingDebtor}>
                 Cancelar
               </Button>
-              <Button
-                onClick={handleCreateDebtorSubmit}
-                disabled={creatingDebtor || !debtorDescription.trim()}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
+              <Button onClick={handleCreateDebtorSubmit} disabled={creatingDebtor || !debtorDescription.trim()}>
                 {creatingDebtor ? "Creando..." : "Crear Deudor"}
               </Button>
             </DialogFooter>

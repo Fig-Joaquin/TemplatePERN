@@ -22,12 +22,10 @@ import {
   Save,
   Car,
   Wrench,
-  FileText,
   AlertCircle,
   Plus,
   Trash2,
   Info,
-  User,
   X,
 } from "lucide-react";
 import {
@@ -202,7 +200,7 @@ const WorkOrderEditPage = () => {
     const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
     const availableStock = stockProduct ? stockProduct.quantity : 0;
     const existingProduct = products.find(p => p.product_id === productId && !p._markedForDeletion);
-    
+
     // Para productos nuevos, validar stock completo
     if (!existingProduct && quantity > availableStock) {
       toast.error(`No hay suficiente stock para ${selectedProduct.product_name}. Disponible: ${availableStock}`);
@@ -230,25 +228,25 @@ const WorkOrderEditPage = () => {
     if (save) {
       // Aplicar cambios temporales a los productos reales
       const newProducts: any[] = [];
-      
+
       for (const tempProduct of tempSelectedProducts) {
         const existingProduct = products.find(p => p.product_id === tempProduct.productId);
         const productData = allProducts.find(p => p.product_id === tempProduct.productId);
-        
+
         if (!productData) continue;
-        
+
         const basePrice = Number(productData.sale_price);
         const margin = Number(productData.profit_margin) / 100;
         const priceWithMargin = Number((basePrice * (1 + margin)).toFixed(2));
-        
+
         if (existingProduct && !existingProduct._markedForDeletion) {
           // Actualizar producto existente
           newProducts.push({
             ...existingProduct,
             quantity: tempProduct.quantity,
             labor_price: tempProduct.laborPrice,
-            _modified: existingProduct.quantity !== tempProduct.quantity || 
-                       existingProduct.labor_price !== tempProduct.laborPrice
+            _modified: existingProduct.quantity !== tempProduct.quantity ||
+              existingProduct.labor_price !== tempProduct.laborPrice
           });
         } else {
           // Nuevo producto
@@ -262,10 +260,10 @@ const WorkOrderEditPage = () => {
           });
         }
       }
-      
+
       // Mantener productos marcados para eliminación
       const deletedProducts = products.filter(p => p._markedForDeletion);
-      
+
       setProducts([...newProducts, ...deletedProducts]);
       setHasUnsavedChanges(true);
     }
@@ -646,19 +644,25 @@ const WorkOrderEditPage = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-lg text-muted-foreground">Cargando orden de trabajo...</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full border-4 border-muted animate-pulse"></div>
+          <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-transparent border-t-primary animate-spin"></div>
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">Cargando orden de trabajo...</p>
       </div>
     );
   }
 
   if (error || !orderData) {
     return (
-      <div className="text-center py-10">
-        <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-        <p className="mt-4 text-lg text-destructive">{error || "No se encontró la orden de trabajo"}</p>
-        <Button className="mt-4" onClick={() => navigate("/admin/orden-trabajo")}>
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <p className="text-lg font-medium text-foreground mb-2">Error al cargar</p>
+        <p className="text-muted-foreground mb-4">{error || "No se encontró la orden de trabajo"}</p>
+        <Button variant="outline" onClick={() => navigate("/admin/orden-trabajo")}>
           Volver a Órdenes de Trabajo
         </Button>
       </div>
@@ -667,46 +671,63 @@ const WorkOrderEditPage = () => {
 
   return (
     <motion.div
-      className="container mx-auto p-6 space-y-6"
+      className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Encabezado */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigate("/admin/orden-trabajo")}>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin/orden-trabajo")}
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
           </Button>
-          <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
-            <Wrench className="w-8 h-8" />
-            Editar Orden de Trabajo #{orderData.work_order_id}
-          </h1>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Editar Orden #{orderData.work_order_id}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Modifica los detalles de la orden de trabajo
+            </p>
+          </div>
         </div>
       </div>
 
       {isQuotationBased && (
-        <div className="p-4 border rounded-md flex items-start gap-3 mb-4" style={{ backgroundColor: 'var(--stat-blue-bg)', borderColor: 'var(--balance-net-border)' }}>
-          <Info className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--stat-blue-text)' }} />
-          <div>
-            <h3 className="font-semibold" style={{ color: 'var(--stat-blue-text-secondary)' }}>Orden basada en cotización</h3>
-            <p style={{ color: 'var(--stat-blue-text)' }}>
-              Esta orden de trabajo está asociada a la cotización #{orderData.quotation.quotation_id}.
-              Los productos que agregue se asociarán a esta cotización.
-            </p>
+        <div className="mb-6 p-4 border rounded-lg bg-muted/30">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-sm">Orden basada en cotización</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Esta orden está asociada a la cotización #{orderData.quotation.quotation_id}.
+                Los productos que agregue se asociarán a esta cotización.
+              </p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Mostrar aviso si hay cambios sin guardar */}
       {hasUnsavedChanges && (
-        <div className="p-4 border rounded-md flex items-start gap-3 mb-4" style={{ backgroundColor: 'var(--stat-orange-bg)', borderColor: 'var(--stat-orange-text)' }}>
-          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--stat-orange-text)' }} />
-          <div>
-            <h3 className="font-semibold" style={{ color: 'var(--stat-orange-text-secondary)' }}>Cambios sin guardar</h3>
-            <p style={{ color: 'var(--stat-orange-text)' }}>
-              Tiene cambios sin guardar. Asegúrese de guardar antes de salir.
-            </p>
+        <div className="mb-6 p-4 border border-amber-500/30 rounded-lg bg-amber-500/5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-sm text-amber-700 dark:text-amber-300">Cambios sin guardar</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Tiene cambios sin guardar. Asegúrese de guardar antes de salir.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -714,35 +735,34 @@ const WorkOrderEditPage = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información General y Vehículo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
+          <Card className="border">
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-base font-medium">
                 Información General
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               <div className="space-y-2">
-                <Label>ID de Orden</Label>
-                <div className="bg-muted p-2 rounded-md">{orderData.work_order_id}</div>
+                <Label className="text-sm font-medium">ID de Orden</Label>
+                <div className="bg-muted/50 border p-3 rounded-md text-sm font-mono">#{orderData.work_order_id}</div>
               </div>
               <div className="space-y-2">
-                <Label>Fecha de Creación</Label>
-                <div className="bg-muted p-2 rounded-md">{formatDate(orderData.order_date || new Date())}</div>
+                <Label className="text-sm font-medium">Fecha de Creación</Label>
+                <div className="bg-muted/50 border p-3 rounded-md text-sm">{formatDate(orderData.order_date || new Date())}</div>
               </div>
               {orderData.entry_date && (
                 <div className="space-y-2">
-                  <Label>Fecha de Entrada</Label>
-                  <div className="bg-muted p-2 rounded-md">{formatDate(orderData.entry_date)}</div>
+                  <Label className="text-sm font-medium">Fecha de Entrada</Label>
+                  <div className="bg-muted/50 border p-3 rounded-md text-sm">{formatDate(orderData.entry_date)}</div>
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="status">Estado de la Orden</Label>
+                <Label htmlFor="status" className="text-sm font-medium">Estado de la Orden</Label>
                 <Select value={status} onValueChange={(value) => {
                   setStatus(value);
                   setHasUnsavedChanges(true);
                 }} disabled={submitting}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="Seleccionar estado" />
                   </SelectTrigger>
                   <SelectContent>
@@ -753,7 +773,7 @@ const WorkOrderEditPage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description" className="text-sm font-medium">Descripción</Label>
                 <Textarea
                   id="description"
                   value={description}
@@ -761,22 +781,21 @@ const WorkOrderEditPage = () => {
                     setDescription(e.target.value);
                     setHasUnsavedChanges(true);
                   }}
-                  rows={5}
+                  rows={4}
                   placeholder="Descripción de la orden de trabajo"
                   disabled={submitting}
+                  className="resize-none"
                 />
               </div>
               {orderData.quotation && (
-                <div className="space-y-2 pt-2 border-t">
-                  <Label>Cotización Asociada</Label>
-                  <div className="bg-muted p-2 rounded-md">
-                    <Badge className="bg-primary mb-1">
-                      Cotización #{orderData.quotation.quotation_id}
-                    </Badge>
-                    <p className="text-sm">
+                <div className="space-y-2 pt-4 border-t">
+                  <Label className="text-sm font-medium">Cotización Asociada</Label>
+                  <div className="bg-muted/50 border p-3 rounded-md space-y-1">
+                    <p className="text-sm font-medium">Cotización #{orderData.quotation.quotation_id}</p>
+                    <p className="text-xs text-muted-foreground">
                       Fecha: {formatDate(orderData.quotation.entry_date || new Date())}
                     </p>
-                    <p className="text-sm">
+                    <p className="text-xs text-muted-foreground">
                       Estado: {translateStatus(orderData.quotation.quotation_status)}
                     </p>
                   </div>
@@ -785,33 +804,32 @@ const WorkOrderEditPage = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car className="w-5 h-5" />
+          <Card className="border">
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-base font-medium">
                 Información del Vehículo
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               {orderData?.vehicle ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Matrícula</Label>
-                      <div className="bg-muted p-2 rounded-md font-medium">
+                      <Label className="text-sm font-medium">Matrícula</Label>
+                      <div className="bg-muted/50 border p-3 rounded-md font-mono text-sm">
                         {orderData.vehicle.license_plate || "No especificada"}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Año</Label>
-                      <div className="bg-muted p-2 rounded-md">
+                      <Label className="text-sm font-medium">Año</Label>
+                      <div className="bg-muted/50 border p-3 rounded-md text-sm">
                         {orderData.vehicle.year || "No especificado"}
                       </div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Marca y Modelo</Label>
-                    <div className="bg-muted p-2 rounded-md">
+                    <Label className="text-sm font-medium">Marca y Modelo</Label>
+                    <div className="bg-muted/50 border p-3 rounded-md text-sm">
                       {orderData.vehicle.model ? (
                         <>
                           {orderData.vehicle.model.brand?.brand_name || "Sin marca"}{" "}
@@ -823,53 +841,52 @@ const WorkOrderEditPage = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Propietario</Label>
-                    <div className="bg-muted p-2 rounded-md">
+                    <Label className="text-sm font-medium">Propietario</Label>
+                    <div className="bg-muted/50 border p-3 rounded-md">
                       {orderData.vehicle.owner ? (
                         <div>
-                          <p className="font-medium">
+                          <p className="font-medium text-sm">
                             {orderData.vehicle.owner.name} {orderData.vehicle.owner.first_surname}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Tel: +{orderData.vehicle.owner.number_phone || "No disponible"}
                           </p>
                         </div>
                       ) : orderData.vehicle.company ? (
                         <div>
-                          <p className="font-medium">Empresa: {orderData.vehicle.company.name}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-medium text-sm">Empresa: {orderData.vehicle.company.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
                             Tel: +{orderData.vehicle.company.phone || "No disponible"}
                           </p>
                         </div>
                       ) : (
-                        "No especificado"
+                        <span className="text-muted-foreground text-sm">No especificado</span>
                       )}
                     </div>
                   </div>
                 </>
               ) : (
-                <div className="text-center text-muted-foreground py-4">
-                  <Car className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                  <p>No se encontró información del vehículo</p>
+                <div className="text-center py-8">
+                  <Car className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">No se encontró información del vehículo</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
           {/* Asignación de Mécanico */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Asignación de Mécanico
+          <Card className="border">
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-base font-medium">
+                Asignación de Mecánico
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex gap-2">
                   <Select value={selectedTechnicianId?.toString() || ""} onValueChange={(value) => setSelectedTechnicianId(Number(value))}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Seleccionar Mécanico" />
+                    <SelectTrigger className="flex-1 h-10">
+                      <SelectValue placeholder="Seleccionar Mecánico" />
                     </SelectTrigger>
                     <SelectContent>
                       {technicians.map((tech) => (
@@ -883,21 +900,22 @@ const WorkOrderEditPage = () => {
                     type="button"
                     onClick={handleAssignTechnician}
                     disabled={!selectedTechnicianId || loadingTechnicians}
+                    className="h-10"
                   >
                     {loadingTechnicians ? (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent"></span>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent" />
                     ) : "Asignar"}
                   </Button>
                 </div>
 
                 <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-2">Mécanicos Asignados</h4>
+                  <p className="text-sm font-medium mb-3">Mecánicos Asignados</p>
                   {assignedTechnicians.length > 0 ? (
                     <div className="space-y-2">
                       {assignedTechnicians.map((assignment) => (
-                        <div key={assignment.id} className="flex justify-between items-center p-3 bg-secondary/20 rounded-md">
+                        <div key={assignment.id} className="flex justify-between items-center p-3 bg-muted/50 border rounded-md">
                           <div className="flex flex-col">
-                            <span className="font-medium">
+                            <span className="font-medium text-sm">
                               {assignment.technician?.name} {assignment.technician?.first_surname}
                             </span>
                             <span className="text-xs text-muted-foreground">
@@ -918,7 +936,7 @@ const WorkOrderEditPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No hay Mécanicos asignados</p>
+                    <p className="text-sm text-muted-foreground">No hay Mecánicos asignados</p>
                   )}
                 </div>
               </div>
@@ -927,37 +945,39 @@ const WorkOrderEditPage = () => {
         </div>
 
         {/* Detalles de Productos */}
-        <Card>
-          <CardHeader>
+        <Card className="border">
+          <CardHeader className="border-b px-6 py-4">
             <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">Detalles de Productos</span>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddProduct} disabled={submitting}>
-                <Plus className="w-4 h-4 mr-2" />
+              <span className="text-base font-medium">
+                Detalles de Productos
+              </span>
+              <Button type="button" variant="outline" size="sm" onClick={handleAddProduct} disabled={submitting} className="gap-2">
+                <Plus className="w-4 h-4" />
                 Agregar Producto
               </Button>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             {products && products.length > 0 ? (
-              <div className="space-y-4">
-                <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-muted">
+              <div className="space-y-6">
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-4 py-2 text-left">Producto</th>
-                        {isQuotationBased && <th className="px-4 py-2 text-center">Origen</th>}
-                        <th className="px-4 py-2 text-center">Cantidad</th>
-                        <th className="px-4 py-2 text-right">Precio Neto</th>
-                        <th className="px-4 py-2 text-right">Precio c/Margen</th>
-                        <th className="px-4 py-2 text-right">Mano de Obra</th>
-                        <th className="px-4 py-2 text-right">Subtotal</th>
-                        <th className="px-4 py-2 text-center">Acciones</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Producto</th>
+                        {isQuotationBased && <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Origen</th>}
+                        <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Cantidad</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio Neto</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio c/Margen</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Mano de Obra</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Subtotal</th>
+                        <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground w-20">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-border">
                       {products.map((product, index) => {
                         const productName =
-                          (product.product && product.product.product_name) ||
+                          (product.product?.product_name) ||
                           (allProducts.find(p => p.product_id === product.product_id)?.product_name) ||
                           `Producto #${product.product_id}`;
                         const foundProduct = allProducts.find(p => p.product_id === product.product_id);
@@ -1052,57 +1072,56 @@ const WorkOrderEditPage = () => {
                   </table>
                 </div>
                 {/* Totales */}
-                <div className="grid grid-cols-2 gap-4 text-sm mt-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal Productos:</span>
-                      <span className="font-medium">{formatPriceCLP(totalProductPrice)}</span>
+                <div className="border rounded-md p-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-sm text-muted-foreground">Subtotal Productos:</span>
+                        <span className="font-medium text-sm">{formatPriceCLP(totalProductPrice)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-sm text-muted-foreground">Total Mano de Obra:</span>
+                        <span className="font-medium text-sm">{formatPriceCLP(totalLaborPrice)}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-3 rounded bg-accent/5">
-                    <div className="flex justify-between">
-                      <span>Total Mano de Obra:</span>
-                      <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="p-3 rounded bg-accent/5">
-                    <div className="flex justify-between">
-                      <span>Subtotal Neto:</span>
-                      <span className="font-medium">{formatPriceCLP(subtotal)}</span>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded bg-accent/5">
-                    <div className="flex justify-between">
-                      <span>IVA ({taxRatePercent}%):</span>
-                      <span className="font-medium">{formatPriceCLP(ivaAmount)}</span>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded bg-primary/10 font-bold">
-                    <div className="flex justify-between">
-                      <span>TOTAL CON IVA:</span>
-                      <span>{formatPriceCLP(totalAmount)}</span>
+                    <div className="space-y-2 md:border-l md:pl-4">
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-sm text-muted-foreground">Subtotal Neto:</span>
+                        <span className="font-medium text-sm">{formatPriceCLP(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-sm text-muted-foreground">IVA ({taxRatePercent}%):</span>
+                        <span className="font-medium text-sm">{formatPriceCLP(ivaAmount)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-t mt-2">
+                        <span className="font-semibold text-sm">TOTAL CON IVA:</span>
+                        <span className="font-bold">{formatPriceCLP(totalAmount)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-6">
-                No hay productos agregados a esta orden de trabajo.
-              </p>
+              <div className="text-center py-10">
+                <Wrench className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm mb-4">No hay productos agregados a esta orden.</p>
+                <Button variant="outline" onClick={handleAddProduct} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Agregar Producto
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Botones de acción */}
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => {
               if (hasUnsavedChanges) {
-                const confirmed = window.confirm(
+                const confirmed = globalThis.confirm(
                   "Tiene cambios sin guardar. ¿Está seguro de que desea salir sin guardar?"
                 );
                 if (confirmed) {
@@ -1113,19 +1132,24 @@ const WorkOrderEditPage = () => {
               }
             }}
             disabled={submitting}
+            className="sm:w-auto w-full"
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={submitting} className={`gap-2 ${hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700' : ''}`}>
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="gap-2 sm:w-auto w-full"
+          >
             {submitting ? (
               <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent"></span>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent" />
                 Guardando...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                {hasUnsavedChanges ? 'Guardar Cambios *' : 'Guardar Cambios'}
+                {hasUnsavedChanges ? 'Guardar Cambios' : 'Guardar'}
               </>
             )}
           </Button>
@@ -1150,7 +1174,7 @@ const WorkOrderEditPage = () => {
         showStock={true}
         requireStock={true}
         title="Agregar Productos"
-        description={isQuotationBased 
+        description={isQuotationBased
           ? `Los productos se asociarán a la cotización #${orderData?.quotation?.quotation_id}`
           : "Selecciona los productos para la orden de trabajo"
         }

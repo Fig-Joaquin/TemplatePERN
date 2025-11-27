@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -22,7 +22,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import {
   fetchWorkPaymentById,
   createWorkPayment,
-  updateWorkPayment
+  updateWorkPayment,
+  fetchWorkPaymentsByWorkOrderId
 } from "@/services/work/workPayment";
 import { fetchPaymentTypes } from "@/services/work/paymentType";
 import { fetchWorkOrders } from "@/services/workOrderService";
@@ -33,6 +34,9 @@ import { usePaymentContext } from "@/contexts/PaymentContext";
 
 export default function WorkPaymentFormPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const workOrderIdFromUrl = queryParams.get('workOrderId');
   const isEditMode = !!id;
   const navigate = useNavigate();
   const { refreshPayments } = usePaymentContext();
@@ -65,6 +69,10 @@ export default function WorkPaymentFormPage() {
   // Añade este estado para almacenar el monto total de la orden seleccionada
   const [selectedOrderTotal, setSelectedOrderTotal] = useState<number>(0);
 
+  // Estado para almacenar el monto ya pagado y el restante
+  const [alreadyPaidAmount, setAlreadyPaidAmount] = useState<number>(0);
+  const [remainingAmount, setRemainingAmount] = useState<number>(0);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -91,6 +99,27 @@ export default function WorkPaymentFormPage() {
           // Actualizar el monto total de la orden seleccionada
           const orderTotal = Number(paymentData.work_order.total_amount) || 0;
           setSelectedOrderTotal(orderTotal);
+
+          // Calcular pagos existentes (excluyendo el pago actual en edición)
+          const existingPayments = await fetchWorkPaymentsByWorkOrderId(paymentData.work_order.work_order_id!);
+          const otherPayments = existingPayments.filter(p => p.work_payment_id !== Number(id));
+          const totalPaidByOthers = otherPayments.reduce((sum, p) => sum + Number(p.amount_paid), 0);
+          setAlreadyPaidAmount(totalPaidByOthers);
+          setRemainingAmount(Math.max(0, orderTotal - totalPaidByOthers));
+        } else if (workOrderIdFromUrl) {
+          // Si viene un workOrderId desde la URL, preseleccionarlo
+          const selectedOrder = ordersData.find(order => order.work_order_id?.toString() === workOrderIdFromUrl);
+          if (selectedOrder) {
+            setFormData(prev => ({ ...prev, work_order_id: workOrderIdFromUrl }));
+            const orderTotal = Number(selectedOrder.total_amount) || 0;
+            setSelectedOrderTotal(orderTotal);
+
+            // Calcular pagos existentes
+            const existingPayments = await fetchWorkPaymentsByWorkOrderId(Number(workOrderIdFromUrl));
+            const totalPaid = existingPayments.reduce((sum, p) => sum + Number(p.amount_paid), 0);
+            setAlreadyPaidAmount(totalPaid);
+            setRemainingAmount(Math.max(0, orderTotal - totalPaid));
+          }
         }
       } catch (error: any) {
         console.error("Error al cargar datos:", error);
@@ -110,25 +139,45 @@ export default function WorkPaymentFormPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Función para calcular los pagos existentes de una orden
+  const calculateExistingPayments = async (workOrderId: number): Promise<{ totalPaid: number; remaining: number; orderTotal: number }> => {
+    try {
+      const existingPayments = await fetchWorkPaymentsByWorkOrderId(workOrderId);
+      const totalPaid = existingPayments.reduce((sum, payment) => sum + Number(payment.amount_paid), 0);
+      const order = workOrders.find(o => o.work_order_id === workOrderId);
+      const orderTotal = Number(order?.total_amount) || 0;
+      const remaining = Math.max(0, orderTotal - totalPaid);
+      return { totalPaid, remaining, orderTotal };
+    } catch (error) {
+      console.error("Error al calcular pagos existentes:", error);
+      return { totalPaid: 0, remaining: 0, orderTotal: 0 };
+    }
+  };
+
   // Actualiza esta función para establecer el monto total al seleccionar una orden
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = async (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Si es la orden de trabajo la que cambia, actualizar el monto total
+    // Si es la orden de trabajo la que cambia, actualizar el monto total y restante
     if (name === "work_order_id") {
       const selectedOrder = workOrders.find(order => order.work_order_id?.toString() === value);
       if (selectedOrder) {
         const orderTotal = Number(selectedOrder.total_amount) || 0;
         setSelectedOrderTotal(orderTotal);
 
-        // Actualizar automáticamente el estado según el monto pagado
-        updatePaymentStatus(formData.amount_paid, orderTotal);
+        // Calcular pagos existentes y monto restante
+        const { totalPaid, remaining } = await calculateExistingPayments(Number(value));
+        setAlreadyPaidAmount(totalPaid);
+        setRemainingAmount(remaining);
+
+        // Actualizar automáticamente el estado según el monto pagado y el restante
+        updatePaymentStatus(formData.amount_paid, remaining);
       }
     }
   };
 
   // Modifica la función updatePaymentStatus para aceptar un parámetro que permita forzar la actualización
-  const updatePaymentStatus = (amountPaid: number, total: number = selectedOrderTotal, forceUpdate: boolean = false) => {
+  const updatePaymentStatus = (amountPaid: number, total: number = remainingAmount || selectedOrderTotal, forceUpdate: boolean = false) => {
     if (total <= 0) return; // Evitar división por cero o valores negativos
 
     let newStatus = formData.payment_status;
@@ -147,16 +196,18 @@ export default function WorkPaymentFormPage() {
     }
   };
 
-  // Modifica esta función para validar y limitar el monto
+  // Modifica esta función para validar y limitar el monto (usar monto restante si hay pagos previos)
   const handleAmountChange = (value: number) => {
-    // Validar que el monto no supere el total de la orden
-    if (selectedOrderTotal > 0 && value > selectedOrderTotal) {
-      toast.warning(`El monto no puede superar el total de la orden: ${formatPriceCLP(selectedOrderTotal)}`);
-      setFormData(prev => ({ ...prev, amount_paid: selectedOrderTotal }));
-      updatePaymentStatus(selectedOrderTotal);
+    const maxAmount = remainingAmount > 0 ? remainingAmount : selectedOrderTotal;
+
+    // Validar que el monto no supere el monto restante
+    if (maxAmount > 0 && value > maxAmount) {
+      toast.warning(`El monto no puede superar lo que falta por pagar: ${formatPriceCLP(maxAmount)}`);
+      setFormData(prev => ({ ...prev, amount_paid: maxAmount }));
+      updatePaymentStatus(maxAmount, maxAmount);
     } else {
       setFormData(prev => ({ ...prev, amount_paid: value }));
-      updatePaymentStatus(value);
+      updatePaymentStatus(value, maxAmount);
     }
   };
 
@@ -434,7 +485,7 @@ export default function WorkPaymentFormPage() {
                   value={formData.amount_paid}
                   onChange={handleAmountChange}
                   min={0}
-                  max={selectedOrderTotal > 0 ? selectedOrderTotal : undefined}
+                  max={remainingAmount > 0 ? remainingAmount : (selectedOrderTotal > 0 ? selectedOrderTotal : undefined)}
                   isPrice
                   required
                   className="w-full"
@@ -442,14 +493,20 @@ export default function WorkPaymentFormPage() {
                 {selectedOrderTotal > 0 && (
                   <div className="space-y-1 mt-1">
                     <p className="text-xs text-muted-foreground">
-                      Total de la orden: {formatPriceCLP(selectedOrderTotal)} |
-                      {formData.amount_paid < selectedOrderTotal ?
-                        `Falta: ${formatPriceCLP(selectedOrderTotal - formData.amount_paid)}` :
-                        'Monto completo'}
+                      Total de la orden: {formatPriceCLP(selectedOrderTotal)}
+                      {alreadyPaidAmount > 0 && (
+                        <> | Ya pagado: <span className="text-green-600 font-medium">{formatPriceCLP(alreadyPaidAmount)}</span></>
+                      )}
+                      {' '}| Falta: <span className="text-primary font-medium">{formatPriceCLP(remainingAmount > 0 ? remainingAmount : selectedOrderTotal)}</span>
                     </p>
-                    {formData.amount_paid > selectedOrderTotal && (
+                    {formData.amount_paid > (remainingAmount > 0 ? remainingAmount : selectedOrderTotal) && (
                       <p className="text-xs text-red-500 font-medium">
-                        ⚠️ El monto no puede superar el total de la orden
+                        ⚠️ El monto no puede superar lo que falta por pagar
+                      </p>
+                    )}
+                    {remainingAmount === 0 && alreadyPaidAmount > 0 && (
+                      <p className="text-xs text-green-600 font-medium">
+                        ✓ Esta orden ya está completamente pagada
                       </p>
                     )}
                   </div>

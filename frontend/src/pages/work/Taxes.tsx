@@ -180,12 +180,6 @@ export default function TaxesPage() {
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={(open) => handleDialogClose(open, false)}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nuevo Impuesto
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Crear Nuevo Impuesto</DialogTitle>

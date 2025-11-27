@@ -93,15 +93,25 @@ export const createWorkPayment = async (req: Request, res: Response, _next: Next
             return;
         }
 
-        // Verificar si ya existe un pago para esta orden de trabajo
-        const existingPayment = await workPaymentRepository.findOne({
+        // Permitir múltiples pagos por orden de trabajo (pagos parciales)
+        // Solo validamos que el monto total pagado no exceda el total de la orden
+        const existingPayments = await workPaymentRepository.find({
             where: { work_order: { work_order_id } }
         });
         
-        if (existingPayment) {
-            res.status(409).json({ 
-                message: "Ya existe un pago registrado para esta orden de trabajo",
-                existing_payment_id: existingPayment.work_payment_id
+        const totalAlreadyPaid = existingPayments
+            .filter(p => p.payment_status !== "cancelado")
+            .reduce((sum, p) => sum + Number(p.amount_paid), 0);
+        
+        const orderTotal = Number(workOrder.total_amount);
+        const newPaymentAmount = Number(paymentData.amount_paid);
+        
+        if (totalAlreadyPaid + newPaymentAmount > orderTotal) {
+            res.status(400).json({ 
+                message: `El monto excede el total pendiente. Total orden: ${orderTotal}, Ya pagado: ${totalAlreadyPaid}, Disponible: ${orderTotal - totalAlreadyPaid}`,
+                total_order: orderTotal,
+                already_paid: totalAlreadyPaid,
+                available: orderTotal - totalAlreadyPaid
             });
             return;
         }
