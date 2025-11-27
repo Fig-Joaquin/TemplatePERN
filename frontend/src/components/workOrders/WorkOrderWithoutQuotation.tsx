@@ -30,11 +30,12 @@ import { getStockProducts, updateStockProduct } from "../../services/stockProduc
 import { createWorkOrder } from "../../services/workOrderService";
 import { createWorkProductDetail } from "../../services/workProductDetail";
 import { getActiveTax } from "@/services/taxService";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
+import { SparePartsModal } from "@/components/quotations/SparePartsModal";
+import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog";
 import type { Vehicle, Product, StockProduct, WorkOrderInput, WorkProductDetail } from "../../types/interfaces";
 
 interface SelectedProduct {
@@ -64,9 +65,9 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
 
   // Estados de UI
   const [vehicleQuery, setVehicleQuery] = useState("");
-  const [productQuery, setProductQuery] = useState("");
   const [openVehiclePopover, setOpenVehiclePopover] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
   const [selectedType, setSelectedType] = useState<"all" | "person" | "company">("all");
 
   // Función para generar descripción automática
@@ -148,17 +149,15 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     return vehicleInfo.includes(vehicleQuery.toLowerCase()) && matchesType;
   });
 
-  const filteredProducts = products.filter((product) =>
-    product.product_name.toLowerCase().includes(productQuery.toLowerCase()) ||
-    (product.description || "").toLowerCase().includes(productQuery.toLowerCase())
-  );
+  // Función para calcular precio con margen
+  const calculateTotalWithMargin = (price: number, quantity: number, profitMargin: number): number => {
+    return price * quantity * (1 + profitMargin / 100);
+  };
 
   const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
     const product = products.find((p) => p.product_id === productId);
     if (product) {
-      const profitMargin = Number(product.profit_margin);
-      const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
-      return total + finalPrice * quantity;
+      return total + calculateTotalWithMargin(Number(product.sale_price), quantity, Number(product.profit_margin));
     }
     return total;
   }, 0);
@@ -169,7 +168,16 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const finalTotal = subtotalBeforeTax + taxAmount;
 
   // Manejadores de eventos
-  const handleProductSelect = (productId: number, quantity: number = 1, laborPrice: number = 0) => {
+  const handleProductChange = (productId: number, quantity: number, laborPrice: number) => {
+    // Validar stock
+    const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
+    const availableStock = stockProduct?.quantity || 0;
+    
+    if (quantity > availableStock) {
+      toast.error(`Stock insuficiente. Disponible: ${availableStock}`);
+      return;
+    }
+
     const existingIndex = selectedProducts.findIndex(p => p.productId === productId);
     if (existingIndex >= 0) {
       const updated = [...selectedProducts];
@@ -178,6 +186,10 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     } else {
       setSelectedProducts([...selectedProducts, { productId, quantity, laborPrice }]);
     }
+  };
+
+  const handleProductSelect = (productId: number, quantity: number = 1, laborPrice: number = 0) => {
+    handleProductChange(productId, quantity, laborPrice);
     setShowProductModal(false);
   };
 
@@ -558,101 +570,34 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         </Button>
       </div>
 
-      {/* Modal de Selección de Productos */}
-      <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              Seleccionar Productos
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={productQuery}
-                onChange={(e) => setProductQuery(e.target.value)}
-                placeholder="Buscar productos..."
-                className="w-full pl-10 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+      {/* Modal de Selección de Productos - Nuevo diseño */}
+      <SparePartsModal
+        open={showProductModal}
+        onOpenChange={setShowProductModal}
+        products={products}
+        stockProducts={stockProducts}
+        selectedProducts={selectedProducts}
+        onProductChange={handleProductChange}
+        onRemoveProduct={handleRemoveProduct}
+        onConfirm={() => setShowProductModal(false)}
+        onCancel={() => setShowProductModal(false)}
+        onCreateProduct={() => setShowCreateProductModal(true)}
+        calculatePrice={calculateTotalWithMargin}
+        showStock={true}
+        requireStock={true}
+        title="Seleccionar Productos"
+        description="Selecciona los productos para la orden de trabajo. Solo productos con stock disponible."
+      />
 
-            <ScrollArea className="h-96">
-              <div className="space-y-2">
-                {filteredProducts.map((product) => {
-                  const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-                  const inStock = stockProduct && stockProduct.quantity > 0;
-                  const profitMargin = Number(product.profit_margin);
-                  const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
-                  const isSelected = selectedProducts.some(p => p.productId === product.product_id);
-
-                  // Define className based on state
-                  let cardClassName = "w-full text-left p-3 border border-border rounded-lg transition-all duration-200 ";
-                  if (isSelected) {
-                    cardClassName += "bg-primary/10 border-primary";
-                  } else if (inStock) {
-                    cardClassName += "hover:bg-accent hover:shadow-md";
-                  } else {
-                    cardClassName += "opacity-50";
-                  }
-
-                  // Define badge content
-                  let badgeContent;
-                  if (isSelected) {
-                    badgeContent = <CheckCircle className="w-5 h-5 text-green-600" />;
-                  } else if (inStock) {
-                    badgeContent = (
-                      <Badge variant="outline">
-                        Stock: {stockProduct?.quantity}
-                      </Badge>
-                    );
-                  } else {
-                    badgeContent = (
-                      <Badge variant="destructive">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Sin stock
-                      </Badge>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={product.product_id}
-                      type="button"
-                      className={cardClassName}
-                      onClick={() => inStock && !isSelected && handleProductSelect(product.product_id)}
-                      disabled={!inStock || isSelected}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium">{product.product_name}</div>
-                          {product.description && (
-                            <div className="text-sm text-muted-foreground">{product.description}</div>
-                          )}
-                          <div className="text-sm font-medium text-green-600">
-                            {formatPriceCLP(finalPrice)}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {badgeContent}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-
-                {filteredProducts.length === 0 && (
-                  <div className="p-4 text-center text-muted-foreground">
-                    No se encontraron productos
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Modal para crear producto rápido */}
+      <QuickProductCreateDialog
+        open={showCreateProductModal}
+        onOpenChange={setShowCreateProductModal}
+        onProductCreated={(newProduct) => {
+          setProducts((prev) => [...prev, newProduct]);
+          toast.success("Producto creado exitosamente");
+        }}
+      />
     </div>
   );
 };

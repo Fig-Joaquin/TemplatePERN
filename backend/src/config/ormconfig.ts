@@ -14,8 +14,8 @@ export const AppDataSource = new DataSource({
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    synchronize: process.env.NODE_ENV !== "production", // Desactivar en producción
-    // synchronize: true, //! Comentar cuando esté en producción
+    synchronize: false, // Desactivado temporalmente - la migración SQL ya creó las columnas
+    // synchronize: process.env.NODE_ENV !== "production", // Descomentar cuando el esquema esté sincronizado
     migrations: ["dist/migrations/*.js"],
     logging: process.env.NODE_ENV !== "production", // No loggear en producción
     entities: Object.values(entities), // Carga todas las entidades automáticamente

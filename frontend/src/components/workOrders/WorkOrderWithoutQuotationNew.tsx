@@ -13,10 +13,8 @@ import {
   Car,
   User,
   Building2,
-  ShoppingCart,
   Calculator,
   Search,
-  AlertCircle,
   CheckCircle,
   X
 } from "lucide-react";
@@ -29,11 +27,12 @@ import { getStockProducts, updateStockProduct } from "../../services/stockProduc
 import { createWorkOrder } from "../../services/workOrderService";
 import { createWorkProductDetail } from "../../services/workProductDetail";
 import { getActiveTax } from "@/services/taxService";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
+import { SparePartsModal } from "@/components/quotations/SparePartsModal";
+import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog";
 import type { Vehicle, Product, StockProduct, WorkOrderInput, WorkProductDetail } from "../../types/interfaces";
 
 interface SelectedProduct {
@@ -63,10 +62,11 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
 
   // Estados de UI
   const [vehicleQuery, setVehicleQuery] = useState("");
-  const [productQuery, setProductQuery] = useState("");
   const [openVehiclePopover, setOpenVehiclePopover] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const [tempSelectedProducts, setTempSelectedProducts] = useState<SelectedProduct[]>([]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -111,19 +111,22 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
     return matchesQuery && matchesType;
   });
 
-  const filteredProducts = products.filter((product) =>
-    product.product_name.toLowerCase().includes(productQuery.toLowerCase()) ||
-    (product.description || "").toLowerCase().includes(productQuery.toLowerCase())
-  );
+  // Función para calcular precio con margen (para SparePartsModal)
+  const calculatePrice = (salePrice: number, quantity: number, profitMargin: number) => {
+    const finalPrice = Number(salePrice) * (1 + Number(profitMargin) / 100);
+    return finalPrice * quantity;
+  };
+
+  // Función para calcular precio con margen (para cálculos internos)
+  const calculateTotalWithMargin = (product: Product, quantity: number) => {
+    const profitMargin = Number(product.profit_margin);
+    const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
+    return finalPrice * quantity;
+  };
 
   const totalProductPrice = selectedProducts.reduce((total, { productId, quantity }) => {
     const product = products.find((p) => p.product_id === productId);
-    if (product) {
-      const profitMargin = Number(product.profit_margin);
-      const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
-      return total + finalPrice * quantity;
-    }
-    return total;
+    return product ? total + calculateTotalWithMargin(product, quantity) : total;
   }, 0);
 
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0);
@@ -132,14 +135,67 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const finalTotal = subtotalBeforeTax + taxAmount;
 
   // Manejadores de eventos
-  const handleProductSelect = (productId: number, quantity: number = 1, laborPrice: number = 0) => {
+  const handleProductChange = (productId: number, quantity: number = 1, laborPrice: number = 0) => {
+    // Validar stock disponible
+    const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
+    const availableStock = stockProduct?.quantity || 0;
+    
+    if (quantity > availableStock) {
+      toast.warning(`Solo hay ${availableStock} unidades disponibles en stock`);
+      return;
+    }
+    
     const existingIndex = selectedProducts.findIndex(p => p.productId === productId);
-    if (existingIndex >= 0) {
+    if (quantity === 0) {
+      // Eliminar producto
+      setSelectedProducts(selectedProducts.filter(p => p.productId !== productId));
+    } else if (existingIndex >= 0) {
+      // Actualizar producto existente
       const updated = [...selectedProducts];
-      updated[existingIndex] = { productId, quantity, laborPrice };
+      updated[existingIndex] = { productId, quantity, laborPrice: updated[existingIndex].laborPrice };
       setSelectedProducts(updated);
     } else {
+      // Agregar nuevo producto
       setSelectedProducts([...selectedProducts, { productId, quantity, laborPrice }]);
+    }
+  };
+
+  // Handler para abrir el modal
+  const handleOpenProductModal = () => {
+    setTempSelectedProducts([...selectedProducts]);
+    setShowProductModal(true);
+  };
+
+  // Handler para cambios temporales en el modal
+  const handleTempProductChange = (productId: number, quantity: number, laborPrice: number) => {
+    const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
+    const availableStock = stockProduct?.quantity || 0;
+    
+    if (quantity > availableStock) {
+      toast.warning(`Solo hay ${availableStock} unidades disponibles en stock`);
+      return;
+    }
+
+    setTempSelectedProducts(prev => {
+      const existingIndex = prev.findIndex(p => p.productId === productId);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = { productId, quantity, laborPrice };
+        return updated;
+      }
+      return [...prev, { productId, quantity, laborPrice }];
+    });
+  };
+
+  // Handler para eliminar producto temporal
+  const handleTempRemoveProduct = (productId: number) => {
+    setTempSelectedProducts(prev => prev.filter(p => p.productId !== productId));
+  };
+
+  // Handler para cerrar modal
+  const handleModalClose = (save: boolean) => {
+    if (save) {
+      setSelectedProducts([...tempSelectedProducts]);
     }
     setShowProductModal(false);
   };
@@ -356,7 +412,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Button onClick={() => setShowProductModal(true)} className="w-full hover:shadow-md transition-all duration-200">
+            <Button onClick={handleOpenProductModal} className="w-full hover:shadow-md transition-all duration-200">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Producto
             </Button>
@@ -486,100 +542,38 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
       </div>
 
       {/* Modal de Selección de Productos */}
-      <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              Seleccionar Productos
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={productQuery}
-                onChange={(e) => setProductQuery(e.target.value)}
-                placeholder="Buscar productos..."
-                className="w-full pl-10 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+      <SparePartsModal
+        open={showProductModal}
+        onOpenChange={(open) => {
+          if (!open) handleModalClose(false);
+        }}
+        products={products}
+        stockProducts={stockProducts}
+        selectedProducts={tempSelectedProducts}
+        onProductChange={handleTempProductChange}
+        onRemoveProduct={handleTempRemoveProduct}
+        onConfirm={() => handleModalClose(true)}
+        onCancel={() => handleModalClose(false)}
+        onCreateProduct={() => setShowCreateProductModal(true)}
+        calculatePrice={calculatePrice}
+        showStock={true}
+        requireStock={true}
+        title="Agregar Productos"
+        description="Selecciona los productos para la orden de trabajo"
+      />
 
-            <ScrollArea className="h-96">
-              <div className="space-y-2">
-                {filteredProducts.map((product) => {
-                  const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-                  const inStock = stockProduct && stockProduct.quantity > 0;
-                  const profitMargin = Number(product.profit_margin);
-                  const finalPrice = Number(product.sale_price) * (1 + profitMargin / 100);
-                  const isSelected = selectedProducts.some(p => p.productId === product.product_id);
-
-                  // Define className based on state
-                  let cardClassName = "w-full text-left p-3 border border-border rounded-lg transition-all duration-200 ";
-                  if (isSelected) {
-                    cardClassName += "bg-primary/10 border-primary";
-                  } else if (inStock) {
-                    cardClassName += "hover:bg-accent hover:shadow-sm";
-                  } else {
-                    cardClassName += "opacity-50";
-                  }
-
-                  // Define badge content
-                  let badgeContent;
-                  if (isSelected) {
-                    badgeContent = <CheckCircle className="w-5 h-5 text-green-600" />;
-                  } else if (inStock) {
-                    badgeContent = (
-                      <Badge variant="outline">
-                        Stock: {stockProduct?.quantity}
-                      </Badge>
-                    );
-                  } else {
-                    badgeContent = (
-                      <Badge variant="destructive">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Sin stock
-                      </Badge>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={product.product_id}
-                      type="button"
-                      className={cardClassName}
-                      onClick={() => inStock && !isSelected && handleProductSelect(product.product_id)}
-                      disabled={!inStock || isSelected}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium">{product.product_name}</div>
-                          {product.description && (
-                            <div className="text-sm text-muted-foreground">{product.description}</div>
-                          )}
-                          <div className="text-sm font-medium text-green-600">
-                            {formatPriceCLP(finalPrice)}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {badgeContent}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-
-                {filteredProducts.length === 0 && (
-                  <div className="p-4 text-center text-muted-foreground">
-                    No se encontraron productos
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog para crear producto rápido */}
+      <QuickProductCreateDialog
+        open={showCreateProductModal}
+        onOpenChange={setShowCreateProductModal}
+        onProductCreated={async () => {
+          // Recargar productos y stock
+          const productsData = await fetchProducts();
+          setProducts(productsData);
+          const stockData = await getStockProducts();
+          setStockProducts(stockData);
+        }}
+      />
     </div>
   );
 };

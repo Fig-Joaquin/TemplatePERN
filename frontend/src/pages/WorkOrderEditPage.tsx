@@ -17,7 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
 import {
   ArrowLeft,
   Save,
@@ -41,22 +40,6 @@ import {
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { formatDate } from "@/utils/formDate";
 import { motion } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { fetchPersonsEmployee } from "@/services/personService";
 import {
   createWorkOrderTechnician,
@@ -65,6 +48,8 @@ import {
 } from "@/services/workOrderTechnicianService";
 import { Person, WorkOrderTechnician } from "@/types/interfaces";
 import { getActiveTax } from "@/services/taxService";
+import { SparePartsModal } from "@/components/quotations/SparePartsModal";
+import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog";
 
 const WorkOrderEditPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -92,9 +77,17 @@ const WorkOrderEditPage = () => {
   const [assignedTechnicians, setAssignedTechnicians] = useState<WorkOrderTechnician[]>([]);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<number | null>(null);
   const [loadingTechnicians, setLoadingTechnicians] = useState(false);
-  const [tempProducts, setTempProducts] = useState<any[]>([]); // Add temporary products state
   const [productsToDelete, setProductsToDelete] = useState<number[]>([]); // Track products to delete
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track unsaved changes
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
+  const [tempSelectedProducts, setTempSelectedProducts] = useState<Array<{
+    productId: number;
+    quantity: number;
+    laborPrice: number;
+    workProductDetailId?: number;
+    originalSalePrice?: number;
+    originalQuantity?: number;
+  }>>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -164,7 +157,7 @@ const WorkOrderEditPage = () => {
         }
       }
       setStatus(data.order_status || "not_started");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading work order:", err);
       setError("No se pudo cargar la información de la orden de trabajo");
       toast.error(err.response?.data?.message || err.message || "Error al cargar la orden de trabajo");
@@ -175,89 +168,107 @@ const WorkOrderEditPage = () => {
 
   // Modified to use temp products state
   const handleAddProduct = () => {
-    setTempProducts([...products]); // Initialize temp products with current products
+    // Inicializar productos temporales con los productos actuales
+    setTempSelectedProducts(
+      products
+        .filter(p => !p._markedForDeletion)
+        .map(p => ({
+          productId: p.product_id,
+          quantity: p.quantity,
+          laborPrice: p.labor_price || 0,
+          workProductDetailId: p.work_product_detail_id,
+          originalSalePrice: p.sale_price,
+          originalQuantity: p.originalQuantity
+        }))
+    );
     setShowProductModal(true);
     setSelectedProductId(null);
     setProductQuantity(1);
     setProductLaborPrice(0);
   };
 
-  // Handle product selection in modal
-  const handleTempProductChange = (productId: number, quantity: number, laborPrice: number = 0) => {
+  // Calcular precio con margen
+  const calculateTotalWithMargin = (salePrice: number, quantity: number, profitMargin: number) => {
+    const finalPrice = Number(salePrice) * (1 + Number(profitMargin) / 100);
+    return finalPrice * quantity;
+  };
+
+  // Handle product change in modal (temporary state)
+  const handleTempProductChange = (productId: number, quantity: number, laborPrice: number) => {
     const selectedProduct = allProducts.find(p => p.product_id === productId);
     if (!selectedProduct) return;
 
-    // Only validate stock for products not already in the order
-    const isNewProduct = !products.some(p => p.product_id === productId);
-
+    // Validate stock for new products
     const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
     const availableStock = stockProduct ? stockProduct.quantity : 0;
-
-    // Validate stock only for new products
-    if (isNewProduct && quantity > availableStock) {
+    const existingProduct = products.find(p => p.product_id === productId && !p._markedForDeletion);
+    
+    // Para productos nuevos, validar stock completo
+    if (!existingProduct && quantity > availableStock) {
       toast.error(`No hay suficiente stock para ${selectedProduct.product_name}. Disponible: ${availableStock}`);
       return;
     }
 
-    // Calculate price with margin
-    const basePrice = Number(selectedProduct.sale_price);
-    const margin = Number(selectedProduct.profit_margin) / 100;
-    const priceWithMargin = Number((basePrice * (1 + margin)).toFixed(2));
-
-    setTempProducts(prev => {
-      const existingIndex = prev.findIndex(p => p.product_id === productId);
+    setTempSelectedProducts(prev => {
+      const existingIndex = prev.findIndex(p => p.productId === productId);
       if (existingIndex >= 0) {
-        // Update existing product
-        return prev.map((p, i) =>
-          i === existingIndex
-            ? { ...p, quantity, labor_price: laborPrice, _temp: true }
-            : p
-        );
-      } else {
-        // Add new product
-        return [...prev, {
-          product_id: productId,
-          product: selectedProduct,
-          quantity,
-          sale_price: priceWithMargin,
-          labor_price: laborPrice,
-          _temp: true,
-          _isNew: true
-        }];
+        const updated = [...prev];
+        updated[existingIndex] = { ...updated[existingIndex], quantity, laborPrice };
+        return updated;
       }
+      return [...prev, { productId, quantity, laborPrice }];
     });
   };
 
   // Remove product from temp state
   const handleTempRemoveProduct = (productId: number) => {
-    setTempProducts(prev => prev.filter(p => p.product_id !== productId));
+    setTempSelectedProducts(prev => prev.filter(p => p.productId !== productId));
   };
 
-  // Apply temporary changes to main state
+  // Handle modal close
   const handleModalClose = (save: boolean) => {
     if (save) {
-      // Only validate NEW products that aren't already in the order
-      const newTempProducts = tempProducts.filter(p => p._temp && p._isNew);
-
-      const hasInvalidQuantity = newTempProducts.some(product => {
-        const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-        const availableStock = stockProduct ? stockProduct.quantity : 0;
-        return product.quantity > availableStock;
-      });
-
-      if (hasInvalidQuantity) {
-        toast.error("Uno o más productos nuevos exceden el stock disponible");
-        return;
+      // Aplicar cambios temporales a los productos reales
+      const newProducts: any[] = [];
+      
+      for (const tempProduct of tempSelectedProducts) {
+        const existingProduct = products.find(p => p.product_id === tempProduct.productId);
+        const productData = allProducts.find(p => p.product_id === tempProduct.productId);
+        
+        if (!productData) continue;
+        
+        const basePrice = Number(productData.sale_price);
+        const margin = Number(productData.profit_margin) / 100;
+        const priceWithMargin = Number((basePrice * (1 + margin)).toFixed(2));
+        
+        if (existingProduct && !existingProduct._markedForDeletion) {
+          // Actualizar producto existente
+          newProducts.push({
+            ...existingProduct,
+            quantity: tempProduct.quantity,
+            labor_price: tempProduct.laborPrice,
+            _modified: existingProduct.quantity !== tempProduct.quantity || 
+                       existingProduct.labor_price !== tempProduct.laborPrice
+          });
+        } else {
+          // Nuevo producto
+          newProducts.push({
+            product_id: tempProduct.productId,
+            product: productData,
+            quantity: tempProduct.quantity,
+            sale_price: priceWithMargin,
+            labor_price: tempProduct.laborPrice,
+            _isNew: true
+          });
+        }
       }
-
-      setProducts(tempProducts);
-
-      // Mark as having unsaved changes if new products were added
-      if (newTempProducts.length > 0) {
-        setHasUnsavedChanges(true);
-      }
+      
+      // Mantener productos marcados para eliminación
+      const deletedProducts = products.filter(p => p._markedForDeletion);
+      
+      setProducts([...newProducts, ...deletedProducts]);
+      setHasUnsavedChanges(true);
     }
-
     setShowProductModal(false);
   };
 
@@ -1121,242 +1132,42 @@ const WorkOrderEditPage = () => {
         </div>
       </form>
 
-      {/* Modal para agregar producto - Updated to handle temporary products */}
-      <Dialog open={showProductModal} onOpenChange={(isOpen) => {
-        if (!isOpen) handleModalClose(false);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Agregar Producto</DialogTitle>
-            {isQuotationBased && (
-              <DialogDescription>
-                Este producto se asociará a la cotización #{orderData.quotation.quotation_id}
-              </DialogDescription>
-            )}
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Seleccionar Producto</Label>
-              <div className="relative">
-                <Command className="rounded-lg border shadow-md">
-                  <CommandInput placeholder="Buscar producto..." />
-                  <CommandList>
-                    <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                    <ScrollArea className="h-72">
-                      <CommandGroup heading="Productos disponibles">
-                        {allProducts
-                          .filter(product => {
-                            // Verificar si el producto ya existe en la lista temporal (no en products)
-                            const existingTempProduct = tempProducts.find(p => p.product_id === product.product_id && p._temp);
+      {/* Modal para agregar producto */}
+      <SparePartsModal
+        open={showProductModal}
+        onOpenChange={(open) => {
+          if (!open) handleModalClose(false);
+        }}
+        products={allProducts}
+        stockProducts={stockProducts}
+        selectedProducts={tempSelectedProducts}
+        onProductChange={handleTempProductChange}
+        onRemoveProduct={handleTempRemoveProduct}
+        onConfirm={() => handleModalClose(true)}
+        onCancel={() => handleModalClose(false)}
+        onCreateProduct={() => setShowCreateProductModal(true)}
+        calculatePrice={calculateTotalWithMargin}
+        showStock={true}
+        requireStock={true}
+        title="Agregar Productos"
+        description={isQuotationBased 
+          ? `Los productos se asociarán a la cotización #${orderData?.quotation?.quotation_id}`
+          : "Selecciona los productos para la orden de trabajo"
+        }
+      />
 
-                            // Si el producto ya existe en productos temporales, no mostrarlo
-                            if (existingTempProduct) {
-                              return false;
-                            }
-
-                            // Los productos que ya están en la orden NO deben ser filtrados por stock
-                            const alreadyInOrder = products.find(p => p.product_id === product.product_id);
-                            if (alreadyInOrder) {
-                              return false;
-                            }
-
-                            // Para productos nuevos, sí verificamos el stock
-                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-                            return stockProduct && stockProduct.quantity > 0;
-                          })
-                          .map(product => {
-                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-                            const tempProduct = tempProducts.find(p => p.product_id === product.product_id);
-                            const isSelected = !!tempProduct;
-
-                            return (
-                              <CommandItem
-                                key={product.product_id}
-                                onSelect={() => {
-                                  if (!isSelected) {
-                                    handleTempProductChange(product.product_id, 1, 0);
-                                  }
-                                }}
-                                className={isSelected ? "bg-accent text-accent-foreground" : ""}
-                              >
-                                <div className="flex items-center space-x-4 flex-1">
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        handleTempProductChange(product.product_id, 1, 0);
-                                      } else {
-                                        handleTempRemoveProduct(product.product_id);
-                                      }
-                                    }}
-                                  />
-                                  <div className="flex-col">
-                                    <span className="font-medium">{product.product_name}</span>
-                                    <span className="text-xs text-muted-foreground block">
-                                      Precio: {formatPriceCLP(Number(product.sale_price))} - Margen: {product.profit_margin}% - Stock: {stockProduct?.quantity || 0}
-                                    </span>
-                                  </div>
-                                </div>
-                                {isSelected && (
-                                  <div className="flex items-center space-x-2">
-                                    <Label htmlFor={`temp-quantity-${product.product_id}`} className="text-xs">
-                                      Cantidad:
-                                    </Label>
-                                    <Input
-                                      id={`temp-quantity-${product.product_id}`}
-                                      type="number"
-                                      min="1"
-                                      max={stockProduct?.quantity || 1}
-                                      value={tempProduct.quantity}
-                                      onChange={(e) => handleTempProductChange(
-                                        product.product_id,
-                                        Number(e.target.value),
-                                        tempProduct.labor_price
-                                      )}
-                                      className="w-16 h-7 text-xs"
-                                    />
-                                  </div>
-                                )}
-                              </CommandItem>
-                            );
-                          })}
-                      </CommandGroup>
-                      <CommandGroup heading="Productos sin stock o ya agregados">
-                        {allProducts
-                          .filter(product => {
-                            // Los productos que ya están en productos temporales
-                            const existingTempProduct = tempProducts.find(p => p.product_id === product.product_id && p._temp);
-
-                            // Los productos que ya están en la orden
-                            const existingProduct = products.find(p => p.product_id === product.product_id);
-
-                            // Si está en los temporales, lo mostramos aquí
-                            if (existingTempProduct) {
-                              return false; // Ya no lo mostramos en esta sección
-                            }
-
-                            // Si está en la orden original pero no en temporales, lo mostramos aquí
-                            if (existingProduct) {
-                              return true;
-                            }
-
-                            // Para productos nuevos, verificamos si no tienen stock
-                            const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-                            return !stockProduct || stockProduct.quantity <= 0;
-                          })
-                          .map(product => {
-                            const existingProduct = products.find(p => p.product_id === product.product_id);
-
-                            let statusMessage = "";
-                            if (existingProduct) {
-                              statusMessage = "Ya agregado a la orden";
-                            } else {
-                              statusMessage = `Margen: ${product.profit_margin}% - Sin stock`;
-                            }
-
-                            return (
-                              <CommandItem
-                                key={product.product_id}
-                                className="opacity-50 cursor-not-allowed"
-                                disabled
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{product.product_name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    Precio: {formatPriceCLP(Number(product.sale_price))} - {statusMessage}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            );
-                          })}
-                      </CommandGroup>
-                    </ScrollArea>
-                  </CommandList>
-                </Command>
-              </div>
-            </div>
-
-            {/* Show selected products in modal */}
-            {tempProducts.some(p => p._temp) && (
-              <div className="space-y-2">
-                <Label>Productos seleccionados:</Label>
-                <ScrollArea className="h-40 border rounded p-2">
-                  <ul className="space-y-2">
-                    {tempProducts
-                      .filter(p => p._temp)
-                      .map(product => {
-                        const foundProduct = allProducts.find(p => p.product_id === product.product_id);
-                        const stockProduct = stockProducts.find(sp => sp.product?.product_id === product.product_id);
-
-                        return (
-                          <li key={product.product_id} className="flex items-center justify-between text-sm p-1 border-b">
-                            <div>
-                              <p>{foundProduct?.product_name || `Producto #${product.product_id}`}</p>
-                              <p className="text-xs text-muted-foreground">
-                                Stock: {stockProduct?.quantity || 0}
-                              </p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="flex flex-col items-end">
-                                <Label htmlFor={`modal-quantity-${product.product_id}`} className="text-xs">
-                                  Cantidad
-                                </Label>
-                                <Input
-                                  id={`modal-quantity-${product.product_id}`}
-                                  type="number"
-                                  min="1"
-                                  max={stockProduct?.quantity || 1}
-                                  value={product.quantity}
-                                  onChange={(e) => {
-                                    const newQuantity = Number(e.target.value);
-                                    handleTempProductChange(product.product_id, newQuantity, product.labor_price);
-                                  }}
-                                  className="w-16 h-7 text-xs"
-                                />
-                              </div>
-                              <div className="flex flex-col items-end">
-                                <Label htmlFor={`modal-labor-${product.product_id}`} className="text-xs">
-                                  M. Obra
-                                </Label>
-                                <Input
-                                  id={`modal-labor-${product.product_id}`}
-                                  type="number"
-                                  min="0"
-                                  value={product.labor_price}
-                                  onChange={(e) => {
-                                    const newLaborPrice = Number(e.target.value);
-                                    handleTempProductChange(product.product_id, product.quantity, newLaborPrice);
-                                  }}
-                                  className="w-20 h-7 text-xs"
-                                />
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-destructive"
-                                onClick={() => handleTempRemoveProduct(product.product_id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                  </ul>
-                </ScrollArea>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => handleModalClose(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => handleModalClose(true)}>
-              Aplicar Cambios
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog para crear producto rápido */}
+      <QuickProductCreateDialog
+        open={showCreateProductModal}
+        onOpenChange={setShowCreateProductModal}
+        onProductCreated={async () => {
+          // Recargar productos y stock
+          const productsData = await fetchProducts();
+          setAllProducts(productsData);
+          const stockData = await getStockProducts();
+          setStockProducts(stockData);
+        }}
+      />
     </motion.div>
   );
 };

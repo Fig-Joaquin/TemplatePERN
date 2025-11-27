@@ -19,9 +19,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Checkbox } from "@/components/ui/checkbox"
 import { fetchVehicles } from "../services/vehicleService"
 import { createQuotation } from "../services/quotationService"
 import { getActiveTax } from "@/services/taxService"
@@ -32,6 +30,8 @@ import { getStockProducts } from "../services/stockProductService"
 import type React from "react"
 import { NumberInput } from "@/components/numberInput"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
+import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog"
+import { SparePartsModal } from "@/components/quotations/SparePartsModal"
 
 const fetchTax = async () => {
   try {
@@ -66,6 +66,7 @@ const QuotationCreatePage = () => {
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -526,81 +527,33 @@ const QuotationCreatePage = () => {
               )}
             </Button>
           </form>
-          {/* Diálogo para seleccionar productos */}
-          <Dialog open={showProductModal} onOpenChange={setShowProductModal}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Seleccionar Repuestos
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Command>
-                  <CommandInput placeholder="Buscar repuestos..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>No se encontraron repuestos.</CommandEmpty>
-                    <CommandGroup heading="Productos disponibles">
-                      <ScrollArea className="h-[200px]">
-                        {products
-                          .map((product) => {
-                            const stockProduct = stockProducts.find(
-                              (sp) => sp.product?.product_id === product.product_id,
-                            )
-                            const selectedProduct = selectedProducts.find(
-                              (sp) => sp.productId === product.product_id,
-                            )
-                            const isSelected = !!selectedProduct
+          {/* Diálogo para seleccionar productos - Nuevo modal mejorado */}
+          <SparePartsModal
+            open={showProductModal}
+            onOpenChange={setShowProductModal}
+            products={products}
+            stockProducts={stockProducts}
+            selectedProducts={selectedProducts}
+            onProductChange={handleProductChange}
+            onRemoveProduct={handleRemoveProduct}
+            onConfirm={() => setShowProductModal(false)}
+            onCancel={() => setShowProductModal(false)}
+            onCreateProduct={() => setShowCreateProductModal(true)}
+            calculatePrice={calculateTotalWithMargin}
+            showStock={true}
+            title="Seleccionar Repuestos"
+            description="Selecciona los productos para la cotización y configura cantidades y mano de obra"
+          />
 
-                            return (
-                              <CommandItem
-                                key={product.product_id}
-                                className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent/5"
-                                onSelect={() => {
-                                  if (!isSelected) {
-                                    handleProductChange(product.product_id, 1, 0)
-                                  }
-                                }}
-                              >
-                                <div className="flex items-center space-x-4 flex-1">
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        handleProductChange(product.product_id, 1, 0)
-                                      } else {
-                                        handleRemoveProduct(product.product_id)
-                                      }
-                                    }}
-                                  />
-                                  <div className="flex-1">
-                                    <p className="font-medium">{product.product_name}</p>
-                                    <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Precio: {formatPriceCLP(Number(product.sale_price))} - Stock:{" "}
-                                      {stockProduct?.quantity || 0}
-                                    </p>
-                                  </div>
-                                </div>
-                              </CommandItem>
-                            )
-                          })}
-                      </ScrollArea>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowProductModal(false)}
-                  >
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <QuickProductCreateDialog
+            open={showCreateProductModal}
+            onOpenChange={setShowCreateProductModal}
+            onProductCreated={(newProduct) => {
+              setProducts((prev) => [...prev, newProduct])
+              handleProductChange(newProduct.product_id, 1, 0)
+              toast.success("Producto agregado a la cotización")
+            }}
+          />
         </CardContent>
       </Card>
     </div>

@@ -19,11 +19,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
+import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog"
+import { SparePartsModal } from "@/components/quotations/SparePartsModal"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
 import { Save, ArrowLeft, FileText, Plus, Package } from "lucide-react"
@@ -71,6 +70,7 @@ export default function EditQuotationPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
     const [showProductModal, setShowProductModal] = useState(false)
+    const [showCreateProductModal, setShowCreateProductModal] = useState(false)
     const [taxRate, setTaxRate] = useState<number>(0)
     const [activeTaxId, setActiveTaxId] = useState<number>(1)
     const [taxRatePercent, setTaxRatePercent] = useState<number>(19)
@@ -102,6 +102,7 @@ export default function EditQuotationPage() {
                 if (!vehicleId) {
                     toast.error("No se encontró un vehículo asociado a esta cotización")
                     return
+
                 }
 
                 setSelectedVehicleId(vehicleId)
@@ -453,7 +454,7 @@ export default function EditQuotationPage() {
                                 type="button" // Importante: esto previene que envíe el formulario
                                 onClick={handleOpenProductModal}
                                 variant="outline"
-                                className="hover:bg-primary hover:text-primary-foreground transition-colors"
+                                className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
                                 disabled={submitting}
                             >
                                 <Plus className="w-4 h-4 mr-2" />
@@ -606,88 +607,35 @@ export default function EditQuotationPage() {
                 </div>
             </form>
 
-            {/* Product selection dialog - modificado para usar estado temporal */}
-            <Dialog
+            {/* Product selection dialog - Nuevo modal mejorado */}
+            <SparePartsModal
                 open={showProductModal}
                 onOpenChange={(open) => {
                     if (!open) handleModalClose(false)
                 }}
-            >
-                <DialogContent className="max-w-4xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Package className="w-5 h-5" />
-                            Seleccionar Repuestos
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <Command>
-                            <CommandInput placeholder="Buscar repuestos..." className="h-9" />
-                            <CommandList>
-                                <CommandEmpty>No se encontraron repuestos.</CommandEmpty>
+                products={products}
+                selectedProducts={tempSelectedProducts}
+                onProductChange={handleTempProductChange}
+                onRemoveProduct={handleTempRemoveProduct}
+                onConfirm={() => handleModalClose(true)}
+                onCancel={() => handleModalClose(false)}
+                onCreateProduct={() => setShowCreateProductModal(true)}
+                calculatePrice={calculateTotalWithMargin}
+                showStock={false}
+                title="Seleccionar Repuestos"
+                description="Selecciona los productos para la cotización y configura cantidades y mano de obra"
+            />
 
-                                {/* Available products section */}
-                                <CommandGroup heading="Productos disponibles">
-                                    <ScrollArea className="h-[200px]">
-                                        {products
-                                            .map((product) => {
-                                                const selectedProduct = tempSelectedProducts.find((sp) => sp.productId === product.product_id)
-                                                const isSelected = !!selectedProduct
-
-                                                return (
-                                                    <CommandItem
-                                                        key={product.product_id}
-                                                        className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent/5"
-                                                        onSelect={() => {
-                                                            // onSelect receives the value, not an event object
-                                                            if (!isSelected) {
-                                                                handleTempProductChange(product.product_id, 1, 0)
-                                                            }
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center space-x-4 flex-1">
-                                                            <Checkbox
-                                                                checked={isSelected}
-                                                                onCheckedChange={(checked) => {
-                                                                    if (checked) {
-                                                                        handleTempProductChange(product.product_id, 1, 0)
-                                                                    } else {
-                                                                        handleTempRemoveProduct(product.product_id)
-                                                                    }
-                                                                }}
-                                                            />
-                                                            <div className="flex-1">
-                                                                <p className="font-medium">{product.product_name}</p>
-                                                                <p className="text-xs text-gray-500">Margen: {product.profit_margin}%</p>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Precio: {formatPriceCLP(Number(product.sale_price))}
-                                                                    {/* No stock information for quotations */}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                )
-                                            })}
-                                    </ScrollArea>
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-
-                        <div className="flex justify-end gap-2">
-                            <Button type="button" variant="outline" onClick={() => handleModalClose(false)}>
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => handleModalClose(true)}
-                                className="bg-primary text-primary-foreground"
-                            >
-                                Aplicar Cambios
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <QuickProductCreateDialog
+                open={showCreateProductModal}
+                onOpenChange={setShowCreateProductModal}
+                onProductCreated={(newProduct) => {
+                    setProducts((prev) => [...prev, newProduct])
+                    // Add to temp selected products since we are in the modal
+                    handleTempProductChange(newProduct.product_id, 1, 0)
+                    toast.success("Producto agregado a la selección")
+                }}
+            />
         </motion.div>
     )
 }
