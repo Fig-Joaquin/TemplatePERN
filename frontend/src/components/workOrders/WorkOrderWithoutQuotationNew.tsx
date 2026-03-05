@@ -145,7 +145,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const handleTempProductChange = (productId: number, quantity: number, laborPrice: number) => {
     const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
     const availableStock = stockProduct?.quantity || 0;
-    
+
     if (quantity > availableStock) {
       toast.warning(`Solo hay ${availableStock} unidades disponibles en stock`);
       return;

@@ -290,7 +290,7 @@ const CreateProductPurchasePage = () => {
         {/* Products */}
         <Card>
           <CardHeader>
-              <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center">
               <CardTitle>Productos a Comprar</CardTitle>
               <div className="flex gap-2 items-center">
                 <div className="flex items-center space-x-2">

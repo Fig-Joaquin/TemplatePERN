@@ -124,14 +124,14 @@ const VehicleModelPage = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="container mx-auto p-6 space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       {/* Header Section with Stats */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -234,11 +234,11 @@ const VehicleModelPage = () => {
           <p className="mt-4">Cargando modelos de vehículos...</p>
         </div>
       ) : models.filter(
-                (model) =>
-                  model.model_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                  (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId)
-              ).length > 0 ? (
-        <motion.div 
+        (model) =>
+          model.model_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          (!filterBrandId || model.brand.vehicle_brand_id === filterBrandId)
+      ).length > 0 ? (
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

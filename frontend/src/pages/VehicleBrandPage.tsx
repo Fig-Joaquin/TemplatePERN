@@ -13,7 +13,7 @@ import {
   updateVehicleBrand,
   deleteVehicleBrand,
 } from "../services/VehicleBrandService"
-import{
+import {
   fetchVehicleModels,
 } from "../services/VehicleModelService"
 import type { Brand, Model } from "../types/interfaces"
@@ -116,14 +116,14 @@ const VehicleBrandPage = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="container mx-auto p-6 space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       {/* Header Section with Stats */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -150,7 +150,7 @@ const VehicleBrandPage = () => {
       </motion.div>
 
       {/* Header with Actions */}
-      <motion.div 
+      <motion.div
         className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -191,7 +191,7 @@ const VehicleBrandPage = () => {
           <p className="mt-4">Cargando marcas de vehículos...</p>
         </div>
       ) : brands.filter((brand) => brand.brand_name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -220,14 +220,14 @@ const VehicleBrandPage = () => {
                         ID: {brand.vehicle_brand_id}
                       </Badge>
                       <p className="text-sm text-muted-foreground">
-                        {models.filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id).length > 0 
+                        {models.filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id).length > 0
                           ? models
-                              .filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id)
-                              .map((m, i, arr) => (
-                                <span key={m.vehicle_model_id}>
-                                  {m.model_name}{i < arr.length - 1 ? ', ' : ''}
-                                </span>
-                              ))
+                            .filter((m) => m.brand.vehicle_brand_id === brand.vehicle_brand_id)
+                            .map((m, i, arr) => (
+                              <span key={m.vehicle_model_id}>
+                                {m.model_name}{i < arr.length - 1 ? ', ' : ''}
+                              </span>
+                            ))
                           : "Sin modelos registrados"}
                       </p>
                     </CardContent>

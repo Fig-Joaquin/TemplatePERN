@@ -150,7 +150,7 @@ const ProductTypePage = () => {
 
 
   return (
-    <motion.div 
+    <motion.div
       className="container mx-auto p-6 space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -320,7 +320,7 @@ const ProductTypePage = () => {
                     >
                       {selectedCategory
                         ? categories.find((category) => category.product_category_id === selectedCategory)
-                            ?.category_name
+                          ?.category_name
                         : "Seleccione una categoría"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -393,7 +393,7 @@ const ProductTypePage = () => {
                     >
                       {selectedCategory
                         ? categories.find((category) => category.product_category_id === selectedCategory)
-                            ?.category_name
+                          ?.category_name
                         : "Seleccione una categoría"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
