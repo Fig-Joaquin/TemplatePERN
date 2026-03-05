@@ -132,13 +132,6 @@ export default function WorkPaymentFormPage() {
     fetchData();
   }, [id, isEditMode]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   // Función para calcular los pagos existentes de una orden
   const calculateExistingPayments = async (workOrderId: number): Promise<{ totalPaid: number; remaining: number; orderTotal: number }> => {
     try {

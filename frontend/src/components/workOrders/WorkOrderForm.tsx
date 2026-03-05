@@ -29,7 +29,7 @@ const WorkOrderForm = ({ initialData, quotationId, onSuccess, onClose }: WorkOrd
   const loadQuotationDetails = async (quotationId: number) => {
     try {
       const quotation: Quotation = await fetchQuotationById(quotationId);
-      setDescription(quotation.description);
+      setDescription(quotation.description || "");
       setProducts(quotation.details || []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || "Error al cargar detalles de la cotización");
@@ -52,7 +52,7 @@ const WorkOrderForm = ({ initialData, quotationId, onSuccess, onClose }: WorkOrd
 
       if (!quotationId) {
         await Promise.all(products.map((detail) => createWorkProductDetail({
-          work_order_id: createdOrder.work_order_id,
+          work_order_id: createdOrder.workOrder.work_order_id,
           product_id: detail.product_id,
           quantity: detail.quantity,
           sale_price: detail.sale_price,

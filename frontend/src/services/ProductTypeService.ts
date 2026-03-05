@@ -1,27 +1,27 @@
 import api from "../utils/axiosConfig"
-import type { type } from "../types/interfaces"
+import type { ProductType } from "../types/interfaces"
 
 // Obtener todos los tipos de producto
-export const fetchProductTypes = async (): Promise<type[]> => {
-  const { data } = await api.get<type[]>("/productTypes")
+export const fetchProductTypes = async (): Promise<ProductType[]> => {
+  const { data } = await api.get<ProductType[]>("/productTypes")
   return data
 }
 
 // Obtener un tipo de producto por su ID
-export const fetchProductTypeById = async (id: number): Promise<type> => {
-  const { data } = await api.get<type>(`/productTypes/${id}`)
+export const fetchProductTypeById = async (id: number): Promise<ProductType> => {
+  const { data } = await api.get<ProductType>(`/productTypes/${id}`)
   return data
 }
 
 // Crear un nuevo tipo de producto
-export const createProductType = async (productTypeData: Partial<type>): Promise<type> => {
-  const { data } = await api.post<type>("/productTypes", productTypeData)
+export const createProductType = async (productTypeData: Partial<ProductType>): Promise<ProductType> => {
+  const { data } = await api.post<ProductType>("/productTypes", productTypeData)
   return data
 }
 
 // Actualizar un tipo de producto existente
-export const updateProductType = async (id: number, productTypeData: Partial<type>): Promise<type> => {
-  const { data } = await api.put<type>(`/productTypes/${id}`, productTypeData)
+export const updateProductType = async (id: number, productTypeData: Partial<ProductType>): Promise<ProductType> => {
+  const { data } = await api.put<ProductType>(`/productTypes/${id}`, productTypeData)
   return data
 }
 

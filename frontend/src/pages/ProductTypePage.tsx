@@ -16,7 +16,7 @@ import {
   deleteProductType,
 } from "../services/ProductTypeService"
 import { fetchProductCategories } from "../services/ProductCategoryService"
-import type { type as ProductType, category } from "../types/interfaces"
+import type { ProductType, ProductCategory } from "../types/interfaces"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
@@ -34,7 +34,7 @@ const ProductTypePage = () => {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [formValue, setFormValue] = useState("")
   const [editingType, setEditingType] = useState<ProductType | null>(null)
-  const [categories, setCategories] = useState<category[]>([])
+  const [categories, setCategories] = useState<ProductCategory[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)

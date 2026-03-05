@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Minus, ArrowLeft, Package, Trash2 } from "lucide-react";
+import { Plus, ArrowLeft, Package, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
 import { DatePicker } from "@/components/ui/date-picker";

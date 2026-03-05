@@ -135,31 +135,6 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const finalTotal = subtotalBeforeTax + taxAmount;
 
   // Manejadores de eventos
-  const handleProductChange = (productId: number, quantity: number = 1, laborPrice: number = 0) => {
-    // Validar stock disponible
-    const stockProduct = stockProducts.find(sp => sp.product?.product_id === productId);
-    const availableStock = stockProduct?.quantity || 0;
-    
-    if (quantity > availableStock) {
-      toast.warning(`Solo hay ${availableStock} unidades disponibles en stock`);
-      return;
-    }
-    
-    const existingIndex = selectedProducts.findIndex(p => p.productId === productId);
-    if (quantity === 0) {
-      // Eliminar producto
-      setSelectedProducts(selectedProducts.filter(p => p.productId !== productId));
-    } else if (existingIndex >= 0) {
-      // Actualizar producto existente
-      const updated = [...selectedProducts];
-      updated[existingIndex] = { productId, quantity, laborPrice: updated[existingIndex].laborPrice };
-      setSelectedProducts(updated);
-    } else {
-      // Agregar nuevo producto
-      setSelectedProducts([...selectedProducts, { productId, quantity, laborPrice }]);
-    }
-  };
-
   // Handler para abrir el modal
   const handleOpenProductModal = () => {
     setTempSelectedProducts([...selectedProducts]);
@@ -260,7 +235,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         const finalProductPrice = Number(product.sale_price) * (1 + profitMargin / 100);
 
         const workProductDetailData: Omit<WorkProductDetail, 'work_product_detail_id'> = {
-          work_order_id: workOrder.work_order_id,
+          work_order_id: workOrder.workOrder.work_order_id,
           product_id: selectedProduct.productId,
           quantity: selectedProduct.quantity,
           sale_price: finalProductPrice,

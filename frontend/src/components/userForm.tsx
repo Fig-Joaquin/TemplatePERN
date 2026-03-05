@@ -131,8 +131,8 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
         ...formData,
         // Campos opcionales: enviar undefined si están vacíos
         second_surname: formData.second_surname.trim() || undefined,
-        email: formData.email.trim() || undefined,
-        rut: formData.rut.trim() ? cleanRut(formData.rut) : undefined,
+        email: formData.email.trim(),
+        rut: formData.rut.trim() ? cleanRut(formData.rut) : "",
       };
       onSubmit(dataToSubmit);
     }

@@ -22,6 +22,7 @@ export interface ProductPurchase {
   purchase_price: number;
   quantity: number;
   total_price: number;
+  tax?: { tax_rate: number };
 }
 
 export interface PurchaseHistory {

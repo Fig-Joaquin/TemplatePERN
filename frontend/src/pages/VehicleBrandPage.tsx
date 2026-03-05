@@ -16,20 +16,20 @@ import {
 import{
   fetchVehicleModels,
 } from "../services/VehicleModelService"
-import type { brand, model } from "../types/interfaces"
+import type { Brand, Model } from "../types/interfaces"
 import { Plus, Edit, Trash2, Search, Car, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 
 const VehicleBrandPage = () => {
-  const [brands, setBrands] = useState<brand[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [brandName, setBrandName] = useState("")
-  const [editingBrand, setEditingBrand] = useState<brand | null>(null)
-  const [models, setModels] = useState<model[]>([])
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null)
+  const [models, setModels] = useState<Model[]>([])
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
@@ -93,7 +93,7 @@ const VehicleBrandPage = () => {
     }
   }
 
-  const handleDelete = async (brand: brand) => {
+  const handleDelete = async (brand: Brand) => {
     if (window.confirm(`¿Está seguro de eliminar la marca "${brand.brand_name}"?`)) {
       try {
         await deleteVehicleBrand(brand.vehicle_brand_id)
@@ -109,7 +109,7 @@ const VehicleBrandPage = () => {
     setBrandName("")
   }
 
-  const openEditModal = (brand: brand) => {
+  const openEditModal = (brand: Brand) => {
     setEditingBrand(brand)
     setBrandName(brand.brand_name)
     setIsEditModalOpen(true)

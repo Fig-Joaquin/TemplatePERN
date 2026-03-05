@@ -14,7 +14,7 @@ import {
   deleteVehicleModel,
 } from "../services/VehicleModelService"
 import { fetchVehicleBrands } from "../services/VehicleBrandService"
-import type { model, brand } from "../types/interfaces"
+import type { Model, Brand } from "../types/interfaces"
 import { Plus, Edit, Trash2, Search, Car, Calendar, Settings } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -25,14 +25,14 @@ import { Check, ChevronsUpDown } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const VehicleModelPage = () => {
-  const [models, setModels] = useState<model[]>([])
-  const [brands, setBrands] = useState<brand[]>([])
+  const [models, setModels] = useState<Model[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [modelName, setModelName] = useState("")
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null)
-  const [editingModel, setEditingModel] = useState<model | null>(null)
+  const [editingModel, setEditingModel] = useState<Model | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBrandId, setFilterBrandId] = useState<number | null>(null)
   const [openCreateBrandCombobox, setOpenCreateBrandCombobox] = useState(false)
@@ -99,7 +99,7 @@ const VehicleModelPage = () => {
     }
   }
 
-  const handleDelete = async (model: model) => {
+  const handleDelete = async (model: Model) => {
     if (window.confirm(`¿Está seguro de eliminar el modelo "${model.model_name}"?`)) {
       try {
         await deleteVehicleModel(model.vehicle_model_id)
@@ -116,7 +116,7 @@ const VehicleModelPage = () => {
     setSelectedBrandId(null)
   }
 
-  const openEditModal = (model: model) => {
+  const openEditModal = (model: Model) => {
     setEditingModel(model)
     setModelName(model.model_name)
     setSelectedBrandId(model.brand.vehicle_brand_id)

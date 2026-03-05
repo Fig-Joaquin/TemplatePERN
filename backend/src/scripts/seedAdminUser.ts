@@ -37,12 +37,12 @@ async function seedAdminUser() {
     
     // Crear la persona
     const newPerson = personRepository.create({
-      rut: "204876541",
-      name: "Joaquin",
-      first_surname: "Figueroa",
-      second_surname: "Sanchez",
-      email: "joaquin@gmail.com",
-      number_phone: "56912344321", // Sin el símbolo +
+      rut: "156473529",
+      name: "Ronald",
+      first_surname: "Rubilar",
+      second_surname: "Medina",
+      email: "Ronald@gmail.com",
+      number_phone: "56911223344", // Sin el símbolo +
       person_type: "administrador"
     });
 
@@ -68,15 +68,6 @@ async function seedAdminUser() {
     console.log(`✅ Usuario creado con ID: ${savedUser.user_id}`);
 
     console.log("\n🎉 ¡Usuario administrador creado exitosamente!");
-    console.log("\n📋 Credenciales:");
-    console.log("   Username: admin");
-    console.log("   Password: Admin123@");
-    console.log("\n🔗 Puedes hacer login en: http://localhost:4000/user/login");
-    console.log("\n💡 Body para login:");
-    console.log(JSON.stringify({
-      username: "admin",
-      password: "Admin123@"
-    }, null, 2));
 
     await AppDataSource.destroy();
     process.exit(0);

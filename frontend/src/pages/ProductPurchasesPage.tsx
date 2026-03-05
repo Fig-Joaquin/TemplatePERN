@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -304,7 +304,7 @@ const ProductPurchasesPage = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Impuesto</label>
-                  <p className="text-sm">{selectedPurchase.tax.tax_rate}%</p>
+                  <p className="text-sm">{selectedPurchase.tax?.tax_rate ?? 'N/A'}%</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Total</label>

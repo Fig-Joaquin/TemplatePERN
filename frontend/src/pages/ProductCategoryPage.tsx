@@ -13,7 +13,7 @@ import {
   updateProductCategory,
   deleteProductCategory,
 } from "../services/ProductCategoryService"
-import type { category } from "../types/interfaces"
+import type { ProductCategory } from "../types/interfaces"
 import { Plus, Edit, Trash2, Folder, Search, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
@@ -22,16 +22,16 @@ import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 
 const ProductCategoryPage = () => {
-  const [categories, setCategories] = useState<category[]>([])
-  const [filteredCategories, setFilteredCategories] = useState<category[]>([])
+  const [categories, setCategories] = useState<ProductCategory[]>([])
+  const [filteredCategories, setFilteredCategories] = useState<ProductCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [categoryName, setCategoryName] = useState("")
-  const [editingCategory, setEditingCategory] = useState<category | null>(null)
+  const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [categoryToDelete, setCategoryToDelete] = useState<category | null>(null)
+  const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null)
 
   const loadCategories = useCallback(async () => {
     setIsLoading(true)
@@ -88,7 +88,7 @@ const ProductCategoryPage = () => {
     }
   }
 
-  const handleDelete = (category: category) => {
+  const handleDelete = (category: ProductCategory) => {
     setCategoryToDelete(category)
     setDeleteDialogOpen(true)
   }
@@ -111,7 +111,7 @@ const ProductCategoryPage = () => {
     setCategoryName("")
   }
 
-  const openEditModal = (category: category) => {
+  const openEditModal = (category: ProductCategory) => {
     setEditingCategory(category)
     setCategoryName(category.category_name)
     setIsEditModalOpen(true)

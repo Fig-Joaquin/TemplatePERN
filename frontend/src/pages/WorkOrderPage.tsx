@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Table as TableIcon, LayoutGrid, MoreHorizontal, Eye, Edit, UserPlus, Trash2, Plus, Play, Pause, CheckCircle, CreditCard } from "lucide-react";
+import { Search, Table as TableIcon, LayoutGrid, MoreHorizontal, Eye, Edit, UserPlus, Trash2, Plus, Play, Pause, CheckCircle, CreditCard, FileText } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllWorkOrders, deleteWorkOrder, updateWorkOrder } from "@/services/workOrderService";
 import { createDebtor } from "@/services/debtorService";
@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   Select,

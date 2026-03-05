@@ -1,23 +1,23 @@
 import api from "../utils/axiosConfig"
-import type { model } from "../types/interfaces"
+import type { Model } from "../types/interfaces"
 
-export const fetchVehicleModels = async (): Promise<model[]> => {
-  const { data } = await api.get<model[]>("/vehicleModels")
+export const fetchVehicleModels = async (): Promise<Model[]> => {
+  const { data } = await api.get<Model[]>("/vehicleModels")
   return data
 }
 
-export const fetchVehicleModelById = async (id: number): Promise<model> => {
-  const { data } = await api.get<model>(`/vehicleModels/${id}`)
+export const fetchVehicleModelById = async (id: number): Promise<Model> => {
+  const { data } = await api.get<Model>(`/vehicleModels/${id}`)
   return data
 }
 
-export const createVehicleModel = async (modelData: Partial<model>): Promise<model> => {
-  const { data } = await api.post<model>("/vehicleModels", modelData)
+export const createVehicleModel = async (modelData: Partial<Model>): Promise<Model> => {
+  const { data } = await api.post<Model>("/vehicleModels", modelData)
   return data
 }
 
-export const updateVehicleModel = async (id: number, modelData: Partial<model>): Promise<model> => {
-  const { data } = await api.put<model>(`/vehicleModels/${id}`, modelData)
+export const updateVehicleModel = async (id: number, modelData: Partial<Model>): Promise<Model> => {
+  const { data } = await api.put<Model>(`/vehicleModels/${id}`, modelData)
   return data
 }
 

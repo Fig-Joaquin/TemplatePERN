@@ -1,23 +1,23 @@
 import api from "../utils/axiosConfig"
-import type { brand } from "../types/interfaces"
+import type { Brand } from "../types/interfaces"
 
-export const fetchVehicleBrands = async (): Promise<brand[]> => {
-  const { data } = await api.get<brand[]>("/vehicleBrands")
+export const fetchVehicleBrands = async (): Promise<Brand[]> => {
+  const { data } = await api.get<Brand[]>("/vehicleBrands")
   return data
 }
 
-export const fetchVehicleBrandById = async (id: number): Promise<brand> => {
-  const { data } = await api.get<brand>(`/vehicleBrands/${id}`)
+export const fetchVehicleBrandById = async (id: number): Promise<Brand> => {
+  const { data } = await api.get<Brand>(`/vehicleBrands/${id}`)
   return data
 }
 
-export const createVehicleBrand = async (brandData: Partial<brand>): Promise<brand> => {
-  const { data } = await api.post<brand>("/vehicleBrands", brandData)
+export const createVehicleBrand = async (brandData: Partial<Brand>): Promise<Brand> => {
+  const { data } = await api.post<Brand>("/vehicleBrands", brandData)
   return data
 }
 
-export const updateVehicleBrand = async (id: number, brandData: Partial<brand>): Promise<brand> => {
-  const { data } = await api.put<brand>(`/vehicleBrands/${id}`, brandData)
+export const updateVehicleBrand = async (id: number, brandData: Partial<Brand>): Promise<Brand> => {
+  const { data } = await api.put<Brand>(`/vehicleBrands/${id}`, brandData)
   return data
 }
 
