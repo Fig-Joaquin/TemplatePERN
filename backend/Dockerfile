@@ -1,64 +1,42 @@
-#  Etapa builder
-FROM node:22.12.0 AS builder
+# ─── Stage 1: Builder ────────────────────────────────────────────────────────
+FROM node:22.12.0-alpine AS builder
 WORKDIR /app
 
-# 1) Instala dependencias
+# Install all dependencies (dev included for the TypeScript build)
 COPY package*.json tsconfig.json ./
 RUN npm ci
 
-# 2) Copia y compila
-COPY . .
+# Copy source and compile
+COPY src ./src
 RUN npm run build
 
-# Etapa final (prod)
-FROM node:22.12.0-slim
+# ─── Stage 2: Production ─────────────────────────────────────────────────────
+FROM node:22.12.0-alpine AS production
 WORKDIR /app
 
-# 1) Copia solo package.json y lockfile, luego instala prod deps
-COPY --from=builder /app/package*.json ./
+# Install postgresql-client for pg_isready in the entrypoint
+RUN apk add --no-cache postgresql-client
+
+# Copy package manifests and install only production dependencies
+COPY --from=builder --chown=node:node /app/package*.json ./
 RUN npm ci --omit=dev
 
-# 1.1) Instala pg_isready para el healthcheck
-RUN apt-get update \
- && apt-get install -y postgresql-client \
- && rm -rf /var/lib/apt/lists/*
+# Copy compiled application
+COPY --from=builder --chown=node:node /app/dist ./dist
 
-# 2) Copia el build
-COPY --from=builder /app/dist ./dist
+# Copy the pre-trained NLP model (loaded at runtime from working directory)
+COPY --chown=node:node model.nlp ./model.nlp
+
+# Copy and make the entrypoint executable (must be done as root before USER switch)
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 EXPOSE 4000
 
-# 3) Espera a Postgres, corre migraciones compiladas y arranca
-CMD ["sh", "-c", "\
-  until pg_isready -h postgres -p 5432; do \
-    echo 'Esperando a Postgres…'; \
-    sleep 1; \
-  done; \
-  npm run migration:run:prod && npm run start:prod\
-"]
+# Run as non-root for security
+USER node
 
-
-# !# Etapa builder
-# FROM node:22.12.0 AS builder
-# WORKDIR /app
-
-# # 1) Instala dependencias
-# COPY package*.json tsconfig.json ./
-# RUN npm ci
-
-# # 2) Copia el código fuente
-# COPY src ./src
-
-# # 3) Compila TypeScript (incluye src/migrations si está bajo src/)
-# RUN npm run build
-
-# # 4) Copia las migraciones TS para luego compilarlas o ejecutarlas
-# #    En este punto las migraciones .ts siguen en /app/src/migrations
-# #    Si quieres ejecutarlas con ts-node, podrías usarlas directamente.
-# #    Pero como en producción ejecutaremos las .js generadas,
-# #    vamos a copiarlas del src original para que tsc las haya convertido.
-# #    (Si tu tsconfig no las compila, este paso asegura que existan)
-# RUN mkdir -p dist/migrations
+ENTRYPOINT ["./entrypoint.sh"]
 # COPY src/migrations ./dist/migrations
 
 # # Etapa final

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { formatDate } from "@/utils/formDate"
 import { VehicleCard } from "@/components/VehicleCard"
-import { FileText, Plus, Edit, Search, CheckCircle, XCircle, Clock, ArrowRightLeft } from "lucide-react"
+import { FileText, Plus, Edit, Search, CheckCircle, XCircle, Clock, ArrowRightLeft, Filter, X } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
@@ -26,12 +26,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [workProductDetails, setWorkProductDetails] = useState<WorkProductDetail[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [dateFrom, setDateFrom] = useState<string>("")
+  const [dateTo, setDateTo] = useState<string>("")
   const navigate = useNavigate()
 
   // First, add a state for controlling the delete confirmation dialog
@@ -140,36 +150,54 @@ export default function QuotationPage() {
     details: workProductDetails.filter((detail) => detail.quotation_id === quotation.quotation_id),
   }))
 
-  // Función de filtrado por patente, nombre del dueño o teléfono
+  // Función de filtrado: estado + rango de fechas + texto libre
   const filteredData = data.filter((quotation) => {
-    if (!searchTerm) return true;
+    // Filtro por estado
+    if (statusFilter !== "all" && quotation.quotation_status !== statusFilter) return false;
 
-    const searchLower = searchTerm.toLowerCase();
-
-    // Buscar por patente del vehículo
-    const licensePlate = quotation.vehicle?.license_plate?.toLowerCase() || '';
-    if (licensePlate.includes(searchLower)) return true;
-
-    // Buscar por nombre del dueño (concatenar nombre + apellidos)
-    const owner = quotation.vehicle?.owner;
-    if (owner) {
-      const fullName = `${owner.name} ${owner.first_surname} ${owner.second_surname || ''}`.toLowerCase();
-      if (fullName.includes(searchLower)) return true;
+    // Filtro por rango de fechas
+    if (dateFrom || dateTo) {
+      const entryDate = quotation.entry_date ? new Date(quotation.entry_date) : null;
+      if (!entryDate) return false;
+      if (dateFrom && entryDate < new Date(dateFrom)) return false;
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (entryDate > toDate) return false;
+      }
     }
 
-    // Buscar por nombre de la empresa
-    const company = quotation.vehicle?.company;
-    if (company?.name?.toLowerCase().includes(searchLower)) return true;
+    // Filtro por texto (patente, nombre, teléfono)
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
 
-    // Buscar por teléfono del dueño
-    const ownerPhone = owner?.number_phone?.toLowerCase() || '';
-    if (ownerPhone.includes(searchLower)) return true;
+      // Buscar por patente del vehículo
+      const licensePlate = quotation.vehicle?.license_plate?.toLowerCase() || '';
+      if (licensePlate.includes(searchLower)) return true;
 
-    // Buscar por teléfono de la empresa
-    const companyPhone = company?.phone?.toLowerCase() || '';
-    if (companyPhone.includes(searchLower)) return true;
+      // Buscar por nombre del dueño (concatenar nombre + apellidos)
+      const owner = quotation.vehicle?.owner;
+      if (owner) {
+        const fullName = `${owner.name} ${owner.first_surname} ${owner.second_surname || ''}`.toLowerCase();
+        if (fullName.includes(searchLower)) return true;
+      }
 
-    return false;
+      // Buscar por nombre de la empresa
+      const company = quotation.vehicle?.company;
+      if (company?.name?.toLowerCase().includes(searchLower)) return true;
+
+      // Buscar por teléfono del dueño
+      const ownerPhone = owner?.number_phone?.toLowerCase() || '';
+      if (ownerPhone.includes(searchLower)) return true;
+
+      // Buscar por teléfono de la empresa
+      const companyPhone = company?.phone?.toLowerCase() || '';
+      if (companyPhone.includes(searchLower)) return true;
+
+      return false;
+    }
+
+    return true;
   });
 
   const updatedColumns = columns.map((col) => {
@@ -376,16 +404,118 @@ export default function QuotationPage() {
         </Button>
       </div>
 
-      {/* Campo de búsqueda */}
-      <div className="relative">
-        <Input
-          type="text"
-          placeholder="Buscar por patente, nombre del dueño o teléfono..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+      {/* Panel de filtros */}
+      <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+          <Filter className="w-4 h-4" />
+          Filtros
+        </div>
+        {/* Todos los controles comparten la misma altura de input; items-end los alinea por la base */}
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          {/* Buscador — más ancho que los demás */}
+          <div className="flex-[2] min-w-0 flex flex-col gap-1">
+            <label htmlFor="search-input" className="text-xs font-medium text-muted-foreground">Buscar</label>
+            <div className="relative">
+              <Input
+                id="search-input"
+                type="text"
+                placeholder="Patente, nombre del dueño o teléfono..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-10 pl-9 pr-9"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro por estado */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Estado</label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger id="status-filter" className="h-10">
+                <SelectValue placeholder="Todos los estados" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="approved">Aprobada</SelectItem>
+                <SelectItem value="rejected">Rechazada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Rango de fechas — etiqueta compartida arriba, inputs en la misma fila */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">Fecha de entrada</span>
+            <div className="flex items-center gap-2">
+              <Input
+                id="date-from"
+                type="date"
+                aria-label="Desde"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-10 flex-1 min-w-0"
+              />
+              <span className="text-xs text-muted-foreground shrink-0">–</span>
+              <Input
+                id="date-to"
+                type="date"
+                aria-label="Hasta"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-10 flex-1 min-w-0"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Indicador de filtros activos */}
+        {(statusFilter !== "all" || dateFrom || dateTo || searchTerm) && (
+          <div className="flex items-center gap-2 flex-wrap pt-1 border-t">
+            <span className="text-xs text-muted-foreground">Filtros activos:</span>
+            {searchTerm && (
+              <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                Búsqueda: "{searchTerm}"
+                <button onClick={() => setSearchTerm("")}><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {statusFilter !== "all" && (() => {
+              const statusLabels: Record<string, string> = { pending: "Pendiente", approved: "Aprobada", rejected: "Rechazada" };
+              return (
+                <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                  Estado: {statusLabels[statusFilter] ?? statusFilter}
+                  <button onClick={() => setStatusFilter("all")}><X className="w-3 h-3" /></button>
+                </Badge>
+              );
+            })()}
+            {dateFrom && (
+              <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                Desde: {dateFrom}
+                <button onClick={() => setDateFrom("")}><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {dateTo && (
+              <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                Hasta: {dateTo}
+                <button onClick={() => setDateTo("")}><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            <button
+              onClick={() => { setSearchTerm(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); }}
+              className="text-xs text-destructive hover:underline ml-auto"
+            >
+              Limpiar todo
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -399,18 +529,22 @@ export default function QuotationPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {filteredData.length === 0 && searchTerm ? (
+          {filteredData.length === 0 ? (
             <div className="text-center py-10">
               <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <p className="text-lg text-muted-foreground">
-                No se encontraron cotizaciones que coincidan con "{searchTerm}"
+                No se encontraron cotizaciones con los filtros aplicados
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Intenta buscar por patente, nombre del dueño o teléfono
+                Intenta ajustar los criterios de búsqueda
               </p>
             </div>
           ) : (
-            <DataTable columns={updatedColumns} data={filteredData} />
+            <DataTable
+              columns={updatedColumns}
+              data={filteredData}
+              initialSorting={[{ id: "quotation_id", desc: true }]}
+            />
           )}
         </motion.div>
       )}

@@ -26,6 +26,7 @@ import { getChileanISOString, formatChileanDate } from "@/utils/dateUtils";
 import { translateQuotationStatus } from "@/utils/statusTranslations";
 import { cn } from "@/lib/utils";
 import type { Vehicle, Quotation, WorkProductDetail, WorkOrderInput, StockProduct } from "../../types/interfaces";
+import { showApiError } from "@/utils/apiErrorHandler";
 
 interface WorkOrderWithQuotationProps {
   preselectedVehicleId?: number;
@@ -232,9 +233,8 @@ const WorkOrderWithQuotation = ({ preselectedVehicleId }: WorkOrderWithQuotation
 
       toast.success("Orden de trabajo creada exitosamente");
       navigate("/admin/orden-trabajo");
-    } catch (error: any) {
-      console.error("Error al crear la orden de trabajo:", error);
-      toast.error(error.response?.data?.message || error.message || "Error al crear la orden de trabajo");
+    } catch (error: unknown) {
+      showApiError(error, "Error al crear la orden de trabajo");
     } finally {
       setLoading(false);
     }

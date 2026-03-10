@@ -2,9 +2,10 @@
 /* eslint-disable no-console */
 import { Request, Response, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/usersEntity";
+import { JwtPayload } from "../types/auth";
 
 export const login: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const { username, password } = req.body;
@@ -32,15 +33,12 @@ export const login: RequestHandler = async (req: Request, res: Response): Promis
       return;
     }
 
-    const token = jwt.sign(
-      { 
-        user_id: user.user_id, 
-        username: user.username,
-        userRole: user.user_role 
-      },
-      process.env.JWT_SECRET || "secret_default",
-      { expiresIn: "1h" }
-    );
+    const payload: JwtPayload = {
+      userId: user.user_id,
+      username: user.username,
+      userRole: user.user_role,
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -67,19 +65,16 @@ export const logoutUser: RequestHandler = (_req, res) => {
 };
 
 export const checkSession: RequestHandler = async (req: Request, res: Response): Promise<void> => {
-  console.log("Cookies recibidas:", req.cookies); // 🔍 Depuración
-
-  const token = req.cookies?.token; // ← Cambia `session` por `token`
+  const token = req.cookies?.token;
   if (!token) {
     res.status(401).json({ error: "No autenticado, cookie no encontrada" });
-    return; 
+    return;
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    // Nuevo: obtener al usuario con la relación "person"
     const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
-      where: { user_id: decoded.user_id },
+      where: { user_id: decoded.userId },
       relations: ["person"],
     });
     if (!user) {

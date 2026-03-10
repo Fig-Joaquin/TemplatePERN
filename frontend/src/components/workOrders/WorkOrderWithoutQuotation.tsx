@@ -30,6 +30,7 @@ import { Separator } from "@/components/ui/separator";
 import { SparePartsModal } from "@/components/quotations/SparePartsModal";
 import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog";
 import type { Vehicle, Product, StockProduct, WorkOrderInput, WorkProductDetail } from "../../types/interfaces";
+import { showApiError } from "@/utils/apiErrorHandler";
 
 interface SelectedProduct {
   productId: number;
@@ -275,9 +276,8 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
 
       toast.success("Orden de trabajo creada exitosamente");
       navigate("/admin/orden-trabajo");
-    } catch (error: any) {
-      console.error("Error al crear la orden de trabajo:", error);
-      toast.error(`Error al crear la orden de trabajo: ${error.message || "Error desconocido"}`);
+    } catch (error: unknown) {
+      showApiError(error, "Error al crear la orden de trabajo");
     } finally {
       setLoading(false);
     }

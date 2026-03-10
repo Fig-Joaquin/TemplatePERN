@@ -25,10 +25,21 @@ import gastoRoutes from "./gastoRoutes";
 import tipoGastoRoutes from "./tipoGastoRoutes";
 import paymentTypeRoutes from "./work/paymentTypeRoutes";
 import workPaymentRoutes from "./work/workPaymentRoutes";
+import { authenticateUser } from "../middleware/authMiddleware";
 
 const router = Router();
 
+// ─── Public routes ───────────────────────────────────────────────────────────
+// Only /auth endpoints (login, logout, check-session) are accessible without a
+// valid session. Every route registered AFTER router.use(authenticateUser) is
+// automatically protected.
 router.use("/auth", authRoutes);
+
+// ─── Authentication gate ─────────────────────────────────────────────────────
+// Applies to all routes registered below this line.
+router.use(authenticateUser);
+
+// ─── Protected routes ────────────────────────────────────────────────────────
 router.use("/persons", personsRoutes);
 router.use("/user", userRoutes);
 router.use("/vehicles", vehicleRoutes);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { showApiError } from "@/utils/apiErrorHandler";
 import {
   createWorkProductDetail,
   updateWorkProductDetail,
@@ -543,9 +544,9 @@ const WorkOrderEditPage = () => {
 
       navigate("/admin/orden-trabajo");
       setTimeout(() => window.location.reload(), 100);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating work order:", error);
-      toast.error(error.response?.data?.message || error.message || "Error al actualizar la orden de trabajo");
+      showApiError(error, "Error al actualizar la orden de trabajo");
     } finally {
       setSubmitting(false);
       // Clear deleted products list to avoid duplicate deletions on next save

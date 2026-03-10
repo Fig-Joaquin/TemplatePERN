@@ -1,6 +1,6 @@
 "use client"
 
-import type { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef, Column } from "@tanstack/react-table"
 import type { Quotation, WorkProductDetail } from "@/types/interfaces"
 import { formatDate } from "@/utils/formDate"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { VehicleCard } from "@/components/VehicleCard"
 import { Badge } from "@/components/ui/badge"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
+
+// Helper to render sort direction icon
+function SortIcon({ column }: Readonly<{ column: Column<any, any> }>) {
+  if (column.getIsSorted() === "asc") return <ArrowUp className="ml-1 h-4 w-4" />
+  if (column.getIsSorted() === "desc") return <ArrowDown className="ml-1 h-4 w-4" />
+  return <ArrowUpDown className="ml-1 h-4 w-4 opacity-40" />
+}
 
 // Función auxiliar para obtener información del estado con estilos
 const getStatusBadge = (status: string) => {
@@ -40,7 +48,17 @@ const translateStatus = (status: string): string => {
 export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkProductDetail[] }>[] = [
   {
     accessorKey: "quotation_id",
-    header: "ID",
+    enableSorting: true,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="px-0 font-semibold hover:bg-transparent"
+      >
+        ID
+        <SortIcon column={column} />
+      </Button>
+    ),
   },
   {
     accessorKey: "description",
@@ -57,7 +75,17 @@ export const columns: ColumnDef<Quotation & { totalPrice: number; details: WorkP
   },
   {
     accessorKey: "entry_date",
-    header: "Fecha de Entrada",
+    enableSorting: true,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="px-0 font-semibold hover:bg-transparent"
+      >
+        Fecha de Entrada
+        <SortIcon column={column} />
+      </Button>
+    ),
     cell: ({ row }) => formatDate(row.getValue("entry_date")),
   },
   {

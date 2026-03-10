@@ -15,12 +15,13 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  readonly columns: ColumnDef<TData, TValue>[]
+  readonly data: TData[]
+  readonly initialSorting?: SortingState
 }
 
-export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+export function DataTable<TData, TValue>({ columns, data, initialSorting = [] }: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = useState<SortingState>(initialSorting)
 
   const table = useReactTable({
     data,

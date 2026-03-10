@@ -1,0 +1,107 @@
+version: "3.9"
+
+# ─── Networks ────────────────────────────────────────────────────────────────
+# app_network: internal bridge — backend and db are NEVER directly reachable
+#              from the host, only through the frontend Nginx proxy.
+networks:
+  app_network:
+    driver: bridge
+
+# ─── Volumes ─────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:   # Persistent database storage (named volume, managed by Docker)
+
+# ─── Services ────────────────────────────────────────────────────────────────
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: prod_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB:       ${DB_NAME}
+      TZ:                America/Santiago
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # ⛔ Port intentionally NOT published → only reachable inside app_network
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Backend (Node.js / Express) ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: prod_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV:       production
+      TZ:             America/Santiago
+      # ── Database (uses Docker service name as host) ──
+      DB_HOST:        db
+      DB_PORT:        5432
+      DB_USER:        ${DB_USER}
+      DB_PASSWORD:    ${DB_PASSWORD}
+      DB_NAME:        ${DB_NAME}
+      # ── Auth ──
+      JWT_SECRET:     ${JWT_SECRET}
+      PORT:           4000
+      # ── CORS ── must match the public URL served by Nginx
+      FRONTEND_URL:   https://mecanicaintegralaym.cl
+      # ── External AI services ──
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OLLAMA_API_URL: ${OLLAMA_API_URL}
+    # ⛔ Port intentionally NOT published → only reachable inside app_network
+    networks:
+      - app_network
+
+  # ── Frontend (React + Nginx with HTTPS) ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the Vite bundle at build time.
+        # Nginx proxies /api/ → http://backend:4000/
+        VITE_API_URL: /api
+    container_name: prod_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"     # HTTP → HTTPS redirect (nginx.conf)
+      - "443:443"   # HTTPS (served by Nginx with Let's Encrypt certs)
+    volumes:
+      # Let's Encrypt certificates — read-only inside the container
+      # Initial cert must be generated with Certbot before first `docker compose up`
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Certbot webroot for ACME HTTP-01 challenge during certificate renewal
+      - /var/www/certbot:/var/www/certbot:ro
+    networks:
+      - app_network
+
+  # ── Certbot (certificate renewal) ───────────────────────────────────────────
+  # Runs `certbot renew` and then exits. Pair with a cron job or `docker compose run`.
+  # Cron example (host crontab): 0 3 * * * docker compose -f docker-compose.prod.yml run --rm certbot
+  certbot:
+    image: certbot/certbot:latest
+    container_name: prod_certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    # webroot renewal — Nginx must be running for ACME challenge to work
+    command: renew --webroot --webroot-path=/var/www/certbot --quiet
+    profiles:
+      - certbot   # Only runs when explicitly called: docker compose --profile certbot up certbot

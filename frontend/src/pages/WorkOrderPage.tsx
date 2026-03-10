@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Table as TableIcon, LayoutGrid, MoreHorizontal, Eye, Edit, UserPlus, Trash2, Plus, Play, Pause, CheckCircle, CreditCard, FileText } from "lucide-react";
+import { Search, Table as TableIcon, LayoutGrid, MoreHorizontal, Eye, Edit, UserPlus, Trash2, Plus, Play, Pause, CheckCircle, CreditCard, FileText, Filter, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllWorkOrders, deleteWorkOrder, updateWorkOrder } from "@/services/workOrderService";
 import { createDebtor } from "@/services/debtorService";
@@ -41,12 +41,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+function SortIcon({ field, colSortField, colSortDir }: Readonly<{ field: "id" | "date"; colSortField: "id" | "date" | null; colSortDir: "asc" | "desc" }>) {
+  if (colSortField !== field) return <ArrowUpDown className="ml-1 h-4 w-4 opacity-40" />;
+  if (colSortDir === "asc") return <ArrowUp className="ml-1 h-4 w-4" />;
+  return <ArrowDown className="ml-1 h-4 w-4" />;
+}
+
 const WorkOrdersPage = () => {
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
-  const [visibleCount, setVisibleCount] = useState<number>(6);
+  const PAGE_SIZE = 6;
+  const [currentPage, setCurrentPage] = useState<number>(0);
   // Estado para alternar entre vista "table" y "card"
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   // Estado para el modal de detalle (en tabla)
@@ -56,6 +63,20 @@ const WorkOrdersPage = () => {
   // Estado para confirmación de eliminación
   const [workOrderToDelete, setWorkOrderToDelete] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+
+  // Column sorting
+  const [colSortField, setColSortField] = useState<"id" | "date" | null>(null);
+  const [colSortDir, setColSortDir] = useState<"asc" | "desc">("desc");
+
+  const toggleColSort = (field: "id" | "date") => {
+    if (colSortField === field) {
+      setColSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setColSortField(field);
+      setColSortDir("desc");
+    }
+    setCurrentPage(0);
+  };
 
   // Estados para crear deudor
   const [showCreateDebtorModal, setShowCreateDebtorModal] = useState<boolean>(false);
@@ -194,6 +215,11 @@ const WorkOrdersPage = () => {
     loadWorkOrders();
   }, []);
 
+  // Resetear página cuando cambia el buscador
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
   const loadWorkOrders = async () => {
     setLoading(true);
     try {
@@ -256,85 +282,110 @@ const WorkOrdersPage = () => {
     );
   });
 
-  // Ordenar por fecha según el criterio seleccionado
-  const sortedWorkOrders = filteredWorkOrders.sort((a, b) => {
-    if (sortOrder === "recent") {
-      return new Date(b.order_date).getTime() - new Date(a.order_date).getTime();
-    } else {
-      return new Date(a.order_date).getTime() - new Date(b.order_date).getTime();
+  // Ordenar: el sort de columna tiene prioridad; si no hay, aplica el dropdown
+  const sortedWorkOrders = [...filteredWorkOrders].sort((a, b) => {
+    if (colSortField === "id") {
+      return colSortDir === "asc"
+        ? a.work_order_id - b.work_order_id
+        : b.work_order_id - a.work_order_id;
     }
+    const timeA = new Date(a.order_date).getTime();
+    const timeB = new Date(b.order_date).getTime();
+    const dropdownDir: "asc" | "desc" = sortOrder === "recent" ? "desc" : "asc";
+    const dir = colSortField === "date" ? colSortDir : dropdownDir;
+    return dir === "asc" ? timeA - timeB : timeB - timeA;
   });
 
-  // Mostrar solo las órdenes visibles según la paginación
-  const visibleWorkOrders = sortedWorkOrders.slice(0, visibleCount);
-
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 6);
-  };
+  // Mostrar solo las órdenes de la página actual
+  const totalPages = Math.ceil(sortedWorkOrders.length / PAGE_SIZE);
+  const visibleWorkOrders = sortedWorkOrders.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
 
   return (
     <motion.div
-      className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl"
+      className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Órdenes de Trabajo
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestión de órdenes de trabajo
-          </p>
-        </div>
-        <Button onClick={() => navigate("/admin/nueva-orden-trabajo")}>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+          <TableIcon className="w-8 h-8" />
+          Órdenes de Trabajo
+        </h1>
+        <Button onClick={() => navigate("/admin/nueva-orden-trabajo")} className="bg-primary text-primary-foreground">
           <Plus className="w-4 h-4 mr-2" />
           Nueva Orden
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Buscar por patente, teléfono o nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+      {/* Panel de filtros */}
+      <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+          <Filter className="w-4 h-4" />
+          Filtros
         </div>
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          {/* Buscador */}
+          <div className="flex-[2] min-w-0 flex flex-col gap-1">
+            <label htmlFor="wo-search" className="text-xs font-medium text-muted-foreground">Buscar</label>
+            <div className="relative">
+              <Input
+                id="wo-search"
+                type="text"
+                placeholder="Patente, teléfono o nombre..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-10 pl-9 pr-9"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
 
-        <Select value={sortOrder} onValueChange={(value: "recent" | "oldest") => setSortOrder(value)}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Ordenar por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Más recientes</SelectItem>
-            <SelectItem value="oldest">Más antiguas</SelectItem>
-          </SelectContent>
-        </Select>
+          {/* Ordenar por fecha */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <label htmlFor="wo-sort" className="text-xs font-medium text-muted-foreground">Ordenar por fecha</label>
+            <Select value={sortOrder} onValueChange={(value: "recent" | "oldest") => { setSortOrder(value); setColSortField(null); setCurrentPage(0); }}>
+              <SelectTrigger id="wo-sort" className="h-10">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Más recientes</SelectItem>
+                <SelectItem value="oldest">Más antiguas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="flex border rounded-md">
-          <Button
-            variant={viewMode === "table" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("table")}
-            className="rounded-r-none"
-          >
-            <TableIcon className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={viewMode === "card" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("card")}
-            className="rounded-l-none border-l"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </Button>
+          {/* Vista */}
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">Vista</span>
+            <div className="flex border rounded-md h-10">
+              <Button
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className="rounded-r-none h-full px-3"
+              >
+                <TableIcon className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === "card" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className="rounded-l-none border-l h-full px-3"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -345,20 +396,40 @@ const WorkOrdersPage = () => {
       ) : visibleWorkOrders.length > 0 ? (
         <>
           {viewMode === "table" ? (
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden bg-card">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-medium">ID</TableHead>
-                    <TableHead className="font-medium">Fecha</TableHead>
-                    <TableHead className="font-medium text-right">Total</TableHead>
-                    <TableHead className="font-medium">Estado</TableHead>
-                    <TableHead className="font-medium">Patente</TableHead>
-                    <TableHead className="font-medium">Cliente</TableHead>
-                    <TableHead className="font-medium">Teléfono</TableHead>
-                    <TableHead className="font-medium">Cotización</TableHead>
-                    <TableHead className="font-medium">Mecánico</TableHead>
-                    <TableHead className="font-medium text-center w-16">Acciones</TableHead>
+                  <TableRow>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleColSort("id")}
+                        className="px-0 font-semibold hover:bg-transparent -ml-1"
+                      >
+                        ID
+                        <SortIcon field="id" colSortField={colSortField} colSortDir={colSortDir} />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleColSort("date")}
+                        className="px-0 font-semibold hover:bg-transparent -ml-1"
+                      >
+                        Fecha
+                        <SortIcon field="date" colSortField={colSortField} colSortDir={colSortDir} />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="font-semibold text-right">Total</TableHead>
+                    <TableHead className="font-semibold">Estado</TableHead>
+                    <TableHead className="font-semibold">Patente</TableHead>
+                    <TableHead className="font-semibold">Cliente</TableHead>
+                    <TableHead className="font-semibold">Teléfono</TableHead>
+                    <TableHead className="font-semibold">Cotización</TableHead>
+                    <TableHead className="font-semibold">Mecánico</TableHead>
+                    <TableHead className="font-semibold text-center w-16">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -503,13 +574,25 @@ const WorkOrdersPage = () => {
             </div>
           )}
 
-          {visibleWorkOrders.length < sortedWorkOrders.length && (
-            <div className="flex justify-center mt-6">
-              <Button variant="outline" onClick={handleLoadMore}>
-                Cargar más ({sortedWorkOrders.length - visibleWorkOrders.length} restantes)
-              </Button>
-            </div>
-          )}
+          {/* Paginación */}
+          <div className="flex items-center justify-end space-x-2 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Siguiente
+            </Button>
+          </div>
         </>
       ) : (
         <Card className="border-dashed">

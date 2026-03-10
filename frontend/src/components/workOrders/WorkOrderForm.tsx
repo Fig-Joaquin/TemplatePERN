@@ -7,6 +7,7 @@ import { fetchQuotationById } from "@/services/quotationService";
 import { createWorkProductDetail } from "@/services/workProductDetail";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { showApiError } from "@/utils/apiErrorHandler";
 
 interface WorkOrderFormProps {
   initialData?: WorkOrder | null;
@@ -65,8 +66,8 @@ const WorkOrderForm = ({ initialData, quotationId, onSuccess, onClose }: WorkOrd
       toast.success("Orden de trabajo creada exitosamente");
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || "Error al guardar la orden de trabajo");
+    } catch (error: unknown) {
+      showApiError(error, "Error al guardar la orden de trabajo");
     } finally {
       setLoading(false);
     }

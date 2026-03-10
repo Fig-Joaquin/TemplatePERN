@@ -9,7 +9,7 @@ const notifRepo = AppDataSource.getRepository(Notification);
 
 export function startNotificationCron(): void {
   const check = async (): Promise<void> => {
-    const cutoff = new Date(Date.now() - 1 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);  
     const orders = await workOrderRepo.find({
       where: { order_status: "not_started", order_date: LessThan(cutoff) }
     });
