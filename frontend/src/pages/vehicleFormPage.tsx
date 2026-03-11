@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { Car, Save, ArrowLeft, Plus } from "lucide-react";
+import { Car, Save, ArrowLeft, Plus, ChevronsUpDown, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,18 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { NumberInput } from "@/components/numberInput";
 import ClientForm from "@/components/clientForm";
 import CompanyForm from "@/components/CompanyForm";
@@ -32,8 +43,8 @@ import {
 } from "@/services/vehicleService";
 import { fetchPersonsClient, createPerson } from "@/services/personService";
 import { fetchCompanies, createCompany } from "@/services/work/companiesList";
-import { fetchVehicleBrands } from "@/services/VehicleBrandService";
-import { fetchVehicleModels } from "@/services/VehicleModelService";
+import { fetchVehicleBrands, createVehicleBrand } from "@/services/VehicleBrandService";
+import { fetchVehicleModels, createVehicleModel } from "@/services/VehicleModelService";
 import type { Person, Vehicle, Brand, Model, Company } from "@/types/interfaces";
 
 export default function VehicleFormPage() {
@@ -82,6 +93,16 @@ export default function VehicleFormPage() {
   const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
   const [, setCreatingPerson] = useState(false);
   const [creatingCompany, setCreatingCompany] = useState(false);
+
+  // Estados para popover y creación de marca y modelo
+  const [brandPopoverOpen, setBrandPopoverOpen] = useState(false);
+  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
+  const [createBrandModalOpen, setCreateBrandModalOpen] = useState(false);
+  const [createModelModalOpen, setCreateModelModalOpen] = useState(false);
+  const [creatingBrand, setCreatingBrand] = useState(false);
+  const [creatingModel, setCreatingModel] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newModelData, setNewModelData] = useState({ model_name: "", vehicle_brand_id: "" });
 
   // Estados para formularios de creación
   const [newPersonData, setNewPersonData] = useState({
@@ -310,6 +331,56 @@ export default function VehicleFormPage() {
     }
   };
 
+  const handleCreateBrand = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBrandName.trim()) return;
+    try {
+      setCreatingBrand(true);
+      const created = await createVehicleBrand({ brand_name: newBrandName.trim() });
+      setBrands(prev => [...prev, created]);
+      setFormData(prev => ({
+        ...prev,
+        vehicle_brand_id: created.vehicle_brand_id!.toString(),
+        vehicle_model_id: "",
+      }));
+      setNewBrandName("");
+      setCreateBrandModalOpen(false);
+      toast.success(`Marca "${created.brand_name}" creada y seleccionada`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error al crear la marca");
+    } finally {
+      setCreatingBrand(false);
+    }
+  };
+
+  const handleCreateModel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newModelData.model_name.trim() || !newModelData.vehicle_brand_id) return;
+    try {
+      setCreatingModel(true);
+      const created = await createVehicleModel({
+        model_name: newModelData.model_name.trim(),
+        vehicle_brand_id: parseInt(newModelData.vehicle_brand_id),
+      });
+      // Enrich with brand relation so brand-based filtering still works
+      const brandObj = brands.find(b => b.vehicle_brand_id?.toString() === newModelData.vehicle_brand_id);
+      const enriched = { ...created, brand: brandObj ?? created.brand };
+      setModels(prev => [...prev, enriched]);
+      setFormData(prev => ({
+        ...prev,
+        vehicle_brand_id: newModelData.vehicle_brand_id,
+        vehicle_model_id: created.vehicle_model_id!.toString(),
+      }));
+      setNewModelData({ model_name: "", vehicle_brand_id: "" });
+      setCreateModelModalOpen(false);
+      toast.success(`Modelo "${created.model_name}" creado y seleccionado`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error al crear el modelo");
+    } finally {
+      setCreatingModel(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -352,21 +423,26 @@ export default function VehicleFormPage() {
       navigate("/admin/vehiculos");
     } catch (error: any) {
       console.error("Error al guardar vehículo:", error);
-      toast.error(
-        error.response?.data?.message ||
-        "Error al guardar el vehículo"
-      );
+      const responseData = error.response?.data;
+      if (responseData?.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+        responseData.errors.forEach((err: { field: string; message: string }) => {
+          toast.error(err.message);
+        });
+      } else {
+        toast.error(responseData?.message || "Error al guardar el vehículo");
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Filtrar modelos basado en la marca seleccionada
-  const filteredModels = models.filter(model =>
-    formData.vehicle_brand_id ?
-      model.brand?.vehicle_brand_id?.toString() === formData.vehicle_brand_id :
-      true
-  );
+  // Filtrar modelos basado en la marca seleccionada (cmdk maneja el filtrado por texto)
+  const filteredModels = models
+    .filter(model => formData.vehicle_brand_id
+      ? model.brand?.vehicle_brand_id?.toString() === formData.vehicle_brand_id
+      : false
+    )
+    .sort((a, b) => a.model_name.localeCompare(b.model_name));
 
   // Filtrado de personas
   const filteredPersons = persons.filter((person) => {
@@ -519,53 +595,140 @@ export default function VehicleFormPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="vehicle_brand_id">Marca*</Label>
-                  <Select
-                    value={formData.vehicle_brand_id}
-                    onValueChange={(value) => {
-                      handleSelectChange("vehicle_brand_id", value);
-                      // Limpiar modelo cuando se cambia la marca
-                      handleSelectChange("vehicle_model_id", "");
-                    }}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione una marca" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {brands.map((brand) => (
-                        <SelectItem key={brand.vehicle_brand_id} value={brand.vehicle_brand_id!.toString()}>
-                          {brand.brand_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>
+                      Marca <span className="text-red-500">*</span>
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCreateBrandModalOpen(true)}
+                      className="text-xs h-8 px-3 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Nueva Marca
+                    </Button>
+                  </div>
+                  <Popover open={brandPopoverOpen} onOpenChange={setBrandPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={brandPopoverOpen}
+                        className="w-full justify-between font-normal"
+                      >
+                        <span className={cn(!formData.vehicle_brand_id && "text-muted-foreground")}>
+                          {formData.vehicle_brand_id
+                            ? brands.find(b => b.vehicle_brand_id?.toString() === formData.vehicle_brand_id)?.brand_name
+                            : "Seleccione una marca"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar marca..." />
+                        <CommandList className="max-h-60">
+                          <CommandEmpty>No se encontraron marcas</CommandEmpty>
+                          <CommandGroup>
+                            {brands
+                              .slice()
+                              .sort((a, b) => a.brand_name.localeCompare(b.brand_name))
+                              .map((brand) => (
+                                <CommandItem
+                                  key={brand.vehicle_brand_id}
+                                  value={brand.brand_name}
+                                  onSelect={() => {
+                                    handleSelectChange("vehicle_brand_id", brand.vehicle_brand_id!.toString());
+                                    handleSelectChange("vehicle_model_id", "");
+                                    setModelSearchTerm("");
+                                    setBrandPopoverOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.vehicle_brand_id === brand.vehicle_brand_id?.toString() ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {brand.brand_name}
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
-                  <Label htmlFor="vehicle_model_id">Modelo*</Label>
-                  <Select
-                    value={formData.vehicle_model_id}
-                    onValueChange={(value) => handleSelectChange("vehicle_model_id", value)}
-                    required
-                    disabled={!formData.vehicle_brand_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un modelo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredModels.map((model) => (
-                        <SelectItem key={model.vehicle_model_id} value={model.vehicle_model_id!.toString()}>
-                          {model.model_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {!formData.vehicle_brand_id && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Primero seleccione una marca
-                    </p>
-                  )}
+                  <div className="flex justify-between items-center mb-1">
+                    <Label>
+                      Modelo <span className="text-red-500">*</span>
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setNewModelData(prev => ({ ...prev, vehicle_brand_id: formData.vehicle_brand_id }));
+                        setCreateModelModalOpen(true);
+                      }}
+                      className="text-xs h-8 px-3 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Nuevo Modelo
+                    </Button>
+                  </div>
+                  <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={modelPopoverOpen}
+                        disabled={!formData.vehicle_brand_id}
+                        className="w-full justify-between font-normal"
+                      >
+                        <span className={cn(!formData.vehicle_model_id && "text-muted-foreground")}>
+                          {formData.vehicle_model_id
+                            ? models.find(m => m.vehicle_model_id?.toString() === formData.vehicle_model_id)?.model_name
+                            : formData.vehicle_brand_id ? "Seleccione un modelo" : "Primero seleccione una marca"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar modelo..." />
+                        <CommandList className="max-h-60">
+                          <CommandEmpty>No se encontraron modelos</CommandEmpty>
+                          <CommandGroup>
+                            {filteredModels.map((model) => (
+                              <CommandItem
+                                key={model.vehicle_model_id}
+                                value={model.model_name}
+                                onSelect={() => {
+                                  handleSelectChange("vehicle_model_id", model.vehicle_model_id!.toString());
+                                  setModelPopoverOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.vehicle_model_id === model.vehicle_model_id?.toString() ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {model.model_name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="md:col-span-2">
@@ -827,6 +990,145 @@ export default function VehicleFormPage() {
               isCreating={creatingCompany}
             />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para crear nueva marca */}
+      <Dialog open={createBrandModalOpen} onOpenChange={setCreateBrandModalOpen}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Plus className="h-5 w-5 text-primary" />
+              </div>
+              Nueva Marca de Vehículo
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Ingrese el nombre de la nueva marca. Se seleccionará automáticamente al crearla.
+            </p>
+          </DialogHeader>
+          <form onSubmit={handleCreateBrand} className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="new_brand_name">
+                Nombre de la Marca <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="new_brand_name"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="Ej: Toyota, Ford, BMW..."
+                required
+                autoFocus
+                className="mt-1"
+              />
+            </div>
+            <DialogFooter className="flex gap-2 justify-end pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setCreateBrandModalOpen(false); setNewBrandName(""); }}
+                disabled={creatingBrand}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={creatingBrand || !newBrandName.trim()}>
+                {creatingBrand ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent mr-2" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Marca
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para crear nuevo modelo */}
+      <Dialog open={createModelModalOpen} onOpenChange={setCreateModelModalOpen}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Plus className="h-5 w-5 text-primary" />
+              </div>
+              Nuevo Modelo de Vehículo
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Ingrese el nombre del modelo. Se seleccionará automáticamente al crearlo.
+            </p>
+          </DialogHeader>
+          <form onSubmit={handleCreateModel} className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="new_model_brand">
+                Marca <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={newModelData.vehicle_brand_id}
+                onValueChange={(value) => setNewModelData(prev => ({ ...prev, vehicle_brand_id: value }))}
+                required
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleccione una marca" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {brands
+                    .slice()
+                    .sort((a, b) => a.brand_name.localeCompare(b.brand_name))
+                    .map((brand) => (
+                      <SelectItem key={brand.vehicle_brand_id} value={brand.vehicle_brand_id!.toString()}>
+                        {brand.brand_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="new_model_name">
+                Nombre del Modelo <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="new_model_name"
+                value={newModelData.model_name}
+                onChange={(e) => setNewModelData(prev => ({ ...prev, model_name: e.target.value }))}
+                placeholder="Ej: Corolla, Mustang, Serie 3..."
+                required
+                autoFocus
+                className="mt-1"
+              />
+            </div>
+            <DialogFooter className="flex gap-2 justify-end pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setCreateModelModalOpen(false); setNewModelData({ model_name: "", vehicle_brand_id: "" }); }}
+                disabled={creatingModel}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={creatingModel || !newModelData.model_name.trim() || !newModelData.vehicle_brand_id}
+              >
+                {creatingModel ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent mr-2" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Modelo
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </motion.div>
