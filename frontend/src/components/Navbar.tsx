@@ -32,6 +32,7 @@ interface Notification {
 
 const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [userRole, setUserRole] = useState<string | null | undefined>(undefined)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const quickLinks = [
@@ -57,13 +58,27 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
     checkUserSession()
       .then((userData) => {
         setUser(userData)
+        setUserRole(userData?.user?.userRole ?? null)
       })
       .catch(() => {
         setUser(null)
+        setUserRole(null)
       })
   }, [])
 
+  const isRoleResolved = userRole !== undefined
+  const isContador = userRole === "contador"
+
   useEffect(() => {
+    if (!isRoleResolved) {
+      return
+    }
+
+    if (isContador) {
+      setNotifications([])
+      return
+    }
+
     const loadNotifications = async () => {
       try {
         const notesData = await fetchNotifications();
@@ -76,7 +91,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
     loadNotifications();
     const interval = setInterval(loadNotifications, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isContador, isRoleResolved]);
 
   const handleLogout = () => {
     userLogout()
@@ -100,40 +115,44 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
       <h1 className="text-xl font-bold text-foreground">{title}</h1>
 
       <div className="flex items-center gap-4">
-        <div className="hidden lg:flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-1">
-          {quickLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary hover:bg-background rounded-lg transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
+        {isRoleResolved && !isContador && (
+          <div className="hidden lg:flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-1">
+            {quickLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary hover:bg-background rounded-lg transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
-          <Popover open={showNotifications} onOpenChange={setShowNotifications}>
-            <PopoverTrigger asChild>
-              <button className="relative hover:text-primary transition-colors">
-                <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
-                {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0">
-              <Notifications
-                notifications={notifications}
-                setNotifications={setNotifications}
-                onClose={() => setShowNotifications(false)}
-              />
-            </PopoverContent>
-          </Popover>
+          {isRoleResolved && !isContador && (
+            <Popover open={showNotifications} onOpenChange={setShowNotifications}>
+              <PopoverTrigger asChild>
+                <button className="relative hover:text-primary transition-colors">
+                  <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0">
+                <Notifications
+                  notifications={notifications}
+                  setNotifications={setNotifications}
+                  onClose={() => setShowNotifications(false)}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
           <DarkModeToggle />
         </div>
 

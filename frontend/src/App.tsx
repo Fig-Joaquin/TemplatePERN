@@ -6,6 +6,8 @@ import { RouterProvider } from "react-router-dom"
 import router from "@/routes/router"
 import { useEffect } from "react"
 import { PaymentProvider } from "@/contexts/PaymentContext"
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 function App() {
   useEffect(() => {
@@ -23,6 +25,7 @@ function App() {
   return (
     <PaymentProvider>
       <RouterProvider router={router} />
+      <ToastContainer className="z-50" />
     </PaymentProvider>
   )
 }

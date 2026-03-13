@@ -10,10 +10,12 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/solid"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
+import api from "@/utils/axiosConfig"
+import { CONTADOR_ALLOWED_ROUTES } from "@/utils/roleAccess"
 
 const sidebarStructure = [
   {
@@ -101,10 +103,36 @@ const Sidebar = ({
 }) => {
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({})
   const location = useLocation()
+  const [userRole, setUserRole] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const response = await api.get("/auth/check-session")
+        setUserRole(response.data?.user?.userRole ?? "administrador")
+      } catch {
+        setUserRole("administrador")
+      }
+    }
+
+    loadSession()
+  }, [])
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
+
+  const visibleSidebarStructure =
+    userRole === undefined
+      ? []
+      : userRole === "contador"
+      ? sidebarStructure
+          .filter((section) => section.id === "finanzas")
+          .map((section) => ({
+            ...section,
+            items: section.items?.filter((item) => CONTADOR_ALLOWED_ROUTES.includes(item.path as (typeof CONTADOR_ALLOWED_ROUTES)[number])),
+          }))
+      : sidebarStructure
 
   return (
     <aside
@@ -176,7 +204,7 @@ const Sidebar = ({
 
       <nav className={cn("p-3", !isSidebarOpen && "flex flex-col items-center")}>
         <ul className={cn("space-y-1", !isSidebarOpen && "flex flex-col items-center w-full")}>
-          {sidebarStructure.map((section) => (
+          {visibleSidebarStructure.map((section) => (
             <li key={section.id}>
               {section.items ? (
                 // Sección con subelementos

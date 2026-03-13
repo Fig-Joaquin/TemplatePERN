@@ -1,16 +1,26 @@
 "use client"
 
 import { Outlet } from "react-router-dom"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Sidebar from "./Sidebar"
 import Navbar from "./Navbar"
-import { ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
 import { cn } from "@/lib/utils"
 import { Chatbot}  from "./Chatbot"
+import { checkUserSession } from "@/services/userService"
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    checkUserSession()
+      .then((userData) => {
+        setUserRole(userData?.user?.userRole ?? null)
+      })
+      .catch(() => {
+        setUserRole(null)
+      })
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -39,11 +49,8 @@ const AdminLayout = () => {
         </main>
         
         {/* Chatbot */}
-        <Chatbot />
+        {userRole !== "contador" && <Chatbot />}
       </div>
-
-      {/* Toast container mantiene el z-index más alto */}
-      <ToastContainer className="z-50" />
     </div>
   )
 }

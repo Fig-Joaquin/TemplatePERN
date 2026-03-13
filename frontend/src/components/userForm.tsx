@@ -1,5 +1,6 @@
 // src/components/userForm.tsx
 import React, { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +40,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
     person_type: "proveedor", // Los administradores son tipo proveedor (personal interno)
     rut: user?.person?.rut || "",
     // Datos de usuario
-    user_role: "administrador", // Siempre administrador
+    user_role: user?.user_role || "administrador",
     username: user?.username || "",
     password: "",
     // Para edición
@@ -47,6 +48,9 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -60,17 +64,21 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
         person_type: "proveedor", // Los administradores son tipo proveedor
         rut: user.person?.rut ? formatRut(user.person.rut) : "",
         // Datos de usuario
-        user_role: "administrador", // Siempre administrador
+        user_role: user.user_role || "administrador",
         username: user.username || "",
         password: "",
         // Para edición
         person_id: user.person?.person_id
       });
+      setConfirmPassword("");
+      setShowPassword(false);
+      setShowConfirmPassword(false);
     }
   }, [user]);
 
   const userRoles = [
-    { value: "administrador", label: "Administrador" }
+    { value: "administrador", label: "Administrador" },
+    { value: "contador", label: "Contador" }
   ];
 
   const validateForm = () => {
@@ -119,6 +127,13 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
       newErrors.password = "La contraseña debe tener al menos 8 caracteres";
     }
 
+    const shouldValidateConfirmation = !user || Boolean(formData.password) || Boolean(confirmPassword);
+    if (shouldValidateConfirmation && !confirmPassword) {
+      newErrors.confirmPassword = "Debe confirmar la contraseña";
+    } else if (shouldValidateConfirmation && formData.password !== confirmPassword) {
+      newErrors.confirmPassword = "Las contraseñas no coinciden";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -143,6 +158,16 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+    if (name === "password" && errors.confirmPassword) {
+      setErrors(prev => ({ ...prev, confirmPassword: "" }));
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    if (errors.confirmPassword) {
+      setErrors(prev => ({ ...prev, confirmPassword: "" }));
     }
   };
 
@@ -253,7 +278,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
 
       {/* Datos de Usuario */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Datos de Administrador</h3>
+        <h3 className="text-lg font-medium mb-4">Datos de Usuario</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -293,20 +318,57 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isSubmitting }) => 
             <Label htmlFor="password">
               {user ? "Nueva Contraseña (dejar vacío para mantener actual)" : "Contraseña *"}
             </Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="Ingrese la contraseña"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Ingrese la contraseña"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
             {!user && (
               <p className="text-xs text-gray-600">
                 La contraseña debe tener al menos 8 caracteres
               </p>
             )}
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="confirmPassword">
+              {user ? "Confirmar Nueva Contraseña" : "Confirmar Contraseña *"}
+            </Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={handleConfirmPasswordChange}
+                placeholder="Vuelva a ingresar la contraseña"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                aria-label={showConfirmPassword ? "Ocultar confirmacion de contraseña" : "Mostrar confirmacion de contraseña"}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
           </div>
         </div>
       </div>
