@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     /* Language and Environment */
-    "target": "ES2020",                               
+    "target": "ES2021",                               
     "module": "commonjs",                             
-    "lib": ["ES2020"],                                
+    "lib": ["ES2021"],                                
     "esModuleInterop": true,                          
     "allowSyntheticDefaultImports": true,             
     "forceConsistentCasingInFileNames": true,         

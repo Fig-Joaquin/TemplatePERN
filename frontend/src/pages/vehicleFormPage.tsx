@@ -664,7 +664,6 @@ export default function VehicleFormPage() {
                                   onSelect={() => {
                                     handleSelectChange("vehicle_brand_id", brand.vehicle_brand_id!.toString());
                                     handleSelectChange("vehicle_model_id", "");
-                                    setModelSearchTerm("");
                                     setBrandPopoverOpen(false);
                                   }}
                                 >

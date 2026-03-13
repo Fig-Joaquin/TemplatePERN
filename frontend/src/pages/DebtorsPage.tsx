@@ -9,10 +9,11 @@ import { fetchPaymentTypes } from "@/services/work/paymentType";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDate } from "@/utils/formDate";
-import { formatPriceCLP } from "@/utils/formatPriceCLP";
+import { formatPriceCLP, parseCLPToInteger } from "@/utils/formatPriceCLP";
 import { formatChileanPhone, getFullName, getCurrentMileage } from "@/utils/formatPhone";
 import { useNavigate } from "react-router-dom";
 import { usePaymentContext } from "@/contexts/PaymentContext";
+import CurrencyInputCLP from "@/components/CurrencyInputCLP";
 import {
   Dialog,
   DialogContent,
@@ -314,8 +315,8 @@ const DebtorsPage = () => {
   const handlePayment = async () => {
     if (!debtorToPay || !paymentAmount) return;
 
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) {
+    const amount = parseCLPToInteger(paymentAmount);
+    if (amount === null || amount <= 0) {
       toast.error("Ingrese un monto válido");
       return;
     }
@@ -334,13 +335,13 @@ const DebtorsPage = () => {
 
     try {
       setProcessingPayment(true);
-      const paymentData: any = {
+      const paymentData: { payment_amount: number; payment_type_id?: number } = {
         payment_amount: amount
       };
 
       // Agregar tipo de pago si está seleccionado
       if (selectedPaymentType) {
-        paymentData.payment_type_id = parseInt(selectedPaymentType);
+        paymentData.payment_type_id = Number.parseInt(selectedPaymentType, 10);
       }
 
       const result = await processPayment(debtorToPay.debtor_id, paymentData);
@@ -379,8 +380,8 @@ const DebtorsPage = () => {
   const isPaymentAmountValid = () => {
     if (!paymentAmount || !debtorToPay) return true;
 
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) return false;
+    const amount = parseCLPToInteger(paymentAmount);
+    if (amount === null || amount <= 0) return false;
 
     if (debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0) {
       const totalAmount = Number(debtorToPay.total_amount);
@@ -817,27 +818,20 @@ const DebtorsPage = () => {
 
             <div>
               <Label htmlFor="payment-amount">Monto a pagar</Label>
-              {debtorToPay && debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0 && (
+              {debtorToPay?.total_amount && Number(debtorToPay.total_amount) > 0 && (
                 <p className="text-xs text-muted-foreground mb-2">
                   Máximo permitido: {formatPriceCLP(Number(debtorToPay.total_amount) - (Number(debtorToPay.paid_amount) || 0))}
                 </p>
               )}
-              <Input
+              <CurrencyInputCLP
                 id="payment-amount"
-                type="number"
                 placeholder="Ingrese el monto"
                 value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                min="0.01"
-                max={debtorToPay && debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0
-                  ? (Number(debtorToPay.total_amount) - (Number(debtorToPay.paid_amount) || 0)).toString()
-                  : undefined}
-                step="0.01"
-                className={!isPaymentAmountValid() ? "border-red-500" : ""}
+                onValueChange={(numericValue) => setPaymentAmount(numericValue === null ? "" : numericValue.toString())}
               />
               {paymentAmount && !isPaymentAmountValid() && (
                 <p className="text-xs text-red-500 mt-1">
-                  {debtorToPay && debtorToPay.total_amount && Number(debtorToPay.total_amount) > 0
+                  {debtorToPay?.total_amount && Number(debtorToPay.total_amount) > 0
                     ? `El monto no puede ser mayor a ${formatPriceCLP(Number(debtorToPay.total_amount) - (Number(debtorToPay.paid_amount) || 0))}`
                     : "Ingrese un monto válido"
                   }

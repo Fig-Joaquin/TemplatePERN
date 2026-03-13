@@ -3,6 +3,21 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "t
 import { IsString, IsNumber, IsOptional } from "class-validator";
 import { WorkOrder } from "..";
 
+const clpIntegerTransformer = {
+    to: (value?: number | null) => {
+        if (value === undefined || value === null) {
+            return value;
+        }
+        return Math.trunc(value);
+    },
+    from: (value: string | number | null) => {
+        if (value === undefined || value === null) {
+            return null;
+        }
+        return Number.parseInt(String(value), 10);
+    }
+};
+
 @Entity("debtors")
 export class Debtor {
     @PrimaryGeneratedColumn()
@@ -19,12 +34,12 @@ export class Debtor {
     @IsString()
     description!: string;
 
-    @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+    @Column({ type: "numeric", precision: 14, scale: 0, nullable: true, transformer: clpIntegerTransformer })
     @IsOptional()
     @IsNumber()
     total_amount?: number;
 
-    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    @Column({ type: "numeric", precision: 14, scale: 0, default: 0, transformer: clpIntegerTransformer })
     @IsOptional()
     @IsNumber()
     paid_amount?: number;

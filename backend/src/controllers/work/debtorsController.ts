@@ -3,11 +3,25 @@ import { AppDataSource } from "../../config/ormconfig";
 import { Debtor, WorkPayment, PaymentType } from "../../entities";
 import { DebtorSchema } from "../../schema/work/debtorsValidator";
 import { WorkOrder } from "../../entities/work/workOrderEntity";
+import { parseCLPFromUnknown } from "../../utils/currency";
+import { formatPriceCLP } from "../../utils/formatPriceCLP";
 
 const debtorRepository = AppDataSource.getRepository(Debtor);
 const workOrderRepository = AppDataSource.getRepository(WorkOrder);
 const workPaymentRepository = AppDataSource.getRepository(WorkPayment);
 const paymentTypeRepository = AppDataSource.getRepository(PaymentType);
+
+const mapDebtorResponse = (debtor: Debtor) => {
+    const totalAmount = Number(debtor.total_amount) || 0;
+    const paidAmount = Number(debtor.paid_amount) || 0;
+
+    return {
+        ...debtor,
+        total_amount_formatted: formatPriceCLP(totalAmount),
+        paid_amount_formatted: formatPriceCLP(paidAmount),
+        remaining_amount_formatted: formatPriceCLP(Math.max(0, totalAmount - paidAmount))
+    };
+};
 
 export const getAllDebtors = async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
@@ -22,7 +36,7 @@ export const getAllDebtors = async (_req: Request, res: Response, _next: NextFun
                 "workOrder.vehicle.mileage_history"
             ]
         });
-        res.json(debtors);
+        res.json(debtors.map(mapDebtorResponse));
     } catch (error) {
         res.status(500).json({ message: "Error al obtener los deudores", error });
     }
@@ -30,8 +44,8 @@ export const getAllDebtors = async (_req: Request, res: Response, _next: NextFun
 
 export const getDebtorById = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
+        const id = Number.parseInt(req.params.id, 10);
+        if (Number.isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });
             return;
         }
@@ -54,7 +68,7 @@ export const getDebtorById = async (req: Request, res: Response, _next: NextFunc
             return;
         }
 
-        res.json(debtor);
+        res.json(mapDebtorResponse(debtor));
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el deudor", error });
     }
@@ -92,7 +106,7 @@ export const createDebtor = async (req: Request, res: Response, next: NextFuncti
         // Si no se especifica total_amount, usar el total de la orden de trabajo
         const finalDebtorData = {
             ...debtorData,
-            total_amount: debtorData.total_amount || workOrder.total_amount
+            total_amount: debtorData.total_amount ?? parseCLPFromUnknown(workOrder.total_amount)
         };
         
         console.log("Datos finales del deudor:", finalDebtorData);
@@ -105,7 +119,7 @@ export const createDebtor = async (req: Request, res: Response, next: NextFuncti
         const savedDebtor = await debtorRepository.save(newDebtor);
         console.log("Deudor creado exitosamente:", savedDebtor);
         
-        res.status(201).json({ data: savedDebtor });
+        res.status(201).json({ data: mapDebtorResponse(savedDebtor) });
     } catch (error) {
         console.error("Error al crear deudor:", error);
         next(error);
@@ -113,8 +127,8 @@ export const createDebtor = async (req: Request, res: Response, next: NextFuncti
 };
 
 export const updateDebtor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
+    const id = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
         return next({ status: 400, message: "ID inválido" });
     }
     const validationResult = DebtorSchema.safeParse(req.body);
@@ -134,7 +148,7 @@ export const updateDebtor = async (req: Request, res: Response, next: NextFuncti
         const { work_order_id, ...debtorData } = validationResult.data; // eslint-disable-line @typescript-eslint/no-unused-vars
         debtorRepository.merge(debtor, debtorData);
         debtor = await debtorRepository.save(debtor);
-        res.status(200).json({ data: debtor });
+        res.status(200).json({ data: mapDebtorResponse(debtor) });
     } catch (error) {
         next(error);
     }
@@ -142,8 +156,8 @@ export const updateDebtor = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteDebtor = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
+        const id = Number.parseInt(req.params.id, 10);
+        if (Number.isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });
             return;
         }
@@ -207,8 +221,8 @@ export const deleteDebtor = async (req: Request, res: Response, _next: NextFunct
 // Obtener deudores por orden de trabajo
 export const getDebtorsByWorkOrder = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const work_order_id = parseInt(req.params.work_order_id);
-        if (isNaN(work_order_id)) {
+        const work_order_id = Number.parseInt(req.params.work_order_id, 10);
+        if (Number.isNaN(work_order_id)) {
             res.status(400).json({ message: "ID de orden de trabajo inválido" });
             return;
         }
@@ -224,7 +238,7 @@ export const getDebtorsByWorkOrder = async (req: Request, res: Response, _next: 
             order: { created_at: "DESC" }
         });
 
-        res.json(debtors);
+        res.json(debtors.map(mapDebtorResponse));
     } catch (error) {
         res.status(500).json({ message: "Error al obtener los deudores de la orden de trabajo", error });
     }
@@ -233,15 +247,16 @@ export const getDebtorsByWorkOrder = async (req: Request, res: Response, _next: 
 // Procesar pago de deuda
 export const processPayment = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
+        const id = Number.parseInt(req.params.id, 10);
+        if (Number.isNaN(id)) {
             res.status(400).json({ message: "ID inválido" });
             return;
         }
 
         const { payment_amount, payment_type_id } = req.body;
+        const normalizedPaymentAmount = parseCLPFromUnknown(payment_amount);
         
-        if (!payment_amount || payment_amount <= 0) {
+        if (normalizedPaymentAmount <= 0) {
             res.status(400).json({ message: "Monto de pago inválido" });
             return;
         }
@@ -263,7 +278,7 @@ export const processPayment = async (req: Request, res: Response, _next: NextFun
 
         const currentPaid = Number(debtor.paid_amount) || 0;
         const totalAmount = Number(debtor.total_amount) || 0;
-        const newPaidAmount = currentPaid + Number(payment_amount);
+        const newPaidAmount = currentPaid + normalizedPaymentAmount;
 
         // Validar que no se pague más del total
         if (totalAmount > 0 && newPaidAmount > totalAmount) {
@@ -309,7 +324,7 @@ export const processPayment = async (req: Request, res: Response, _next: NextFun
             payment_type: paymentType,
             work_order: debtor.workOrder,
             payment_status: "pagado", // Cada pago individual está pagado
-            amount_paid: Number(payment_amount),
+            amount_paid: normalizedPaymentAmount,
             payment_date: new Date()
         });
         await workPaymentRepository.save(workPayment);
@@ -333,10 +348,10 @@ export const processPayment = async (req: Request, res: Response, _next: NextFun
 
         res.status(200).json({
             message: "Pago procesado exitosamente",
-            debtor: updatedDebtor,
+            debtor: updatedDebtor ? mapDebtorResponse(updatedDebtor) : null,
             work_payment: workPayment,
             payment_details: {
-                amount_paid: payment_amount,
+                amount_paid: normalizedPaymentAmount,
                 total_paid: newPaidAmount,
                 remaining: totalAmount > 0 ? Math.max(0, totalAmount - newPaidAmount) : null,
                 percentage_paid: totalAmount > 0 ? Math.round((newPaidAmount / totalAmount) * 100) : null

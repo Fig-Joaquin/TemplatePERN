@@ -4,27 +4,64 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { CreditCard, Save, ArrowLeft, Search, User, Car, Calendar, FileText } from "lucide-react";
+import { CreditCard, Save, ArrowLeft, User, Car, Calendar, FileText, Check, ChevronsUpDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import CurrencyInputCLP from "@/components/CurrencyInputCLP";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   createDebtor,
   updateDebtor,
   getDebtorById
 } from "@/services/debtorService";
 import { getAllWorkOrders, getAvailableWorkOrdersForDebtors } from "@/services/workOrderService";
-import { formatPriceCLP } from "@/utils/formatPriceCLP";
-import type { WorkOrder } from "@/types/interfaces";
+import { formatPriceCLP, parseCLPToInteger } from "@/utils/formatPriceCLP";
+import { translateWorkOrderStatus } from "@/utils/statusTranslations";
+import { cn } from "@/lib/utils";
+import type { Debtor, WorkOrder } from "@/types/interfaces";
+
+interface DebtorFormData {
+  work_order_id: string;
+  description: string;
+  total_amount: string;
+}
+
+interface DebtorPayload {
+  work_order_id: number;
+  description: string;
+  total_amount?: number;
+}
+
+const getWorkOrderStatusBadgeClass = (status: WorkOrder["order_status"]): string => {
+  switch (status) {
+    case "finished":
+      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+    case "in_progress":
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+    default:
+      return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300";
+  }
+};
+
+const mapDebtorToFormData = (debtor: Debtor): DebtorFormData => ({
+  work_order_id: debtor.work_order_id?.toString() || "",
+  description: debtor.description || "",
+  total_amount: debtor.total_amount ? Math.trunc(Number(debtor.total_amount)).toString() : ""
+});
+
+const mapFormDataToPayload = (formData: DebtorFormData): DebtorPayload => {
+  const totalAmount = parseCLPToInteger(formData.total_amount);
+
+  return {
+    work_order_id: Number.parseInt(formData.work_order_id, 10),
+    description: formData.description.trim(),
+    ...(totalAmount !== null && { total_amount: totalAmount })
+  };
+};
 
 export default function DebtorFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,13 +71,9 @@ export default function DebtorFormPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [workOrderSelectorOpen, setWorkOrderSelectorOpen] = useState(false);
 
-  const [formData, setFormData] = useState<{
-    work_order_id: string;
-    description: string;
-    total_amount: string;
-  }>({
+  const [formData, setFormData] = useState<DebtorFormData>({
     work_order_id: "",
     description: "",
     total_amount: ""
@@ -48,17 +81,6 @@ export default function DebtorFormPage() {
 
   // Obtener la orden de trabajo seleccionada
   const selectedWorkOrder = workOrders.find(wo => wo.work_order_id.toString() === formData.work_order_id);
-
-  // Filtrar órdenes de trabajo según búsqueda
-  const filteredWorkOrders = workOrders.filter((wo) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      wo.work_order_id.toString().includes(searchLower) ||
-      wo.vehicle?.license_plate?.toLowerCase().includes(searchLower) ||
-      wo.vehicle?.owner?.name?.toLowerCase().includes(searchLower) ||
-      wo.vehicle?.company?.name?.toLowerCase().includes(searchLower)
-    );
-  });
 
   // Función para manejar la selección de orden de trabajo
   const handleWorkOrderSelect = (workOrderId: string) => {
@@ -68,10 +90,14 @@ export default function DebtorFormPage() {
       ...prev,
       work_order_id: workOrderId,
       // Auto-llenar el monto total con el monto de la orden de trabajo
-      total_amount: selectedWO?.total_amount?.toString() || prev.total_amount,
+      total_amount: selectedWO?.total_amount
+        ? Math.trunc(Number(selectedWO.total_amount)).toString()
+        : prev.total_amount,
       // Auto-generar descripción si está vacía
       description: prev.description || `Servicios realizados en orden de trabajo #${workOrderId}`
     }));
+
+    setWorkOrderSelectorOpen(false);
   };
 
   useEffect(() => {
@@ -85,12 +111,8 @@ export default function DebtorFormPage() {
         setWorkOrders(workOrdersData);
 
         if (isEditMode && id) {
-          const debtorData = await getDebtorById(parseInt(id));
-          setFormData({
-            work_order_id: debtorData.work_order_id?.toString() || "",
-            description: debtorData.description || "",
-            total_amount: debtorData.total_amount?.toString() || ""
-          });
+          const debtorData = await getDebtorById(Number.parseInt(id, 10));
+          setFormData(mapDebtorToFormData(debtorData));
         }
       } catch (error: any) {
         console.error("Error al cargar datos:", error);
@@ -120,8 +142,8 @@ export default function DebtorFormPage() {
       return;
     }
 
-    const totalAmount = parseFloat(formData.total_amount);
-    if (formData.total_amount && (isNaN(totalAmount) || totalAmount <= 0)) {
+    const totalAmount = parseCLPToInteger(formData.total_amount);
+    if (formData.total_amount && (totalAmount === null || totalAmount <= 0)) {
       toast.error("El monto total debe ser un número positivo");
       return;
     }
@@ -129,14 +151,10 @@ export default function DebtorFormPage() {
     try {
       setSubmitting(true);
 
-      const debtorData = {
-        work_order_id: parseInt(formData.work_order_id),
-        description: formData.description.trim(),
-        ...(formData.total_amount && { total_amount: totalAmount })
-      };
+      const debtorData = mapFormDataToPayload(formData);
 
       if (isEditMode && id) {
-        await updateDebtor(parseInt(id), debtorData);
+        await updateDebtor(Number.parseInt(id, 10), debtorData);
         toast.success("Deudor actualizado exitosamente");
       } else {
         await createDebtor(debtorData);
@@ -226,63 +244,80 @@ export default function DebtorFormPage() {
                 <Label htmlFor="work_order_id" className="text-sm font-medium">
                   Orden de Trabajo *
                 </Label>
-                <div className="space-y-3">
-                  {/* Buscador */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      type="text"
-                      placeholder="Buscar por número de OT, patente o cliente..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-
-                  {/* Selector */}
-                  <Select
-                    value={formData.work_order_id}
-                    onValueChange={handleWorkOrderSelect}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una orden de trabajo" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {filteredWorkOrders.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">
-                          {searchTerm ? "No se encontraron órdenes de trabajo" : "No hay órdenes de trabajo disponibles"}
+                <Popover open={workOrderSelectorOpen} onOpenChange={setWorkOrderSelectorOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="work_order_id"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={workOrderSelectorOpen}
+                      className="w-full justify-between h-auto py-3"
+                    >
+                      {selectedWorkOrder ? (
+                        <div className="flex flex-col items-start text-left">
+                          <span className="font-semibold text-primary">OT #{selectedWorkOrder.work_order_id}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[240px] sm:max-w-[420px]">
+                            {selectedWorkOrder.vehicle?.owner?.name || selectedWorkOrder.vehicle?.company?.name || "Sin cliente"}
+                            {" • "}
+                            {formatPriceCLP(selectedWorkOrder.total_amount || 0)}
+                          </span>
                         </div>
                       ) : (
-                        filteredWorkOrders.map((workOrder) => (
-                          <SelectItem
-                            key={workOrder.work_order_id}
-                            value={workOrder.work_order_id.toString()}
-                          >
-                            <div className="flex flex-col items-start space-y-1 py-1">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium text-primary">
-                                  OT #{workOrder.work_order_id}
-                                </span>
-                                <span className="text-sm px-2 py-0.5 bg-muted text-muted-foreground rounded">
-                                  {workOrder.vehicle?.license_plate || 'Sin patente'}
-                                </span>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">
-                                  {workOrder.vehicle?.owner?.name || workOrder.vehicle?.company?.name || "Sin cliente"}
-                                </span>
-                                {" • "}
-                                <span className="text-green-600 font-semibold">
-                                  {formatPriceCLP(workOrder.total_amount || 0)}
-                                </span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))
+                        <span className="text-muted-foreground">Selecciona una orden de trabajo</span>
                       )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[min(95vw,720px)] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar por N° OT, cliente o patente..." />
+                      <CommandList className="max-h-80">
+                        <CommandEmpty>No se encontraron órdenes de trabajo</CommandEmpty>
+                        <CommandGroup>
+                          {workOrders.map((workOrder) => {
+                            const clientName = workOrder.vehicle?.owner?.name || workOrder.vehicle?.company?.name || "Sin cliente";
+                            const statusLabel = translateWorkOrderStatus(workOrder.order_status);
+                            const searchValue = `${workOrder.work_order_id} ${clientName} ${workOrder.vehicle?.license_plate || ""}`;
+
+                            return (
+                              <CommandItem
+                                key={workOrder.work_order_id}
+                                value={searchValue}
+                                onSelect={() => handleWorkOrderSelect(workOrder.work_order_id.toString())}
+                                className="p-3"
+                              >
+                                <div className="flex w-full items-start justify-between gap-3">
+                                  <div className="min-w-0 space-y-1">
+                                    <p className="font-semibold text-primary">OT #{workOrder.work_order_id}</p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {clientName} • {workOrder.vehicle?.license_plate || "Sin patente"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {new Date(workOrder.order_date).toLocaleDateString("es-CL")}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex shrink-0 flex-col items-end gap-2">
+                                    <p className="text-sm font-bold text-green-600">{formatPriceCLP(workOrder.total_amount || 0)}</p>
+                                    <Badge className={cn("text-[10px]", getWorkOrderStatusBadgeClass(workOrder.order_status))}>
+                                      {statusLabel}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <Check
+                                  className={cn(
+                                    "ml-2 h-4 w-4",
+                                    formData.work_order_id === workOrder.work_order_id.toString() ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Información de la Orden de Trabajo Seleccionada */}
@@ -306,7 +341,7 @@ export default function DebtorFormPage() {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <div>
                         <span className="font-medium text-muted-foreground">Estado:</span>
-                        <p className="capitalize">{selectedWorkOrder.order_status?.replace('_', ' ') || 'N/A'}</p>
+                        <p>{selectedWorkOrder.order_status ? translateWorkOrderStatus(selectedWorkOrder.order_status) : 'N/A'}</p>
                       </div>
                     </div>
 
@@ -384,14 +419,14 @@ export default function DebtorFormPage() {
                 <Label htmlFor="total_amount" className="text-sm font-medium">
                   Monto Total de la Deuda (opcional)
                 </Label>
-                <Input
+                <CurrencyInputCLP
                   id="total_amount"
-                  type="number"
                   value={formData.total_amount}
-                  onChange={(e) => handleInputChange("total_amount", e.target.value)}
-                  placeholder="Ej: 150000"
-                  min="0"
-                  step="0.01"
+                  onValueChange={(numericValue) =>
+                    handleInputChange("total_amount", numericValue === null ? "" : numericValue.toString())
+                  }
+                  placeholder="Ej: $150.000"
+                  disabled={submitting}
                 />
                 <p className="text-xs text-muted-foreground">
                   Define el monto total de la deuda para llevar control de pagos y porcentajes
