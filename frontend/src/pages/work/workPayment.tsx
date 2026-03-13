@@ -416,8 +416,15 @@ export default function WorkPaymentsPage() {
                           </div>
                         )}
 
-                        {/* Botón para ver orden completa */}
-                        <div className="flex justify-center pt-2">
+                        {/* Botones de acción */}
+                        <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                          <Button
+                            onClick={() => navigate(`/admin/finanzas/pagos/nuevo?workOrderId=${workOrder?.work_order_id}`)}
+                            className="flex items-center gap-2 bg-primary text-primary-foreground"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Agregar Pago
+                          </Button>
                           <Button
                             variant="outline"
                             onClick={() => navigate(`/admin/orden-trabajo/editar/${workOrder?.work_order_id}`)}

@@ -12,7 +12,8 @@ export const fetchVehicleBrandById = async (id: number): Promise<Brand> => {
 }
 
 export const createVehicleBrand = async (brandData: Partial<Brand>): Promise<Brand> => {
-  const { data } = await api.post<Brand>("/vehicleBrands", brandData)
+  const { data } = await api.post<{ message: string; brand: Brand }>("/vehicleBrands", brandData)
+  return data.brand
   return data
 }
 
