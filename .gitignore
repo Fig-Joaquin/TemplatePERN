@@ -1,3 +1,5 @@
 docker-compose.yml
 .env
 learning_data.json
+
+claude.md
