@@ -34,6 +34,20 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
   const [user, setUser] = useState<User | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
+  const quickLinks = [
+    {
+      href: "https://www.patentechile.com/",
+      label: "Patente Chile",
+    },
+    {
+      href: "https://empresas.officebanking.cl/",
+      label: "Office Banking",
+    },
+    {
+      href: "https://www.bancoestado.cl/content/bancoestado-public/cl/es/home/inicio---bancoestado-empresas.html#/login-empresa",
+      label: "BancoEstado Empresas",
+    },
+  ]
   const navigate = useNavigate()
   const matches = useMatches()
   const currentMatch = matches.find((match) => (match.handle as { title?: string })?.title)
@@ -85,49 +99,60 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarOpen }) => {
     >
       <h1 className="text-xl font-bold text-foreground">{title}</h1>
 
-      <div className="flex items-center space-x-6">
-        <Popover open={showNotifications} onOpenChange={setShowNotifications}>
-          <PopoverTrigger asChild>
-            <button className="relative hover:text-primary transition-colors">
-              <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
-                  {notifications.length}
-                </span>
-              )}
+      <div className="flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-1">
+          {quickLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary hover:bg-background rounded-lg transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Popover open={showNotifications} onOpenChange={setShowNotifications}>
+            <PopoverTrigger asChild>
+              <button className="relative hover:text-primary transition-colors">
+                <BellIcon className="w-6 h-6 text-muted-foreground hover:text-primary" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-2 px-1 py-0.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-full">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0">
+              <Notifications
+                notifications={notifications}
+                setNotifications={setNotifications}
+                onClose={() => setShowNotifications(false)}
+              />
+            </PopoverContent>
+          </Popover>
+          <DarkModeToggle />
+        </div>
+
+        <div className="flex items-center gap-3 border-l border-border pl-3">
+          <img src="/OR_LOGO A&M.png" alt="Logo" className="h-10 w-auto" />
+          {user && (
+            <span className="hidden xl:inline text-foreground font-medium whitespace-nowrap">
+              {user.person.name} {user.person.first_surname}
+            </span>
+          )}
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors cursor-pointer shadow-sm"
+            >
+              Cerrar Sesion
             </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-0">
-            <Notifications
-              notifications={notifications}
-              setNotifications={setNotifications}
-              onClose={() => setShowNotifications(false)}
-            />
-          </PopoverContent>
-        </Popover>
-        <DarkModeToggle />
-        <a 
-          href="https://www.patentechile.com/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="px-4 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors cursor-pointer border border-primary/20"
-        >
-          Patente Chile
-        </a>
-        <img src="/OR_LOGO A&M.png" alt="Logo" className="h-10 w-auto center" />
-        {user && (
-          <span className="text-foreground font-medium">
-            {user.person.name} {user.person.first_surname}
-          </span>
-        )}
-        {user && (
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors cursor-pointer shadow-sm"
-          >
-            Cerrar Sesión
-          </button>
-        )}
+          )}
+        </div>
       </div>
     </nav>
   )
