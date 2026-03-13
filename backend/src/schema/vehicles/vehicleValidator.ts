@@ -13,7 +13,7 @@ export const vehicleSchema = z.object({
     license_plate: z.string()
         .min(6, "La patente debe tener entre 6 y 8 caracteres")
         .max(8, "La patente debe tener entre 6 y 8 caracteres"),
-    vehicle_status: z.enum(["running", "not_running"]).default("running"),
+    vehicle_status: z.enum(["running", "stopped", "unknown"]).default("unknown"),
     year: z.number()
         .int()
         .min(1900, "El año no puede ser menor a 1900")

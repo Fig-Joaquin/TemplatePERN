@@ -430,13 +430,15 @@ const VehicleSearchPage = () => {
                       <div className="flex items-center gap-3 mb-1">
                         <h2 className="text-3xl font-bold tracking-wider">{vehicle.license_plate}</h2>
                         <Badge
-                          variant={vehicle.vehicle_status === "running" ? "secondary" : "destructive"}
-                          className={`text-sm px-3 py-1 ${vehicle.vehicle_status === "running" ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}
+                          variant={vehicle.vehicle_status === "running" ? "secondary" : vehicle.vehicle_status === "stopped" ? "destructive" : "outline"}
+                          className={`text-sm px-3 py-1 ${vehicle.vehicle_status === "running" ? 'bg-green-500/20 text-green-300 border-green-500/30' : vehicle.vehicle_status === "stopped" ? 'bg-red-500/20 text-red-300 border-red-500/30' : 'bg-slate-500/20 text-slate-300 border-slate-500/30'}`}
                         >
                           {vehicle.vehicle_status === "running" ? (
-                            <><CheckCircle2 className="w-4 h-4 mr-1" /> Funcionando</>
+                            <><CheckCircle2 className="w-4 h-4 mr-1" /> En marcha</>
+                          ) : vehicle.vehicle_status === "stopped" ? (
+                            <><AlertCircle className="w-4 h-4 mr-1" /> Detenido</>
                           ) : (
-                            <><AlertCircle className="w-4 h-4 mr-1" /> Averiado</>
+                            <><Clock className="w-4 h-4 mr-1" /> Desconocido</>
                           )}
                         </Badge>
                       </div>

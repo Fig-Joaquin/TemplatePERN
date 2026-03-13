@@ -47,7 +47,8 @@ ALTER TYPE public.quotations_quotation_status_enum OWNER TO postgres;
 
 CREATE TYPE public.vehicles_vehicle_status_enum AS ENUM (
     'running',
-    'not_running'
+    'stopped',
+    'unknown'
 );
 
 
@@ -732,7 +733,7 @@ ALTER SEQUENCE public.vehicle_models_vehicle_model_id_seq OWNED BY public.vehicl
 CREATE TABLE public.vehicles (
     vehicle_id integer NOT NULL,
     license_plate character varying(8) NOT NULL,
-    vehicle_status public.vehicles_vehicle_status_enum DEFAULT 'running'::public.vehicles_vehicle_status_enum NOT NULL,
+    vehicle_status public.vehicles_vehicle_status_enum DEFAULT 'unknown'::public.vehicles_vehicle_status_enum NOT NULL,
     year integer NOT NULL,
     color character varying(30) NOT NULL,
     vehicle_model_id integer NOT NULL,

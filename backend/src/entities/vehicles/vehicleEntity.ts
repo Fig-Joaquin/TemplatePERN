@@ -30,8 +30,8 @@ export class Vehicle {
 
     @Column({ 
         type: "enum",
-        enum: ["running", "not_running"],
-        default: "running"
+        enum: ["running", "stopped", "unknown"],
+        default: "unknown"
     })
     vehicle_status!: string;
 

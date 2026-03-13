@@ -14,6 +14,12 @@ interface VehicleCardProps {
 
 export function VehicleCard({ vehicle, onEdit, onDelete, showActions = false }: VehicleCardProps) {
   const navigate = useNavigate()
+  const statusConfig = {
+    running: { label: "En marcha", variant: "secondary" as const },
+    stopped: { label: "Detenido", variant: "destructive" as const },
+    unknown: { label: "Desconocido", variant: "outline" as const },
+  }
+  const currentStatus = statusConfig[vehicle.vehicle_status] ?? statusConfig.unknown
 
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow">
@@ -23,8 +29,8 @@ export function VehicleCard({ vehicle, onEdit, onDelete, showActions = false }: 
             <Car className="w-4 h-4" />
             {vehicle.license_plate}
           </Badge>
-          <Badge variant={vehicle.vehicle_status === "running" ? "secondary" : "destructive"}>
-            {vehicle.vehicle_status === "running" ? "Funcionando" : "Averiado"}
+          <Badge variant={currentStatus.variant}>
+            {currentStatus.label}
           </Badge>
         </div>
 

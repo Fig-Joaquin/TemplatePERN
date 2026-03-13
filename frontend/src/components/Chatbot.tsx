@@ -44,6 +44,19 @@ export const Chatbot = () => {
     try { localStorage.setItem('chatbot_is_open', String(isOpen)) } catch {}
   }, [isOpen])
 
+  useEffect(() => {
+    const handleEscapeClose = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleEscapeClose)
+    return () => {
+      window.removeEventListener("keydown", handleEscapeClose)
+    }
+  }, [])
+
   // Función para crear efecto de tipeo
   const typeBotMessage = (messageId: string, fullText: string) => {
     let displayText = "";
@@ -243,7 +256,7 @@ export const Chatbot = () => {
     return (
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 p-4 bg-primary hover:bg-primary hover:bg-opacity-90 text-primary-foreground rounded-full shadow-lg"
+        className="fixed bottom-4 right-4 z-[70] p-4 bg-primary hover:bg-primary hover:bg-opacity-90 text-primary-foreground rounded-full shadow-lg"
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         exit={{ scale: 0, rotate: 180 }}
@@ -263,7 +276,7 @@ export const Chatbot = () => {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed bottom-4 right-4 flex flex-col h-[600px] w-full max-w-[400px] bg-card rounded-2xl shadow-xl border border-border/50 overflow-hidden backdrop-blur-sm"
+        className="fixed bottom-2 right-2 z-[70] flex h-[min(600px,calc(100vh-1rem))] w-[min(400px,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-xl backdrop-blur-sm sm:bottom-4 sm:right-4 sm:h-[min(600px,calc(100vh-2rem))] sm:w-[min(400px,calc(100vw-2rem))]"
         initial={{ opacity: 0, scale: 0.3, y: 100 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.3, y: 100 }}

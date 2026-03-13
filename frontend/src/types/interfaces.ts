@@ -37,7 +37,7 @@ export interface ClientFormProps {
 export interface Vehicle {
   vehicle_id: number
   license_plate: string
-  vehicle_status: "running" | "not_running"
+  vehicle_status: "running" | "stopped" | "unknown"
   vehicle_model_id: number
   model?: Model
   mileage_history: MileageHistory[]

@@ -986,7 +986,11 @@ const DebtorsPage = () => {
                 <div>
                   <label className="text-sm font-medium">Estado:</label>
                   <p className="text-sm text-muted-foreground">
-                    {selectedVehicle.workOrder?.vehicle?.vehicle_status === "running" ? "Funcionando" : "Averiado"}
+                    {selectedVehicle.workOrder?.vehicle?.vehicle_status === "running"
+                      ? "En marcha"
+                      : selectedVehicle.workOrder?.vehicle?.vehicle_status === "stopped"
+                      ? "Detenido"
+                      : "Desconocido"}
                   </p>
                 </div>
                 <div>

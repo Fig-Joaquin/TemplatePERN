@@ -21,6 +21,7 @@ import {
   PieChart,
   ArrowUpIcon,
   ArrowDownIcon,
+  Minus,
   Filter
 } from "lucide-react";
 import { fetchWorkPayments } from "@/services/work/workPayment";
@@ -37,7 +38,7 @@ interface BalanceData {
   expenses: number;
   productPurchases: number;
   balance: number;
-  trend: "up" | "down";
+  trend: "up" | "down" | "neutral";
   percentage: number;
 }
 
@@ -167,13 +168,37 @@ const BalancesPage = () => {
     }, 0);
   };
 
-  const calculatePercentageChange = (current: number, previous: number): number => {
-    if (current === 0 && previous === 0) return 0;
-    if (previous === 0) {
-      return current > 0 ? 100 : (current < 0 ? -100 : 0);
+  const calculateTrendMetrics = (
+    current: number,
+    previous: number,
+    hasActivity: boolean
+  ): { trend: BalanceData["trend"]; percentage: number } => {
+    // If a period has no transactions at all, show a neutral state instead of synthetic +/-100% jumps.
+    if (!hasActivity) {
+      return { trend: "neutral", percentage: 0 };
     }
+
+    if (previous === 0) {
+      if (current === 0) {
+        return { trend: "neutral", percentage: 0 };
+      }
+      return {
+        trend: current > 0 ? "up" : "down",
+        percentage: current > 0 ? 100 : -100,
+      };
+    }
+
     const percentageChange = ((current - previous) / Math.abs(previous)) * 100;
-    return Math.max(-999, Math.min(999, percentageChange));
+    const clampedPercentage = Math.max(-999, Math.min(999, percentageChange));
+
+    if (current === previous) {
+      return { trend: "neutral", percentage: 0 };
+    }
+
+    return {
+      trend: current > previous ? "up" : "down",
+      percentage: clampedPercentage,
+    };
   };
 
   const calculateBalances = () => {
@@ -196,10 +221,11 @@ const BalancesPage = () => {
         const expenses = calculateExpensesInRange(gastos, startDate, endDate);
         const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, startDate, endDate);
         const balance = income - (expenses + productPurchaseExpenses);
+        const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
         // Calcular tendencia comparando con el día anterior
         const previousDay = day > 1 ? balanceData[day - 2]?.balance || 0 : 0;
-        const percentage = calculatePercentageChange(balance, previousDay);
+        const { trend, percentage } = calculateTrendMetrics(balance, previousDay, hasActivity);
 
         totalIncome += income;
         totalExpenses += expenses;
@@ -212,7 +238,7 @@ const BalancesPage = () => {
           expenses,
           productPurchases: productPurchaseExpenses,
           balance,
-          trend: balance >= previousDay ? "up" : "down",
+          trend,
           percentage
         });
       }
@@ -238,9 +264,10 @@ const BalancesPage = () => {
         const expenses = calculateExpensesInRange(gastos, weekStart, weekEnd);
         const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, weekStart, weekEnd);
         const balance = income - (expenses + productPurchaseExpenses);
+        const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
         const previousBalance = weekNumber > 1 ? balanceData[weekNumber - 2]?.balance || 0 : 0;
-        const percentage = calculatePercentageChange(balance, previousBalance);
+        const { trend, percentage } = calculateTrendMetrics(balance, previousBalance, hasActivity);
 
         totalIncome += income;
         totalExpenses += expenses;
@@ -253,7 +280,7 @@ const BalancesPage = () => {
           expenses,
           productPurchases: productPurchaseExpenses,
           balance,
-          trend: balance >= previousBalance ? "up" : "down",
+          trend,
           percentage
         });
 
@@ -272,9 +299,10 @@ const BalancesPage = () => {
         const expenses = calculateExpensesInRange(gastos, startDate, endDate);
         const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, startDate, endDate);
         const balance = income - (expenses + productPurchaseExpenses);
+        const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
         const previousBalance = month > 1 ? balanceData[month - 2]?.balance || 0 : 0;
-        const percentage = calculatePercentageChange(balance, previousBalance);
+        const { trend, percentage } = calculateTrendMetrics(balance, previousBalance, hasActivity);
 
         totalIncome += income;
         totalExpenses += expenses;
@@ -287,7 +315,7 @@ const BalancesPage = () => {
           expenses,
           productPurchases: productPurchaseExpenses,
           balance,
-          trend: balance >= previousBalance ? "up" : "down",
+          trend,
           percentage
         });
       }
@@ -304,9 +332,10 @@ const BalancesPage = () => {
         const expenses = calculateExpensesInRange(gastos, startDate, endDate);
         const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, startDate, endDate);
         const balance = income - (expenses + productPurchaseExpenses);
+        const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
         const previousBalance = balanceData.length > 0 ? balanceData[balanceData.length - 1]?.balance || 0 : 0;
-        const percentage = calculatePercentageChange(balance, previousBalance);
+        const { trend, percentage } = calculateTrendMetrics(balance, previousBalance, hasActivity);
 
         totalIncome += income;
         totalExpenses += expenses;
@@ -319,7 +348,7 @@ const BalancesPage = () => {
           expenses,
           productPurchases: productPurchaseExpenses,
           balance,
-          trend: balance >= previousBalance ? "up" : "down",
+          trend,
           percentage
         });
       }
@@ -340,7 +369,7 @@ const BalancesPage = () => {
       expenses: allTimeExpenses,
       productPurchases: allTimeProductPurchases,
       balance: allTimeBalance,
-      trend: allTimeBalance >= 0 ? "up" : "down",
+      trend: allTimeBalance === 0 ? "neutral" : (allTimeBalance > 0 ? "up" : "down"),
       percentage: 0
     });
   };
@@ -464,7 +493,11 @@ const BalancesPage = () => {
                 <PieChart className="h-6 w-6 text-primary" />
                 Balance Histórico Total
                 <Badge variant="outline" className="ml-auto">
-                  {totalBalance.trend === "up" ? "Positivo" : "Negativo"}
+                  {totalBalance.trend === "up"
+                    ? "Positivo"
+                    : totalBalance.trend === "down"
+                      ? "Negativo"
+                      : "Neutral"}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -494,8 +527,10 @@ const BalancesPage = () => {
                     }`}>
                     {totalBalance.trend === "up" ? (
                       <TrendingUp className="h-6 w-6" />
-                    ) : (
+                    ) : totalBalance.trend === "down" ? (
                       <TrendingDown className="h-6 w-6" />
+                    ) : (
+                      <Minus className="h-6 w-6" />
                     )}
                     {formatPriceCLP(Math.abs(totalBalance.balance))}
                   </div>
@@ -564,15 +599,25 @@ const BalancesPage = () => {
                         }`}>
                         {balance.trend === "up" ? (
                           <ArrowUpIcon className="h-4 w-4" />
-                        ) : (
+                        ) : balance.trend === "down" ? (
                           <ArrowDownIcon className="h-4 w-4" />
+                        ) : (
+                          <Minus className="h-4 w-4" />
                         )}
                         {formatPriceCLP(Math.abs(balance.balance))}
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <Badge variant={balance.trend === "up" ? "default" : "destructive"}>
+                      <Badge
+                        variant={
+                          balance.trend === "up"
+                            ? "default"
+                            : balance.trend === "down"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
                         {balance.percentage > 0 ? "+" : ""}{balance.percentage.toFixed(1)}%
                       </Badge>
                     </div>

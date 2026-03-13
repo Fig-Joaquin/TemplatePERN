@@ -12,11 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { fetchVehicles, deleteVehicle } from "@/services/vehicleService";
 import { motion, AnimatePresence } from "framer-motion";
 
+type SortOption = "recent" | "oldest" | "plate_asc" | "plate_desc" | "owner_asc";
+
 const VehiclesPage = () => {
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState<SortOption>("recent");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
 
@@ -36,9 +39,49 @@ const VehiclesPage = () => {
     fetchData();
   }, [fetchData]);
 
-  const filteredVehicles = vehicles.filter((vehicle) =>
-    vehicle.license_plate.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredVehicles = vehicles.filter((vehicle) => {
+    if (!normalizedSearch) return true;
+
+    const ownerFullName = vehicle.owner
+      ? `${vehicle.owner.name || ""} ${vehicle.owner.first_surname || ""} ${vehicle.owner.second_surname || ""}`
+          .trim()
+          .toLowerCase()
+      : "";
+    const brandName = vehicle.model?.brand?.brand_name?.toLowerCase() || "";
+    const modelName = vehicle.model?.model_name?.toLowerCase() || "";
+
+    return (
+      vehicle.license_plate.toLowerCase().includes(normalizedSearch) ||
+      ownerFullName.includes(normalizedSearch) ||
+      brandName.includes(normalizedSearch) ||
+      modelName.includes(normalizedSearch)
+    );
+  });
+
+  const sortedVehicles = [...filteredVehicles].sort((a, b) => {
+    const ownerA = a.owner
+      ? `${a.owner.name || ""} ${a.owner.first_surname || ""} ${a.owner.second_surname || ""}`.trim().toLowerCase()
+      : "";
+    const ownerB = b.owner
+      ? `${b.owner.name || ""} ${b.owner.first_surname || ""} ${b.owner.second_surname || ""}`.trim().toLowerCase()
+      : "";
+
+    switch (sortOption) {
+      case "recent":
+        return b.vehicle_id - a.vehicle_id;
+      case "oldest":
+        return a.vehicle_id - b.vehicle_id;
+      case "plate_desc":
+        return b.license_plate.localeCompare(a.license_plate, "es");
+      case "owner_asc":
+        return ownerA.localeCompare(ownerB, "es");
+      case "plate_asc":
+      default:
+        return a.license_plate.localeCompare(b.license_plate, "es");
+    }
+  });
 
   const handleDelete = (vehicleId: number) => {
     const vehicle = vehicles.find(v => v.vehicle_id === vehicleId);
@@ -79,15 +122,29 @@ const VehiclesPage = () => {
         </Button>
       </div>
 
-      <div className="relative">
-        <Input
-          type="text"
-          placeholder="Buscar vehículo por matrícula..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Input
+            type="text"
+            placeholder="Buscar por patente, dueño, marca o modelo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+        </div>
+
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value as SortOption)}
+          className="h-10 min-w-[220px] rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="recent">Ordenar: Más recientes</option>
+          <option value="oldest">Ordenar: Más antiguos</option>
+          <option value="plate_asc">Ordenar: Patente (A-Z)</option>
+          <option value="plate_desc">Ordenar: Patente (Z-A)</option>
+          <option value="owner_asc">Ordenar: Dueño (A-Z)</option>
+        </select>
       </div>
 
       {loading ? (
@@ -103,7 +160,7 @@ const VehiclesPage = () => {
           transition={{ duration: 0.5 }}
         >
           <AnimatePresence>
-            {filteredVehicles.map((vehicle) => (
+            {sortedVehicles.map((vehicle) => (
               <motion.div
                 key={vehicle.vehicle_id}
                 initial={{ opacity: 0, y: 20 }}
@@ -123,11 +180,11 @@ const VehiclesPage = () => {
         </motion.div>
       )}
 
-      {filteredVehicles.length === 0 && !loading && (
+      {sortedVehicles.length === 0 && !loading && (
         <div className="text-center py-10">
           <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <p className="text-lg text-muted-foreground">
-            {searchTerm ? "No se encontraron vehículos con esa matrícula" : "No hay vehículos registrados"}
+            {searchTerm ? "No se encontraron vehículos para esa búsqueda" : "No hay vehículos registrados"}
           </p>
           {!searchTerm && (
             <Button

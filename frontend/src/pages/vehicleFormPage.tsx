@@ -42,6 +42,26 @@ export default function VehicleFormPage() {
   const isEditMode = !!id;
   const navigate = useNavigate();
 
+  const normalizeVehicleStatus = (status?: string): "running" | "stopped" | "unknown" => {
+    if (status === "running" || status === "stopped" || status === "unknown") {
+      return status;
+    }
+
+    if (status === "en_marcha") {
+      return "running";
+    }
+
+    if (status === "detenido" || status === "not_running") {
+      return "stopped";
+    }
+
+    if (status === "desconocido") {
+      return "unknown";
+    }
+
+    return "unknown";
+  };
+
   const [persons, setPersons] = useState<Person[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -59,7 +79,7 @@ export default function VehicleFormPage() {
     owner_type: "person" | "company";
     person_id: string;
     company_id: string;
-    vehicle_status: "running" | "not_running";
+    vehicle_status: "running" | "stopped" | "unknown";
   }>({
     license_plate: "",
     year: undefined,
@@ -70,7 +90,7 @@ export default function VehicleFormPage() {
     owner_type: "person",
     person_id: "",
     company_id: "",
-    vehicle_status: "running",
+    vehicle_status: "unknown",
   });
 
   // Estados para búsqueda
@@ -102,8 +122,9 @@ export default function VehicleFormPage() {
   });
 
   const vehicleStatusOptions = [
-    { value: "running", label: "Funcionando" },
-    { value: "not_running", label: "Averiado" },
+    { value: "running", label: "En marcha" },
+    { value: "stopped", label: "Detenido" },
+    { value: "unknown", label: "Desconocido" },
   ];
 
   useEffect(() => {
@@ -137,7 +158,7 @@ export default function VehicleFormPage() {
             owner_type: vehicleData.owner ? "person" : "company",
             person_id: vehicleData.owner?.person_id?.toString() || "",
             company_id: vehicleData.company?.company_id?.toString() || "",
-            vehicle_status: vehicleData.vehicle_status || "running",
+            vehicle_status: normalizeVehicleStatus(vehicleData.vehicle_status),
           });
         } else {
           // Si estamos creando un nuevo vehículo y hay un person_id o company_id en la URL, preseleccionarlo

@@ -332,8 +332,10 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
                                 {vehicle.model?.brand?.brand_name} {vehicle.model?.model_name}
                               </div>
                             </div>
-                            <Badge variant={vehicle.vehicle_status === "running" ? "default" : "destructive"}>
-                              {vehicle.vehicle_status === "running" ? "Funcionando" : "Fuera de servicio"}
+                            <Badge
+                              variant={vehicle.vehicle_status === "running" ? "default" : vehicle.vehicle_status === "stopped" ? "destructive" : "outline"}
+                            >
+                              {vehicle.vehicle_status === "running" ? "En marcha" : vehicle.vehicle_status === "stopped" ? "Detenido" : "Desconocido"}
                             </Badge>
                           </div>
                         </button>
