@@ -688,7 +688,7 @@ const DebtorsPage = () => {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {visibleDebtors.length === 0 ? (
-              <motion.div 
+              <motion.div
                 className="col-span-full flex flex-col items-center justify-center py-16 space-y-4"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -983,8 +983,8 @@ const DebtorsPage = () => {
                     {selectedVehicle.workOrder?.vehicle?.vehicle_status === "running"
                       ? "En marcha"
                       : selectedVehicle.workOrder?.vehicle?.vehicle_status === "stopped"
-                      ? "Detenido"
-                      : "Desconocido"}
+                        ? "Detenido"
+                        : "Desconocido"}
                   </p>
                 </div>
                 <div>
