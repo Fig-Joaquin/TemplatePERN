@@ -5,9 +5,10 @@ export const UserSchema = z.object({ // Optional because it's auto-generated
     user_id: z.number().optional(),
     person_id: z.number().int().positive(),
     person: PersonSchema.optional(),
-    user_role: z.string()
-        .min(3, "Rol de usuario debe tener entre 3 y 20 caracteres")
-        .max(20, "Rol de usuario debe tener entre 3 y 20 caracteres"),
+    user_role: z.enum(["administrador", "contador"], {
+        required_error: "Rol de usuario es requerido",
+        invalid_type_error: "Rol de usuario inválido"
+    }),
     username: z.string()
         .min(4, "Nombre de usuario debe tener entre 4 y 30 caracteres")
         .max(30, "Nombre de usuario debe tener entre 4 y 30 caracteres")

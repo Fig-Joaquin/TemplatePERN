@@ -25,7 +25,7 @@ import gastoRoutes from "./gastoRoutes";
 import tipoGastoRoutes from "./tipoGastoRoutes";
 import paymentTypeRoutes from "./work/paymentTypeRoutes";
 import workPaymentRoutes from "./work/workPaymentRoutes";
-import { authenticateUser } from "../middleware/authMiddleware";
+import { authenticateUser, AuthRequest } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -38,6 +38,41 @@ router.use("/auth", authRoutes);
 // ─── Authentication gate ─────────────────────────────────────────────────────
 // Applies to all routes registered below this line.
 router.use(authenticateUser);
+
+router.use((req: AuthRequest, res, next) => {
+	if (req.user?.userRole !== "contador") {
+		next();
+		return;
+	}
+
+	const allowedFinancePrefixes = [
+		"/workPayments",
+		"/company-expenses",
+		"/debtors",
+		"/paymentTypes",
+		"/productPurchases",
+	];
+
+	const isAllowedFinanceRoute = allowedFinancePrefixes.some(
+		(prefix) => req.path === prefix || req.path.startsWith(`${prefix}/`)
+	);
+
+	if (!isAllowedFinanceRoute) {
+		res.status(403).json({
+			message: "Acceso denegado. El rol contador solo puede acceder a módulos de finanzas.",
+		});
+		return;
+	}
+
+	if (req.method !== "GET") {
+		res.status(403).json({
+			message: "Acceso denegado. El rol contador solo tiene permisos de visualización.",
+		});
+		return;
+	}
+
+	next();
+});
 
 // ─── Protected routes ────────────────────────────────────────────────────────
 router.use("/persons", personsRoutes);

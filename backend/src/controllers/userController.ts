@@ -209,7 +209,10 @@ export const createUserWithPerson = async (req: Request, res: Response, _next: N
           { message: "RUT debe contener solo números y dígito verificador (K)" }
         ),
       // Datos de usuario
-      user_role: z.string().min(3, "Rol de usuario es requerido"),
+      user_role: z.enum(["administrador", "contador"], {
+        required_error: "Rol de usuario es requerido",
+        invalid_type_error: "Rol de usuario inválido"
+      }),
       username: z.string().min(4, "Nombre de usuario debe tener al menos 4 caracteres"),
       password: z.string().min(8, "Contraseña debe tener al menos 8 caracteres"),
     });

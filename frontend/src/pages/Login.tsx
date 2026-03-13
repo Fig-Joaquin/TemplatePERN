@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react" // Import eye icons
+import { DEFAULT_CONTADOR_ROUTE } from "@/utils/roleAccess"
 
 const Login = () => {
   const [username, setUsername] = useState("")
@@ -32,7 +33,9 @@ const Login = () => {
 
       if (response.status === 200) {
         showSuccessToast("Inicio de sesión exitoso")
-        navigate("/admin/dashboard")
+        const sessionResponse = await api.get("/auth/check-session")
+        const role = sessionResponse.data?.user?.userRole
+        navigate(role === "contador" ? DEFAULT_CONTADOR_ROUTE : "/admin/dashboard")
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
