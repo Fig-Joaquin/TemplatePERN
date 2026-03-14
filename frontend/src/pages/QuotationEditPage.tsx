@@ -23,6 +23,15 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog"
 import { SparePartsModal } from "@/components/quotations/SparePartsModal"
+import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal"
+import {
+    getServices,
+    getServicesByQuotation,
+    addServiceToQuotation,
+    deleteQuotationService,
+    updateQuotationService,
+} from "@/services/serviceApi"
+import type { Service, SelectedService } from "@/types/service"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
 import { Save, ArrowLeft, FileText, Plus, Package } from "lucide-react"
@@ -77,6 +86,12 @@ export default function EditQuotationPage() {
 
     // Track which details should be deleted
     const [detailsToDelete, setDetailsToDelete] = useState<number[]>([])
+
+    // Services state
+    const [services, setServices] = useState<Service[]>([])
+    const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
+    const [showServiceModal, setShowServiceModal] = useState(false)
+    const [serviceIdsToDelete, setServiceIdsToDelete] = useState<number[]>([])
 
     // Nuevo estado para manejar productos temporales en el modal
     const [tempSelectedProducts, setTempSelectedProducts] = useState<SelectedProduct[]>([])
@@ -135,6 +150,23 @@ export default function EditQuotationPage() {
                 // Fetch products (no need for stock data in quotations)
                 const productsData = await fetchProducts()
                 setProducts(productsData)
+
+                // Fetch services catalog and existing quotation services
+                const [servicesData, existingServices] = await Promise.all([
+                    getServices(),
+                    getServicesByQuotation(Number.parseInt(id)),
+                ])
+                setServices(servicesData)
+                setSelectedServices(
+                    existingServices.map((detail) => ({
+                        serviceId: detail.service.service_id,
+                        serviceName: detail.service.service_name,
+                        cantidad: detail.cantidad,
+                        precio_unitario: Number(detail.precio_unitario),
+                        subtotal: Number(detail.subtotal),
+                        quotationServiceId: detail.id,
+                    }))
+                )
 
                 console.log("Product details:", details)
 
@@ -199,7 +231,8 @@ export default function EditQuotationPage() {
         return total + (Number(laborPrice) || 0) // Convertir a número y usar 0 si es inválido
     }, 0)
 
-    const subtotalWithoutTax = totalProductPrice + totalLaborPrice
+    const totalServicesPrice = selectedServices.reduce((acc, s) => acc + s.subtotal, 0)
+    const subtotalWithoutTax = totalProductPrice + totalLaborPrice + totalServicesPrice
     const taxAmount = subtotalWithoutTax * taxRate
     const totalPrice = subtotalWithoutTax + taxAmount
 
@@ -299,6 +332,32 @@ export default function EditQuotationPage() {
                             Number(product.profit_margin),
                         ),
                         discount: 0,
+                    })
+                }
+            }
+
+            // Sincronizar servicios
+            const quotationIdNum = Number.parseInt(id)
+
+            // Eliminar servicios marcados para borrar
+            if (serviceIdsToDelete.length > 0) {
+                await Promise.all(serviceIdsToDelete.map((sid) => deleteQuotationService(sid)))
+            }
+
+            // Agregar o actualizar servicios
+            for (const sel of selectedServices) {
+                if (sel.quotationServiceId) {
+                    // Ya existe en backend — actualizar si cambió
+                    await updateQuotationService(sel.quotationServiceId, {
+                        cantidad: sel.cantidad,
+                        precio_unitario: sel.precio_unitario,
+                    })
+                } else {
+                    // Nuevo — crear
+                    await addServiceToQuotation(quotationIdNum, {
+                        service_id: sel.serviceId,
+                        cantidad: sel.cantidad,
+                        precio_unitario: sel.precio_unitario,
                     })
                 }
             }
@@ -448,22 +507,100 @@ export default function EditQuotationPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
                                 <Package className="w-5 h-5 text-primary" />
-                                Repuestos Seleccionados
+                                Productos y Servicios
                             </CardTitle>
-                            <Button
-                                type="button" // Importante: esto previene que envíe el formulario
-                                onClick={handleOpenProductModal}
-                                variant="outline"
-                                className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
-                                disabled={submitting}
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Añadir Repuesto
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    onClick={handleOpenProductModal}
+                                    variant="outline"
+                                    className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                    disabled={submitting}
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Agregar Producto
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => setShowServiceModal(true)}
+                                    variant="outline"
+                                    className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                    disabled={submitting}
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Agregar Servicio
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <ScrollArea className="h-[300px] pr-4">
                                 <ul className="space-y-3">
+                                    {/* Servicios seleccionados */}
+                                    {selectedServices.map((sel) => (
+                                        <li
+                                            key={`service-${sel.serviceId}`}
+                                            className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors"
+                                        >
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">Servicio</span>
+                                                    <p className="font-medium">{sel.serviceName}</p>
+                                                    {sel.quotationServiceId && (
+                                                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Existente</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Precio: {formatPriceCLP(sel.precio_unitario)}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center space-x-4">
+                                                <div className="flex flex-col items-end">
+                                                    <Label className="text-xs">Cantidad</Label>
+                                                    <NumberInput
+                                                        value={sel.cantidad}
+                                                        onChange={(val) =>
+                                                            setSelectedServices((prev) =>
+                                                                prev.map((s) =>
+                                                                    s.serviceId === sel.serviceId
+                                                                        ? { ...s, cantidad: val || 1, subtotal: (val || 1) * s.precio_unitario }
+                                                                        : s
+                                                                )
+                                                            )
+                                                        }
+                                                        min={1}
+                                                        className="w-20"
+                                                        disabled={submitting}
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-xs">Subtotal</span>
+                                                    <span className="font-medium">{formatPriceCLP(sel.subtotal)}</span>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                                                    onClick={() => {
+                                                        if (sel.quotationServiceId) {
+                                                            setServiceIdsToDelete((prev) => [...prev, sel.quotationServiceId!])
+                                                        }
+                                                        setSelectedServices((prev) =>
+                                                            prev.filter((s) => s.serviceId !== sel.serviceId)
+                                                        )
+                                                    }}
+                                                    disabled={submitting}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                                        <path d="M3 6h18"></path>
+                                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                                    </svg>
+                                                </Button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                    {/* Productos seleccionados */}
                                     {selectedProducts.map(({ productId, quantity, laborPrice, originalSalePrice, workProductDetailId }) => {
                                         const product = products.find((p) => p.product_id === Number(productId))
                                         // No need to find stock product for quotations
@@ -566,6 +703,12 @@ export default function EditQuotationPage() {
                                             <span>Total Mano de Obra:</span>
                                             <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
                                         </div>
+                                        {totalServicesPrice > 0 && (
+                                            <div className="flex justify-between p-2 rounded bg-accent/5">
+                                                <span>Subtotal Servicios:</span>
+                                                <span className="font-medium">{formatPriceCLP(totalServicesPrice)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex justify-between p-2 rounded bg-accent/5">
@@ -589,7 +732,7 @@ export default function EditQuotationPage() {
                     </Button>
                     <Button
                         type="submit"
-                        disabled={submitting || !selectedVehicleId || selectedProducts.length === 0}
+                        disabled={submitting || !selectedVehicleId || (selectedProducts.length === 0 && selectedServices.length === 0)}
                         className="gap-2"
                     >
                         {submitting ? (
@@ -624,6 +767,30 @@ export default function EditQuotationPage() {
                 showStock={false}
                 title="Seleccionar Repuestos"
                 description="Selecciona los productos para la cotización y configura cantidades y mano de obra"
+            />
+
+            <ServiceSelectorModal
+                open={showServiceModal}
+                onOpenChange={setShowServiceModal}
+                services={services}
+                selectedServices={selectedServices}
+                onConfirm={(selected) => {
+                    // Detectar servicios eliminados (estaban en selected antes, ya no están)
+                    const removedServices = selectedServices.filter(
+                        (prev) => !selected.some((s) => s.serviceId === prev.serviceId)
+                    )
+                    removedServices.forEach((s) => {
+                        if (s.quotationServiceId) {
+                            setServiceIdsToDelete((prev) => [...prev, s.quotationServiceId!])
+                        }
+                    })
+                    setSelectedServices(selected)
+                    setShowServiceModal(false)
+                    toast.success("Servicios actualizados")
+                }}
+                onCancel={() => setShowServiceModal(false)}
+                title="Seleccionar Servicios"
+                description="Selecciona los servicios para la cotización y configura cantidades y precios"
             />
 
             <QuickProductCreateDialog

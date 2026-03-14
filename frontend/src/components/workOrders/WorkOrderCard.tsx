@@ -23,7 +23,9 @@ import { formatDate } from "@/utils/formDate";
 import { toast } from "react-toastify";
 import { deleteWorkOrder, updateWorkOrder } from "@/services/workOrderService";
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail";
+import { getServicesByWorkOrder } from "@/services/serviceApi";
 import { getActiveTax } from "@/services/taxService";
+import type { WorkOrderServiceDetail } from "@/types/service";
 import { getWorkOrderTechnicians } from "@/services/workOrderTechnicianService";
 import { MoreHorizontal, Edit, UserPlus, Trash2, Play, Pause, CheckCircle, CreditCard } from "lucide-react";
 
@@ -52,6 +54,7 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [loadedDetails, setLoadedDetails] = useState<any[]>([]);
+  const [loadedServiceDetails, setLoadedServiceDetails] = useState<WorkOrderServiceDetail[]>([]);
   const [taxRate, setTaxRate] = useState<number>(0);
   const [assignedTechnicians, setAssignedTechnicians] = useState<any[]>([]);
   const navigate = useNavigate();
@@ -118,6 +121,14 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
     fetchTax();
   }, [workOrder.tax_rate, quotation?.tax_rate]);
 
+  // Cargar servicios de la orden de trabajo cuando el modal está abierto
+  useEffect(() => {
+    if (!open) return;
+    getServicesByWorkOrder(work_order_id)
+      .then((res) => setLoadedServiceDetails(res))
+      .catch((err: any) => console.error("Error al cargar servicios de la orden:", err));
+  }, [open, work_order_id]);
+
   // Fetch assigned technicians
   useEffect(() => {
     const fetchAssignedTechnicians = async () => {
@@ -131,12 +142,16 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
     fetchAssignedTechnicians();
   }, [work_order_id]);
 
-  // Calcular el subtotal a partir de los detalles cargados
-  const subtotal =
+  // Calcular el subtotal a partir de productos y servicios cargados
+  const productSubtotal =
     loadedDetails.reduce((acc: number, detail: any) => {
-      const sub = Number(detail.sale_price) * Number(detail.quantity) + Number(detail.labor_price);
-      return acc + sub;
+      return acc + (Number(detail.sale_price) * Number(detail.quantity) + Number(detail.labor_price));
     }, 0) || 0;
+
+  const serviceSubtotal =
+    loadedServiceDetails.reduce((acc, svc) => acc + Number(svc.subtotal), 0);
+
+  const subtotal = productSubtotal + serviceSubtotal;
   const taxAmount = subtotal * taxRate;
   const finalTotal = subtotal + taxAmount;
 
@@ -312,15 +327,15 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
               </p>
             </div>
 
-            {/* Detalles de Productos */}
+            {/* Detalles de Productos y Servicios */}
             <div>
-              <h3 className="font-bold mb-1">Detalles de Productos</h3>
-              {loadedDetails && loadedDetails.length > 0 ? (
+              <h3 className="font-bold mb-1">Productos y Servicios</h3>
+              {(loadedDetails.length > 0 || loadedServiceDetails.length > 0) ? (
                 <ScrollArea className="h-[300px] overflow-x-auto">
                   <table className="min-w-full border-collapse">
                     <thead>
                       <tr className="bg-muted">
-                        <th className="border border-border px-4 py-2 text-left">Producto</th>
+                        <th className="border border-border px-4 py-2 text-left">Producto / Servicio</th>
                         <th className="border border-border px-4 py-2 text-right">Cantidad</th>
                         <th className="border border-border px-4 py-2 text-right">Precio Unitario</th>
                         <th className="border border-border px-4 py-2 text-right">Mano de Obra</th>
@@ -328,13 +343,15 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
                       </tr>
                     </thead>
                     <tbody>
+                      {/* Filas de productos */}
                       {loadedDetails.map((detail, idx: number) => {
                         const subtotalDetail =
                           Number(detail.sale_price) * Number(detail.quantity) +
                           Number(detail.labor_price);
                         return (
-                          <tr key={idx} className="hover:bg-muted/50">
+                          <tr key={`prod-${idx}`} className="hover:bg-muted/50">
                             <td className="border border-border px-4 py-2">
+                              <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">Producto</span>
                               {detail.product?.product_name || "N/A"}
                             </td>
                             <td className="border border-border px-4 py-2 text-right">
@@ -352,6 +369,25 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
                           </tr>
                         );
                       })}
+                      {/* Filas de servicios */}
+                      {loadedServiceDetails.map((svc, idx: number) => (
+                        <tr key={`svc-${idx}`} className="hover:bg-muted/50">
+                          <td className="border border-border px-4 py-2">
+                            <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded mr-2">Servicio</span>
+                            {svc.service?.service_name || "N/A"}
+                          </td>
+                          <td className="border border-border px-4 py-2 text-right">
+                            {svc.cantidad}
+                          </td>
+                          <td className="border border-border px-4 py-2 text-right">
+                            {formatPriceCLP(Number(svc.precio_unitario))}
+                          </td>
+                          <td className="border border-border px-4 py-2 text-right">—</td>
+                          <td className="border border-border px-4 py-2 text-right">
+                            {formatPriceCLP(Number(svc.subtotal))}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                     <tfoot>
                       <tr className="bg-muted">
@@ -382,7 +418,7 @@ const WorkOrderCard = ({ workOrder, onDelete, onCreateDebtor, onStartOrder, onPa
                   </table>
                 </ScrollArea>
               ) : (
-                <p>No hay productos asociados</p>
+                <p>No hay productos ni servicios asociados</p>
               )}
             </div>
 

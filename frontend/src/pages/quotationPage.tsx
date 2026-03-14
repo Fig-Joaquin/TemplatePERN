@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import type { Quotation, WorkProductDetail, QuotationStatus } from "@/types/interfaces"
 import { fetchQuotations, deleteQuotation, downloadQuotationPDF, updateQuotationStatus } from "@/services/quotationService"
 import { getWorkProductDetailsByQuotationId } from "@/services/workProductDetail"
+import { getServicesByQuotation } from "@/services/serviceApi"
+import type { QuotationServiceDetail } from "@/types/service"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/columns"
 import { Toast } from "@/components/ui/toast"
@@ -38,6 +40,7 @@ export default function QuotationPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [workProductDetails, setWorkProductDetails] = useState<WorkProductDetail[]>([])
+  const [quotationServices, setQuotationServices] = useState<QuotationServiceDetail[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [dateFrom, setDateFrom] = useState<string>("")
@@ -72,10 +75,12 @@ export default function QuotationPage() {
         const response = await fetchQuotations([])
         setQuotations(response)
 
-        const detailsPromises = response.map((q) => getWorkProductDetailsByQuotationId(q.quotation_id!))
-        const detailsResults = await Promise.all(detailsPromises)
-        const allDetails = detailsResults.flat()
-        setWorkProductDetails(allDetails)
+        const [detailsResults, servicesResults] = await Promise.all([
+          Promise.all(response.map((q) => getWorkProductDetailsByQuotationId(q.quotation_id!))),
+          Promise.all(response.map((q) => getServicesByQuotation(q.quotation_id!))),
+        ])
+        setWorkProductDetails(detailsResults.flat())
+        setQuotationServices(servicesResults.flat())
       } catch (error) {
         console.error("Error al obtener las cotizaciones:", error)
         Toast({
@@ -148,6 +153,7 @@ export default function QuotationPage() {
     ...quotation,
     totalPrice: quotation.total_price || 0,
     details: workProductDetails.filter((detail) => detail.quotation_id === quotation.quotation_id),
+    services: quotationServices.filter((s) => s.quotation_id === quotation.quotation_id),
   }))
 
   // Función de filtrado: estado + rango de fechas + texto libre
@@ -204,7 +210,7 @@ export default function QuotationPage() {
     if (col.id === "actions") {
       return {
         ...col,
-        cell: ({ row }: { row: { original: Quotation & { details: WorkProductDetail[] } } }) => {
+        cell: ({ row }: { row: { original: Quotation & { details: WorkProductDetail[]; services: QuotationServiceDetail[] } } }) => {
           const quotation = row.original
           return (
             <div className="flex items-center justify-end gap-2">
@@ -239,12 +245,12 @@ export default function QuotationPage() {
                         )}
                       </div>
                       <div className="col-span-2">
-                        <h4 className="font-bold mb-2">Detalles de productos</h4>
+                        <h4 className="font-bold mb-2">Productos y Servicios</h4>
                         <ScrollArea className="h-[300px]">
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>Producto</TableHead>
+                                <TableHead>Producto / Servicio</TableHead>
                                 <TableHead>Cantidad</TableHead>
                                 <TableHead>Precio Unitario</TableHead>
                                 <TableHead>Mano de Obra</TableHead>
@@ -252,24 +258,19 @@ export default function QuotationPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
+                              {/* Filas de productos */}
                               {quotation.details.map((detail, index) => {
-                                // Get tax rate from detail - preferir applied_tax_rate (histórico) sobre tax.tax_rate
                                 const taxRate = Number(detail.applied_tax_rate ?? detail.tax?.tax_rate ?? 19) / 100;
-                                // Get profit margin from product
                                 const profitMargin = Number(detail.product?.profit_margin || 0) / 100;
-
-                                // Calculate base price with profit margin
                                 const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
-
-                                // Calculate subtotal before tax (including quantity and labor)
                                 const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
-
-                                // Calculate final price with tax
                                 const finalPrice = subtotalBeforeTax * (1 + taxRate);
-
                                 return (
-                                  <TableRow key={index}>
-                                    <TableCell>{detail.product?.product_name ?? "N/A"}</TableCell>
+                                  <TableRow key={`prod-${index}`}>
+                                    <TableCell>
+                                      <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">Producto</span>
+                                      {detail.product?.product_name ?? "N/A"}
+                                    </TableCell>
                                     <TableCell>{detail.quantity}</TableCell>
                                     <TableCell>{formatPriceCLP(priceWithMargin)}</TableCell>
                                     <TableCell>{formatPriceCLP(Number(detail.labor_price))}</TableCell>
@@ -280,6 +281,28 @@ export default function QuotationPage() {
                                   </TableRow>
                                 );
                               })}
+                              {/* Filas de servicios */}
+                              {quotation.services?.map((svc, index) => {
+                                const taxRate = Number(quotation.tax_rate ?? 19) / 100;
+                                const subtotalBeforeTax = Number(svc.precio_unitario) * svc.cantidad;
+                                const finalPrice = subtotalBeforeTax * (1 + taxRate);
+                                return (
+                                  <TableRow key={`svc-${index}`}>
+                                    <TableCell>
+                                      <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded mr-2">Servicio</span>
+                                      {svc.service?.service_name ?? "N/A"}
+                                    </TableCell>
+                                    <TableCell>{svc.cantidad}</TableCell>
+                                    <TableCell>{formatPriceCLP(Number(svc.precio_unitario))}</TableCell>
+                                    <TableCell>—</TableCell>
+                                    <TableCell>
+                                      {formatPriceCLP(finalPrice)}
+                                      <span className="text-xs text-gray-500 block">(IVA {taxRate * 100}% incluido)</span>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              {/* Fila total */}
                               <TableRow className="font-bold bg-muted/50">
                                 <TableCell colSpan={4} className="text-right">Total con IVA:</TableCell>
                                 <TableCell>
@@ -290,6 +313,10 @@ export default function QuotationPage() {
                                       const priceWithMargin = Number(detail.product?.sale_price || 0) * (1 + profitMargin);
                                       const subtotalBeforeTax = (priceWithMargin * detail.quantity) + Number(detail.labor_price || 0);
                                       return total + (subtotalBeforeTax * (1 + taxRate));
+                                    }, 0) +
+                                    (quotation.services ?? []).reduce((total, svc) => {
+                                      const taxRate = Number(quotation.tax_rate ?? 19) / 100;
+                                      return total + (Number(svc.precio_unitario) * svc.cantidad * (1 + taxRate));
                                     }, 0)
                                   )}
                                 </TableCell>

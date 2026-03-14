@@ -26,3 +26,6 @@ export { WorkOrderTechnician } from "./work/workOrderTechnician";
 export {Notification} from "./notificationEntity";
 export { CompanyExpense } from "./gastosEmpresas";
 export { ExpenseType } from "./tipoGasto";
+export { Service } from "./work/serviceEntity";
+export { QuotationService } from "./work/quotationServiceEntity";
+export { WorkOrderService } from "./work/workOrderServiceEntity";

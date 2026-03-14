@@ -25,6 +25,9 @@ import gastoRoutes from "./gastoRoutes";
 import tipoGastoRoutes from "./tipoGastoRoutes";
 import paymentTypeRoutes from "./work/paymentTypeRoutes";
 import workPaymentRoutes from "./work/workPaymentRoutes";
+import serviceRoutes from "./work/serviceRoutes";
+import { quotationServiceNestedRoutes, quotationServiceDetailRoutes } from "./work/quotationServiceRoutes";
+import { workOrderServiceNestedRoutes, workOrderServiceDetailRoutes } from "./work/workOrderServiceRoutes";
 import { authenticateUser, AuthRequest } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -100,5 +103,10 @@ router.use("/company-expenses", gastoRoutes);
 router.use("/expense-types", tipoGastoRoutes);
 router.use("/paymentTypes", paymentTypeRoutes);
 router.use("/workPayments", workPaymentRoutes);
+router.use("/services", serviceRoutes);
+router.use("/quotations", quotationServiceNestedRoutes);
+router.use("/quotation-services", quotationServiceDetailRoutes);
+router.use("/workOrders", workOrderServiceNestedRoutes);
+router.use("/work-order-services", workOrderServiceDetailRoutes);
 
 export default router;

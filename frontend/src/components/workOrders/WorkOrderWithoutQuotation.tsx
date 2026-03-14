@@ -29,6 +29,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { SparePartsModal } from "@/components/quotations/SparePartsModal";
 import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog";
+import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal";
+import { getServices, addServiceToWorkOrder } from "@/services/serviceApi";
+import type { Service, SelectedService } from "@/types/service";
 import type { Vehicle, Product, StockProduct, WorkOrderInput, WorkProductDetail } from "../../types/interfaces";
 import { showApiError } from "@/utils/apiErrorHandler";
 
@@ -61,8 +64,11 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   const [vehicleQuery, setVehicleQuery] = useState("");
   const [openVehiclePopover, setOpenVehiclePopover] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [showCreateProductModal, setShowCreateProductModal] = useState(false);
   const [selectedType, setSelectedType] = useState<"all" | "person" | "company">("all");
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
 
   // Función para generar descripción automática
   const generateAutoDescription = (vehicle: Vehicle): string => {
@@ -95,6 +101,9 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         setProducts(productsData);
         const stockData = await getStockProducts();
         setStockProducts(stockData);
+
+        const servicesData = await getServices();
+        setServices(servicesData);
 
         // Obtener el impuesto activo del sistema
         const tax = await getActiveTax();
@@ -157,7 +166,8 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
   }, 0);
 
   const totalLaborPrice = selectedProducts.reduce((total, { laborPrice }) => total + laborPrice, 0);
-  const subtotalBeforeTax = totalProductPrice + totalLaborPrice;
+  const totalServicesPrice = selectedServices.reduce((acc, s) => acc + s.subtotal, 0);
+  const subtotalBeforeTax = totalProductPrice + totalLaborPrice + totalServicesPrice;
   const taxAmount = Math.round(subtotalBeforeTax * taxRate);
   const finalTotal = subtotalBeforeTax + taxAmount;
 
@@ -208,8 +218,8 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
       return;
     }
 
-    if (selectedProducts.length === 0) {
-      toast.error("Por favor selecciona al menos un producto");
+    if (selectedProducts.length === 0 && selectedServices.length === 0) {
+      toast.error("Por favor selecciona al menos un producto o servicio");
       return;
     }
 
@@ -272,6 +282,19 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
             updated_at: new Date()
           });
         }
+      }
+
+      // Crear detalles de servicios
+      if (selectedServices.length > 0) {
+        await Promise.all(
+          selectedServices.map((sel) =>
+            addServiceToWorkOrder(createdWorkOrder.work_order_id, {
+              service_id: sel.serviceId,
+              cantidad: sel.cantidad,
+              precio_unitario: sel.precio_unitario,
+            })
+          )
+        );
       }
 
       toast.success("Orden de trabajo creada exitosamente");
@@ -422,10 +445,81 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Button onClick={() => setShowProductModal(true)} variant="outline" className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Producto
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowProductModal(true)} variant="outline" className="flex-1">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Producto
+              </Button>
+              <Button onClick={() => setShowServiceModal(true)} variant="outline" className="flex-1">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Servicio
+              </Button>
+            </div>
+
+            {/* Servicios seleccionados */}
+            {selectedServices.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Servicios Seleccionados ({selectedServices.length})</p>
+                {selectedServices.map((sel) => (
+                  <div key={sel.serviceId} className="p-4 border rounded-md space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">Servicio</span>
+                          <p className="font-medium text-sm">{sel.serviceName}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Precio: {formatPriceCLP(sel.precio_unitario)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setSelectedServices((prev) => prev.filter((s) => s.serviceId !== sel.serviceId))
+                        }
+                      >
+                        <X className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs">Cantidad</Label>
+                        <NumberInput
+                          value={sel.cantidad}
+                          onChange={(val) =>
+                            setSelectedServices((prev) =>
+                              prev.map((s) =>
+                                s.serviceId === sel.serviceId
+                                  ? { ...s, cantidad: val || 1, subtotal: (val || 1) * s.precio_unitario }
+                                  : s
+                              )
+                            )
+                          }
+                          min={1}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Precio Unitario</Label>
+                        <NumberInput
+                          value={sel.precio_unitario}
+                          onChange={(val) =>
+                            setSelectedServices((prev) =>
+                              prev.map((s) =>
+                                s.serviceId === sel.serviceId
+                                  ? { ...s, precio_unitario: val || 0, subtotal: s.cantidad * (val || 0) }
+                                  : s
+                              )
+                            )
+                          }
+                          min={0}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {selectedProducts.length > 0 && (
               <div className="space-y-3">
@@ -497,7 +591,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
       </Card>
 
       {/* Resumen de Costos */}
-      {selectedProducts.length > 0 && (
+      {(selectedProducts.length > 0 || selectedServices.length > 0) && (
         <Card className="border">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-medium">Resumen de Costos</CardTitle>
@@ -511,6 +605,12 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
               <span className="text-muted-foreground">Mano de Obra:</span>
               <span>{formatPriceCLP(totalLaborPrice)}</span>
             </div>
+            {totalServicesPrice > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal Servicios:</span>
+                <span>{formatPriceCLP(totalServicesPrice)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal:</span>
               <span>{formatPriceCLP(subtotalBeforeTax)}</span>
@@ -533,7 +633,7 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         <Button type="button" variant="outline" onClick={() => navigate(-1)}>
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} disabled={loading || !selectedVehicle || selectedProducts.length === 0}>
+        <Button onClick={handleSubmit} disabled={loading || !selectedVehicle || (selectedProducts.length === 0 && selectedServices.length === 0)}>
           {loading ? "Creando..." : "Crear Orden de Trabajo"}
         </Button>
       </div>
@@ -555,6 +655,22 @@ const WorkOrderWithoutQuotation = ({ preselectedVehicleId }: WorkOrderWithoutQuo
         requireStock={true}
         title="Seleccionar Productos"
         description="Selecciona los productos para la orden de trabajo."
+      />
+
+      {/* Modal de selección de servicios */}
+      <ServiceSelectorModal
+        open={showServiceModal}
+        onOpenChange={setShowServiceModal}
+        services={services}
+        selectedServices={selectedServices}
+        onConfirm={(selected) => {
+          setSelectedServices(selected);
+          setShowServiceModal(false);
+          if (selected.length > 0) toast.success("Servicios actualizados");
+        }}
+        onCancel={() => setShowServiceModal(false)}
+        title="Seleccionar Servicios"
+        description="Selecciona los servicios para la orden de trabajo"
       />
 
       {/* Modal para crear producto rápido */}

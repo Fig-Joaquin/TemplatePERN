@@ -32,6 +32,9 @@ import { NumberInput } from "@/components/numberInput"
 import { formatPriceCLP } from "@/utils/formatPriceCLP"
 import { QuickProductCreateDialog } from "@/components/products/QuickProductCreateDialog"
 import { SparePartsModal } from "@/components/quotations/SparePartsModal"
+import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal"
+import { getServices, addServiceToQuotation } from "@/services/serviceApi"
+import type { Service, SelectedService } from "@/types/service"
 
 const fetchTax = async () => {
   try {
@@ -65,7 +68,10 @@ const QuotationCreatePage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [showCreateProductModal, setShowCreateProductModal] = useState(false);
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -111,9 +117,19 @@ const QuotationCreatePage = () => {
       }
     }
 
+    const fetchServicesData = async () => {
+      try {
+        const res = await getServices()
+        setServices(res)
+      } catch (error: any) {
+        toast.error(error.message || "Error al cargar servicios")
+      }
+    }
+
     fetchVehiclesData();
     fetchProductsData();
     fetchStockProductsData();
+    fetchServicesData();
     fetchTax().then((taxData) => {
       if (taxData) {
         setTaxRate(taxData.rate);
@@ -156,8 +172,8 @@ const QuotationCreatePage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedVehicle || selectedProducts.length === 0) {
-      toast.error("Debe seleccionar un vehículo y al menos un producto")
+    if (!selectedVehicle || (selectedProducts.length === 0 && selectedServices.length === 0)) {
+      toast.error("Debe seleccionar un vehículo y al menos un producto o servicio")
       return
     }
     setLoading(true)
@@ -197,6 +213,21 @@ const QuotationCreatePage = () => {
         },
       )
       await Promise.all(newWorkProductDetails.map((detail) => createWorkProductDetail(detail)))
+
+      // Crear detalles de servicios
+      const quotationId = createdQuotation.quotation?.quotation_id
+      if (quotationId && selectedServices.length > 0) {
+        await Promise.all(
+          selectedServices.map((sel) =>
+            addServiceToQuotation(quotationId, {
+              service_id: sel.serviceId,
+              cantidad: sel.cantidad,
+              precio_unitario: sel.precio_unitario,
+            })
+          )
+        )
+      }
+
       toast.success("Cotización creada exitosamente")
       navigate("/admin/cotizaciones")
     } catch (error: any) {
@@ -229,7 +260,8 @@ const QuotationCreatePage = () => {
     return total + (Number(laborPrice) || 0)  // Convertir a número y usar 0 si es inválido
   }, 0)
 
-  const subtotalWithoutTax = totalProductPrice + totalLaborPrice
+  const totalServicesPrice = selectedServices.reduce((acc, s) => acc + s.subtotal, 0)
+  const subtotalWithoutTax = totalProductPrice + totalLaborPrice + totalServicesPrice
   const taxAmount = subtotalWithoutTax * taxRate
   const totalPrice = subtotalWithoutTax + taxAmount
 
@@ -371,22 +403,33 @@ const QuotationCreatePage = () => {
               </Popover>
             </div>
 
-            {/* Sección de productos */}
+            {/* Sección de productos y servicios */}
             <div className="space-y-4 bg-accent/5 p-4 rounded-lg border">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-2">
                 <Label className="text-lg font-semibold flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" /> {/* Icono */}
-                  Repuestos Seleccionados
+                  <Package className="w-5 h-5 text-primary" />
+                  Productos y Servicios
                 </Label>
-                <Button
-                  type="button"
-                  onClick={() => setShowProductModal(true)}
-                  variant="outline"
-                  className="hover:accent hover:text-primary-foreground transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2 " />
-                  Añadir Repuesto
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setShowProductModal(true)}
+                    variant="outline"
+                    className="hover:accent hover:text-primary-foreground transition-colors"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Producto
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setShowServiceModal(true)}
+                    variant="outline"
+                    className="hover:accent hover:text-primary-foreground transition-colors"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Servicio
+                  </Button>
+                </div>
               </div>
 
               {/* Tarjeta de productos */}
@@ -394,6 +437,58 @@ const QuotationCreatePage = () => {
                 <CardContent className="p-4">
                   <ScrollArea className="h-[300px] pr-4">
                     <ul className="space-y-3">
+                      {/* Servicios seleccionados */}
+                      {selectedServices.map((sel) => (
+                        <li
+                          key={`service-${sel.serviceId}`}
+                          className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">Servicio</span>
+                              <p className="font-medium">{sel.serviceName}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Precio: {formatPriceCLP(sel.precio_unitario)}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <div className="flex flex-col items-end">
+                              <Label className="text-xs">Cantidad</Label>
+                              <NumberInput
+                                value={sel.cantidad}
+                                onChange={(val) =>
+                                  setSelectedServices((prev) =>
+                                    prev.map((s) =>
+                                      s.serviceId === sel.serviceId
+                                        ? { ...s, cantidad: val || 1, subtotal: (val || 1) * s.precio_unitario }
+                                        : s
+                                    )
+                                  )
+                                }
+                                min={1}
+                                className="w-20"
+                              />
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs">Subtotal</span>
+                              <span className="font-medium">{formatPriceCLP(sel.subtotal)}</span>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                setSelectedServices((prev) =>
+                                  prev.filter((s) => s.serviceId !== sel.serviceId)
+                                )
+                              }
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                      {/* Productos seleccionados */}
                       {selectedProducts.map(({ productId, quantity, laborPrice }) => {
                         const product = products.find((p) => p.product_id === Number(productId))
                         const stockProduct = stockProducts.find(
@@ -479,6 +574,12 @@ const QuotationCreatePage = () => {
                           <span>Total Mano de Obra:</span>
                           <span className="font-medium">{formatPriceCLP(totalLaborPrice)}</span>
                         </div>
+                        {totalServicesPrice > 0 && (
+                          <div className="flex justify-between p-2 rounded bg-accent/5">
+                            <span>Subtotal Servicios:</span>
+                            <span className="font-medium">{formatPriceCLP(totalServicesPrice)}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between p-2 rounded bg-accent/5">
@@ -543,6 +644,21 @@ const QuotationCreatePage = () => {
             showStock={true}
             title="Seleccionar Repuestos"
             description="Selecciona los productos para la cotización y configura cantidades y mano de obra"
+          />
+
+          <ServiceSelectorModal
+            open={showServiceModal}
+            onOpenChange={setShowServiceModal}
+            services={services}
+            selectedServices={selectedServices}
+            onConfirm={(selected) => {
+              setSelectedServices(selected)
+              setShowServiceModal(false)
+              if (selected.length > 0) toast.success("Servicios actualizados")
+            }}
+            onCancel={() => setShowServiceModal(false)}
+            title="Seleccionar Servicios"
+            description="Selecciona los servicios para la cotización y configura cantidades y precios"
           />
 
           <QuickProductCreateDialog
