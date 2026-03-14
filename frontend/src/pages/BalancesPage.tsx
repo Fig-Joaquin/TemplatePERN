@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -26,10 +27,17 @@ import {
 } from "lucide-react";
 import { fetchWorkPayments } from "@/services/work/workPayment";
 import { fetchGastos } from "@/services/gastoService";
-import { getAllProductPurchases } from "@/services/productPurchaseService";
+import { getAllProductPurchases, type ProductPurchase } from "@/services/productPurchaseService";
 import { formatPriceCLP } from "@/utils/formatPriceCLP";
+import { formatDate } from "@/utils/formDate";
 import { motion } from "framer-motion";
 import { WorkPayment, Gasto } from "@/types/interfaces";
+
+interface BalanceDetails {
+  incomeTransactions: WorkPayment[];
+  expenseTransactions: Gasto[];
+  productPurchaseTransactions: ProductPurchase[];
+}
 
 interface BalanceData {
   period: string;
@@ -40,15 +48,7 @@ interface BalanceData {
   balance: number;
   trend: "up" | "down" | "neutral";
   percentage: number;
-}
-
-interface ProductPurchase {
-  product_purchase_id: number;
-  purchase_status: string;
-  total_price: number;
-  purchase_history: {
-    purchase_date: string;
-  };
+  details: BalanceDetails;
 }
 
 const BalancesPage = () => {
@@ -102,11 +102,16 @@ const BalancesPage = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const calculateIncomeInRange = (payments: WorkPayment[], start: Date, end: Date): number => {
+  const toNumber = (value: number | string | undefined | null): number => {
+    const numericValue = typeof value === "string" ? parseFloat(value) : Number(value ?? 0);
+    return Number.isFinite(numericValue) ? numericValue : 0;
+  };
+
+  const filterPaymentsByDateRange = (payments: WorkPayment[], start: Date, end: Date): WorkPayment[] => {
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
 
-    const filteredPayments = payments.filter(payment => {
+    return payments.filter(payment => {
       if (!payment.payment_date) return false;
 
       let paymentDateStr = typeof payment.payment_date === 'string'
@@ -118,18 +123,13 @@ const BalancesPage = () => {
 
       return isValidPaymentStatus && paymentDateStr >= startDateStr && paymentDateStr < endDateStr;
     });
-
-    return filteredPayments.reduce((sum, payment) => {
-      const montoNumerico = typeof payment.amount_paid === 'string' ? parseFloat(payment.amount_paid) : Number(payment.amount_paid);
-      return sum + montoNumerico;
-    }, 0);
   };
 
-  const calculateExpensesInRange = (gastos: Gasto[], start: Date, end: Date): number => {
+  const filterGastosByDateRange = (gastos: Gasto[], start: Date, end: Date): Gasto[] => {
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
 
-    const filteredGastos = gastos.filter(gasto => {
+    return gastos.filter(gasto => {
       if (!gasto.expense_date) return false;
 
       let gastoDateStr = typeof gasto.expense_date === 'string'
@@ -138,18 +138,13 @@ const BalancesPage = () => {
 
       return gastoDateStr >= startDateStr && gastoDateStr < endDateStr;
     });
-
-    return filteredGastos.reduce((sum, gasto) => {
-      const montoNumerico = typeof gasto.amount === 'string' ? parseFloat(gasto.amount) : Number(gasto.amount);
-      return sum + montoNumerico;
-    }, 0);
   };
 
-  const calculateProductPurchaseExpensesInRange = (productPurchases: ProductPurchase[], start: Date, end: Date): number => {
+  const filterProductPurchasesByDateRange = (purchases: ProductPurchase[], start: Date, end: Date): ProductPurchase[] => {
     const startDateStr = getLocalDateString(start);
     const endDateStr = getLocalDateString(end);
 
-    const filteredPurchases = productPurchases.filter(purchase => {
+    return purchases.filter(purchase => {
       if (!purchase.purchase_history?.purchase_date) return false;
 
       let purchaseDateStr = typeof purchase.purchase_history.purchase_date === 'string'
@@ -161,11 +156,18 @@ const BalancesPage = () => {
 
       return isProcessed && isInRange;
     });
+  };
 
-    return filteredPurchases.reduce((sum, purchase) => {
-      const totalPrice = typeof purchase.total_price === 'string' ? parseFloat(purchase.total_price) : Number(purchase.total_price);
-      return sum + totalPrice;
-    }, 0);
+  const sumPayments = (paymentList: WorkPayment[]): number => {
+    return paymentList.reduce((sum, payment) => sum + toNumber(payment.amount_paid), 0);
+  };
+
+  const sumGastos = (gastoList: Gasto[]): number => {
+    return gastoList.reduce((sum, gasto) => sum + toNumber(gasto.amount), 0);
+  };
+
+  const sumProductPurchases = (purchaseList: ProductPurchase[]): number => {
+    return purchaseList.reduce((sum, purchase) => sum + toNumber(purchase.total_price), 0);
   };
 
   const calculateTrendMetrics = (
@@ -217,9 +219,13 @@ const BalancesPage = () => {
         const startDate = new Date(year, month - 1, day);
         const endDate = new Date(year, month - 1, day + 1);
 
-        const income = calculateIncomeInRange(payments, startDate, endDate);
-        const expenses = calculateExpensesInRange(gastos, startDate, endDate);
-        const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, startDate, endDate);
+        const incomeTransactions = filterPaymentsByDateRange(payments, startDate, endDate);
+        const expenseTransactions = filterGastosByDateRange(gastos, startDate, endDate);
+        const productPurchaseTransactions = filterProductPurchasesByDateRange(productPurchases, startDate, endDate);
+
+        const income = sumPayments(incomeTransactions);
+        const expenses = sumGastos(expenseTransactions);
+        const productPurchaseExpenses = sumProductPurchases(productPurchaseTransactions);
         const balance = income - (expenses + productPurchaseExpenses);
         const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
@@ -239,7 +245,12 @@ const BalancesPage = () => {
           productPurchases: productPurchaseExpenses,
           balance,
           trend,
-          percentage
+          percentage,
+          details: {
+            incomeTransactions,
+            expenseTransactions,
+            productPurchaseTransactions,
+          }
         });
       }
     } else if (periodType === "weekly") {
@@ -260,9 +271,13 @@ const BalancesPage = () => {
         const weekEnd = new Date(current);
         weekEnd.setDate(weekEnd.getDate() + 7);
 
-        const income = calculateIncomeInRange(payments, weekStart, weekEnd);
-        const expenses = calculateExpensesInRange(gastos, weekStart, weekEnd);
-        const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, weekStart, weekEnd);
+        const incomeTransactions = filterPaymentsByDateRange(payments, weekStart, weekEnd);
+        const expenseTransactions = filterGastosByDateRange(gastos, weekStart, weekEnd);
+        const productPurchaseTransactions = filterProductPurchasesByDateRange(productPurchases, weekStart, weekEnd);
+
+        const income = sumPayments(incomeTransactions);
+        const expenses = sumGastos(expenseTransactions);
+        const productPurchaseExpenses = sumProductPurchases(productPurchaseTransactions);
         const balance = income - (expenses + productPurchaseExpenses);
         const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
@@ -281,7 +296,12 @@ const BalancesPage = () => {
           productPurchases: productPurchaseExpenses,
           balance,
           trend,
-          percentage
+          percentage,
+          details: {
+            incomeTransactions,
+            expenseTransactions,
+            productPurchaseTransactions,
+          }
         });
 
         current.setDate(current.getDate() + 7);
@@ -295,9 +315,13 @@ const BalancesPage = () => {
         const startDate = new Date(year, month - 1, 1);
         const endDate = new Date(year, month, 1);
 
-        const income = calculateIncomeInRange(payments, startDate, endDate);
-        const expenses = calculateExpensesInRange(gastos, startDate, endDate);
-        const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, startDate, endDate);
+        const incomeTransactions = filterPaymentsByDateRange(payments, startDate, endDate);
+        const expenseTransactions = filterGastosByDateRange(gastos, startDate, endDate);
+        const productPurchaseTransactions = filterProductPurchasesByDateRange(productPurchases, startDate, endDate);
+
+        const income = sumPayments(incomeTransactions);
+        const expenses = sumGastos(expenseTransactions);
+        const productPurchaseExpenses = sumProductPurchases(productPurchaseTransactions);
         const balance = income - (expenses + productPurchaseExpenses);
         const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
@@ -316,7 +340,12 @@ const BalancesPage = () => {
           productPurchases: productPurchaseExpenses,
           balance,
           trend,
-          percentage
+          percentage,
+          details: {
+            incomeTransactions,
+            expenseTransactions,
+            productPurchaseTransactions,
+          }
         });
       }
     } else if (periodType === "annual") {
@@ -328,9 +357,13 @@ const BalancesPage = () => {
         const startDate = new Date(year, 0, 1);
         const endDate = new Date(year + 1, 0, 1);
 
-        const income = calculateIncomeInRange(payments, startDate, endDate);
-        const expenses = calculateExpensesInRange(gastos, startDate, endDate);
-        const productPurchaseExpenses = calculateProductPurchaseExpensesInRange(productPurchases, startDate, endDate);
+        const incomeTransactions = filterPaymentsByDateRange(payments, startDate, endDate);
+        const expenseTransactions = filterGastosByDateRange(gastos, startDate, endDate);
+        const productPurchaseTransactions = filterProductPurchasesByDateRange(productPurchases, startDate, endDate);
+
+        const income = sumPayments(incomeTransactions);
+        const expenses = sumGastos(expenseTransactions);
+        const productPurchaseExpenses = sumProductPurchases(productPurchaseTransactions);
         const balance = income - (expenses + productPurchaseExpenses);
         const hasActivity = income > 0 || expenses > 0 || productPurchaseExpenses > 0;
 
@@ -349,7 +382,12 @@ const BalancesPage = () => {
           productPurchases: productPurchaseExpenses,
           balance,
           trend,
-          percentage
+          percentage,
+          details: {
+            incomeTransactions,
+            expenseTransactions,
+            productPurchaseTransactions,
+          }
         });
       }
     }
@@ -357,9 +395,11 @@ const BalancesPage = () => {
     setBalances(balanceData);
 
     // Calcular balance total histórico
-    const allTimeIncome = calculateIncomeInRange(payments, new Date(2000, 0, 1), new Date(2099, 11, 31));
-    const allTimeExpenses = calculateExpensesInRange(gastos, new Date(2000, 0, 1), new Date(2099, 11, 31));
-    const allTimeProductPurchases = calculateProductPurchaseExpensesInRange(productPurchases, new Date(2000, 0, 1), new Date(2099, 11, 31));
+    const historicalStartDate = new Date(2000, 0, 1);
+    const historicalEndDate = new Date(2099, 11, 31);
+    const allTimeIncome = sumPayments(filterPaymentsByDateRange(payments, historicalStartDate, historicalEndDate));
+    const allTimeExpenses = sumGastos(filterGastosByDateRange(gastos, historicalStartDate, historicalEndDate));
+    const allTimeProductPurchases = sumProductPurchases(filterProductPurchasesByDateRange(productPurchases, historicalStartDate, historicalEndDate));
     const allTimeBalance = allTimeIncome - (allTimeExpenses + allTimeProductPurchases);
 
     setTotalBalance({
@@ -370,7 +410,12 @@ const BalancesPage = () => {
       productPurchases: allTimeProductPurchases,
       balance: allTimeBalance,
       trend: allTimeBalance === 0 ? "neutral" : (allTimeBalance > 0 ? "up" : "down"),
-      percentage: 0
+      percentage: 0,
+      details: {
+        incomeTransactions: [],
+        expenseTransactions: [],
+        productPurchaseTransactions: [],
+      }
     });
   };
 
@@ -621,6 +666,152 @@ const BalancesPage = () => {
                         {balance.percentage > 0 ? "+" : ""}{balance.percentage.toFixed(1)}%
                       </Badge>
                     </div>
+                  </div>
+
+                  <div className="mt-4 border-t pt-3">
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value={`details-${index}`} className="border-b-0">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                          <div className="flex w-full items-center justify-between gap-2 pr-2">
+                            <span className="font-medium">Desglose de movimientos del periodo</span>
+                            <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                              {balance.details.incomeTransactions.length + balance.details.expenseTransactions.length + balance.details.productPurchaseTransactions.length} movimientos
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2">
+                            <div
+                              className="rounded-lg border p-3"
+                              style={{
+                                backgroundColor: "var(--balance-income-bg)",
+                                borderColor: "var(--balance-income-border)",
+                              }}
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="text-sm font-semibold" style={{ color: "var(--balance-income-text)" }}>Ingresos</p>
+                                <Badge variant="outline">{balance.details.incomeTransactions.length}</Badge>
+                              </div>
+                              <div className="mb-2 text-sm font-medium" style={{ color: "var(--balance-income-value)" }}>
+                                Total: {formatPriceCLP(balance.income)}
+                              </div>
+                              {balance.details.incomeTransactions.length > 0 ? (
+                                <div className="max-h-56 space-y-2 overflow-auto pr-1">
+                                  {balance.details.incomeTransactions.map((payment, txIndex) => (
+                                    <div key={`${payment.work_payment_id ?? txIndex}-income`} className="rounded-md border bg-background p-2">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="truncate text-sm font-medium">
+                                            {payment.work_order
+                                              ? `Orden #${payment.work_order.work_order_id}`
+                                              : `Pago #${payment.work_payment_id ?? txIndex + 1}`}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {formatDate(payment.payment_date)}
+                                          </p>
+                                          <p className="line-clamp-2 text-xs text-muted-foreground">
+                                            {payment.work_order?.description || payment.payment_type?.type_name || "Ingreso sin descripción"}
+                                          </p>
+                                        </div>
+                                        <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--balance-income-value)" }}>
+                                          {formatPriceCLP(toNumber(payment.amount_paid))}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="py-4 text-center text-xs text-muted-foreground">Sin ingresos en este período</p>
+                              )}
+                            </div>
+
+                            <div
+                              className="rounded-lg border p-3"
+                              style={{
+                                backgroundColor: "var(--balance-expense-bg)",
+                                borderColor: "var(--balance-expense-border)",
+                              }}
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="text-sm font-semibold" style={{ color: "var(--balance-expense-text)" }}>Gastos</p>
+                                <Badge variant="outline">{balance.details.expenseTransactions.length}</Badge>
+                              </div>
+                              <div className="mb-2 text-sm font-medium" style={{ color: "var(--balance-expense-value)" }}>
+                                Total: {formatPriceCLP(balance.expenses)}
+                              </div>
+                              {balance.details.expenseTransactions.length > 0 ? (
+                                <div className="max-h-56 space-y-2 overflow-auto pr-1">
+                                  {balance.details.expenseTransactions.map((expense, txIndex) => (
+                                    <div key={`${expense.company_expense_id ?? txIndex}-expense`} className="rounded-md border bg-background p-2">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="line-clamp-2 text-sm font-medium">
+                                            {expense.description || "Gasto sin descripción"}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {formatDate(expense.expense_date)}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            Tipo: {expense.expense_type?.expense_type_name || "Otro"}
+                                          </p>
+                                        </div>
+                                        <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--balance-expense-value)" }}>
+                                          {formatPriceCLP(toNumber(expense.amount))}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="py-4 text-center text-xs text-muted-foreground">Sin gastos en este período</p>
+                              )}
+                            </div>
+
+                            <div
+                              className="rounded-lg border p-3"
+                              style={{
+                                backgroundColor: "var(--stat-orange-bg)",
+                                borderColor: "var(--stat-orange-text)",
+                              }}
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="text-sm font-semibold" style={{ color: "var(--stat-orange-text-secondary)" }}>Compras</p>
+                                <Badge variant="outline">{balance.details.productPurchaseTransactions.length}</Badge>
+                              </div>
+                              <div className="mb-2 text-sm font-medium" style={{ color: "var(--stat-orange-text-secondary)" }}>
+                                Total: {formatPriceCLP(balance.productPurchases)}
+                              </div>
+                              {balance.details.productPurchaseTransactions.length > 0 ? (
+                                <div className="max-h-56 space-y-2 overflow-auto pr-1">
+                                  {balance.details.productPurchaseTransactions.map((purchase, txIndex) => (
+                                    <div key={`${purchase.product_purchase_id ?? txIndex}-purchase`} className="rounded-md border bg-background p-2">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="line-clamp-2 text-sm font-medium">
+                                            {purchase.product?.product_name || `Compra #${purchase.product_purchase_id ?? txIndex + 1}`}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {formatDate(purchase.purchase_history?.purchase_date)}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            Cantidad: {purchase.quantity}
+                                          </p>
+                                        </div>
+                                        <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--stat-orange-text-secondary)" }}>
+                                          {formatPriceCLP(toNumber(purchase.total_price))}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="py-4 text-center text-xs text-muted-foreground">Sin compras en este período</p>
+                              )}
+                            </div>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
                 </CardContent>
               </Card>
