@@ -47,7 +47,7 @@ export const login: RequestHandler = async (req: Request, res: Response): Promis
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ message: "Login exitoso", token });
+    res.json({ message: "Login exitoso" });
   } catch (error) {
     console.error("Error en login:", error);
     res.status(500).json({ message: "Error en el servidor" });

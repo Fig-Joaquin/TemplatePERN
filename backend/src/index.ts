@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import express, { Application, Request, Response } from "express";
+import express, { Application } from "express";
 import cookieParser from "cookie-parser";
 import { AppDataSource } from "./config/ormconfig";
 import routes from "./routes";
@@ -33,26 +33,6 @@ app.use(errorHandler);
 
 //app.use("/vehicles", vehicleRoutes);
 
-// Ruta para establecer cookies como ejemplo
-app.get("/set-cookie", (_req: Request, res: Response): void => {
-    res.cookie("token", "your_jwt_token", {
-        httpOnly: true, // Impide el acceso desde JavaScript
-        secure: process.env.NODE_ENV === "production", // Solo HTTPS en producción
-        sameSite: "strict", // Protege contra CSRF
-        maxAge: 60 * 60 * 1000, // 1 hora
-    });
-    res.send("Cookie set");
-});
-
-// Ruta para leer cookies como ejemplo
-app.get("/read-cookie", (req: Request, res: Response): void => {
-    const token = req.cookies?.token;
-    if (!token) {
-        res.status(401).json({ message: "No token provided" });
-        return;
-    }
-    res.send(`Token: ${token}`);
-});
 
 const startServer = async (): Promise<void> => {
     try {

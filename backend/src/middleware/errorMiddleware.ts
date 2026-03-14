@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 interface CustomError {
   status?: number;
   message?: string;
-  errors?: any[];
+  errors?: unknown[];
 }
 
 export const errorHandler = (err: CustomError | Error | ZodError, _req: Request, res: Response, _next: NextFunction): void => {
@@ -34,7 +34,6 @@ export const errorHandler = (err: CustomError | Error | ZodError, _req: Request,
 
   // Error genérico del servidor
   res.status(500).json({
-    message: "Error interno del servidor",
-    error: err.message
+    message: "Error interno del servidor"
   });
 };
